@@ -2,17 +2,29 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="Мир Самозанятых — платформа для самозанятых">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="color-scheme" content="dark">
     <title>{% block title %}Мир Самозанятых{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Мир Самозанятых</a>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburger" aria-label="Меню" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
             <a href="/">Главная</a>
             <a href="/svetlana">Светлана</a>
             <a href="/contracts">Договоры</a>
@@ -30,12 +42,37 @@
     </footer>
 
     <script nonce="{{ csp_nonce }}">
-        const token = localStorage.getItem('access_token');
-        const navLogin = document.getElementById('nav-login');
-        if (token && navLogin) {
-            navLogin.textContent = 'Профиль';
-            navLogin.href = '/dashboard';
-        }
+        // Гамбургер-меню
+        (function() {
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('nav-links');
+
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', function() {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    this.classList.toggle('active');
+                    navLinks.classList.toggle('active');
+                });
+
+                // Закрытие при клике на ссылку
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        hamburger.setAttribute('aria-expanded', 'false');
+                        hamburger.classList.remove('active');
+                        navLinks.classList.remove('active');
+                    });
+                });
+            }
+
+            // Проверка авторизации
+            const token = localStorage.getItem('access_token');
+            const navLogin = document.getElementById('nav-login');
+            if (token && navLogin) {
+                navLogin.textContent = 'Профиль';
+                navLogin.href = '/dashboard';
+            }
+        })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>
