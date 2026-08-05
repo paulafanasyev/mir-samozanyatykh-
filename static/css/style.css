@@ -791,3 +791,223 @@ footer {
         overflow: visible;
     }
 }
+
+/* ============================================
+   v4.2 — ДОПОЛНИТЕЛЬНЫЕ СТИЛИ
+   Stats, Tables, Cards, Achievements
+   ============================================ */
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Data Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.data-table tr:hover td {
+    background: var(--card-bg-hover);
+}
+
+.data-table td {
+    color: var(--text-light);
+}
+
+/* Cards Grid */
+.cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.cards-grid .card {
+    background: var(--card-bg);
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.cards-grid .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+}
+
+.cards-grid .card h4 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.0625rem;
+}
+
+/* Achievements */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.achievement-card {
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: var(--transition);
+    position: relative;
+}
+
+.achievement-card:hover {
+    border-color: var(--primary);
+}
+
+.achievement-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.achievement-card h4 {
+    font-size: 0.9375rem;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+}
+
+.achievement-card p {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.achievement-card .points {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background: var(--primary);
+    color: var(--secondary);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Forms in dashboard */
+.dashboard-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dashboard-section form input,
+.dashboard-section form select,
+.dashboard-section form textarea {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 0.9375rem;
+    font-family: inherit;
+    transition: var(--transition);
+    min-height: 44px;
+}
+
+.dashboard-section form textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.dashboard-section form input:focus,
+.dashboard-section form select:focus,
+.dashboard-section form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+/* Tablet+ cards grid */
+@media (min-width: 576px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .achievements-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+    }
+    .achievements-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+    }
+    .data-table {
+        font-size: 1rem;
+    }
+    .data-table th,
+    .data-table td {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .achievements-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
