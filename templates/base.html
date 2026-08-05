@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Мир Самозанятых — платформа для самозанятых">
+    <title>{% block title %}Мир Самозанятых{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Мир Самозанятых</a>
+        <div class="nav-links">
+            <a href="/">Главная</a>
+            <a href="/svetlana">Светлана</a>
+            <a href="/contracts">Договоры</a>
+            <a href="/dashboard">Кабинет</a>
+            <a href="/login" id="nav-login">Вход</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>© 2026 Мир Самозанятых | it-laboratory@bk.ru</p>
+    </footer>
+
+    <script nonce="{{ csp_nonce }}">
+        const token = localStorage.getItem('access_token');
+        const navLogin = document.getElementById('nav-login');
+        if (token && navLogin) {
+            navLogin.textContent = 'Профиль';
+            navLogin.href = '/dashboard';
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

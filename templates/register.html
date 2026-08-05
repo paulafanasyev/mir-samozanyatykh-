@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <h2>Регистрация</h2>
+    <form id="register-form">
+        <input type="email" name="email" placeholder="Email" required maxlength="255">
+        <input type="text" name="full_name" placeholder="ФИО" required maxlength="255">
+        <input type="password" name="password" placeholder="Пароль (мин. 8 символов, заглавная, цифра, спецсимвол)" required maxlength="128">
+        <input type="text" name="phone" placeholder="Телефон" maxlength="50">
+        <input type="text" name="inn" placeholder="ИНН (необязательно)" maxlength="20">
+        <div id="password-strength"></div>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+    </form>
+    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+const passwordInput = document.querySelector('input[name="password"]');
+const strengthDiv = document.getElementById('password-strength');
+
+passwordInput.addEventListener('input', () => {
+    const val = passwordInput.value;
+    let strength = 0;
+    if (val.length >= 8) strength++;
+    if (/[A-Z]/.test(val)) strength++;
+    if (/[a-z]/.test(val)) strength++;
+    if (/\d/.test(val)) strength++;
+    if (/[!@#$%^&*]/.test(val)) strength++;
+
+    const colors = ['#ff4444', '#ff8844', '#ffaa44', '#88cc44', '#44cc44'];
+    strengthDiv.style.color = colors[strength - 1] || '#ff4444';
+    strengthDiv.textContent = ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Надёжный'][strength - 1] || '';
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/auth/register', { method: 'POST', body: form });
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message);
+            window.location.href = '/login';
+        } else {
+            alert(data.detail || 'Ошибка регистрации');
+        }
+    } catch (err) {
+        alert('Ошибка сети');
+    }
+});
+</script>
+{% endblock %}
