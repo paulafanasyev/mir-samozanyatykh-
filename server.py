@@ -1211,50 +1211,91 @@ async def ask_svetlana(request: Request, question: str = Form(..., max_length=50
                        category: Optional[str] = Form(None), use_ai: bool = Form(False),
                        current_user: Optional[User] = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     try:
+        # Сначала ищем в базе знаний
+        knowledge = load_svetlana_knowledge()
+        question_lower = question.lower()
+
+        # 1. Проверяем quick_answers (точное совпадение ключевых слов)
+        quick_answers = knowledge.get("quick_answers", {})
+        for key, answer in quick_answers.items():
+            if key in question_lower:
+                return {"answer": answer, "confidence": 0.9, "source": "quick_answer"}
+
+        # 2. Ищем по topics (по ключевым словам в заголовках и содержимом)
+        topics = knowledge.get("topics", [])
+        best_topic = None
+        best_score = 0
+
+        for topic in topics:
+            topic_title = topic.get("title", "").lower()
+            topic_content = topic.get("content", "").lower()
+            topic_id = topic.get("id", "").lower()
+
+            score = 0
+            words = question_lower.split()
+            for word in words:
+                if len(word) > 2:  # Игнорируем короткие слова
+                    if word in topic_title:
+                        score += 3
+                    if word in topic_content:
+                        score += 1
+                    if word in topic_id:
+                        score += 2
+
+            if category and topic.get("id") == category:
+                score += 5  # Бонус за точное совпадение категории
+
+            if score > best_score:
+                best_score = score
+                best_topic = topic
+
+        # Если нашли релевантную тему с достаточным скором
+        if best_topic and best_score >= 2:
+            return {
+                "answer": best_topic["content"],
+                "confidence": min(best_score / 10, 1.0),
+                "source": "knowledge_base",
+                "topic": best_topic.get("title")
+            }
+
+        # 3. Если включен AI и есть API ключ — спрашиваем ИИ
         if use_ai and settings.OPENROUTER_API_KEY:
             context = ""
             if current_user:
                 context = f"Пользователь: {current_user.full_name}, ИНН: {current_user.inn or 'не указан'}"
-            ai_try:
-                    answer = await ask_ai(question, context=context)
-                except AIError:
-                    answer = "Извините, произошла ошибка при обработке запроса. Попробуйте позже."
-            if ai_answer:
-                return {"answer": ai_answer, "confidence": 0.95, "source": "ai_openrouter"}
-        knowledge = load_svetlana_knowledge()
-        question_lower = question.lower()
-        best_answer = None
-        best_score = 0
-        categories = knowledge.get("categories", {})
-        for cat_key, cat_data in categories.items():
-            if category and cat_key != category:
-                continue
-            for qa in cat_data.get("questions", []):
-                q_text = qa.get("q", "").lower()
-                score = sum(1 for word in question_lower.split() if word in q_text)
-                if score > best_score:
-                    best_score = score
-                    best_answer = qa.get("a")
-        if best_answer and best_score > 0:
-            return {"answer": best_answer, "confidence": min(best_score / len(question_lower.split()), 1.0), "source": "knowledge_base"}
-        fallbacks = knowledge.get("fallback_responses", ["Извините, я не поняла вопрос."])
+            try:
+                ai_answer = await ask_ai(question, context=context)
+                if ai_answer:
+                    return {"answer": ai_answer, "confidence": 0.95, "source": "ai_openrouter"}
+            except AIError:
+                pass
+
+        # 4. Fallback — умный ответ на основе тематики
+        fallbacks = [
+            "Извините, я пока не знаю ответа на этот вопрос. Попробуйте переформулировать или выберите категорию из списка.",
+            "Интересный вопрос! Давайте уточним: вас интересует налоги, гранты, регистрация или что-то другое?",
+            "Я специализируюсь на вопросах самозанятости. Могу рассказать о налогах, грантах, социальных контрактах, коворкингах, штрафах и льготных кредитах.",
+        ]
         import random
         return {"answer": random.choice(fallbacks), "confidence": 0.0, "source": "fallback"}
+
     except Exception as e:
         logger.error(f"Svetlana error: {e}")
-        return {"answer": "Извините, произошла ошибка. Попробуйте позже.", "confidence": 0.0, "source": "error"}
-
+        return {"answer": "Извините, произошла ошибка. Попробуйте позже.", "confidence": 0, "source": "error"}
 @app.get("/api/svetlana/categories")
 async def get_svetlana_categories():
     try:
         knowledge = load_svetlana_knowledge()
-        categories = knowledge.get("categories", {})
-        return {"categories": [{"key": k, "title": v.get("title", k)} for k, v in categories.items()]}
+        topics = knowledge.get("topics", [])
+        return {
+            "categories": [
+                {"key": t["id"], "title": t["title"]} 
+                for t in topics
+            ]
+        }
     except Exception as e:
         logger.error(f"Svetlana categories error: {e}")
         raise HTTPException(status_code=500, detail="Ошибка загрузки категорий")
-
-# ============ FNS INTEGRATION ============
 @app.get("/api/fns/check-inn")
 @limiter.limit("10/minute")
 async def check_inn(request: Request, inn: str = Query(..., min_length=10, max_length=12), current_user: User = Depends(get_current_user)):
