@@ -576,8 +576,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Мир Самозанятых",
-    description="Платформа для самозанятых — SMS Edition v5.2",
-    version="5.2.0",
+    description="Платформа для самозанятых — PDF/QR Edition v5.3",
+    version="5.3.0",
     docs_url="/api/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT == "development" else None,
     openapi_url="/api/openapi.json" if settings.ENVIRONMENT == "development" else None,
@@ -1554,6 +1554,184 @@ async def get_sms_balance(current_user: User = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"SMS balance error: {e}")
         return {"balance": 0, "currency": "RUB", "status": "error"}
+
+
+# ============ PDF / QR GENERATION ============
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import qrcode
+import io
+
+# Register Russian font (try system fonts)
+try:
+    pdfmetrics.registerFont(TTFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+    RUSSIAN_FONT = 'DejaVu'
+except:
+    try:
+        pdfmetrics.registerFont(TTFont('Arial', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
+        RUSSIAN_FONT = 'Arial'
+    except:
+        RUSSIAN_FONT = 'Helvetica'
+
+@app.get("/api/sales/invoices/{invoice_id}/pdf")
+async def generate_invoice_pdf(invoice_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate PDF invoice"""
+    try:
+        result = await db.execute(select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id))
+        invoice = result.scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        items_result = await db.execute(select(InvoiceItem).where(InvoiceItem.invoice_id == invoice_id))
+        items = items_result.scalars().all()
+
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm)
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontName=RUSSIAN_FONT,
+            fontSize=18,
+            spaceAfter=30,
+            alignment=1  # Center
+        )
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontName=RUSSIAN_FONT,
+            fontSize=10,
+            spaceAfter=12
+        )
+
+        story = []
+        story.append(Paragraph(f"СЧЁТ № {invoice.invoice_number}", title_style))
+        story.append(Spacer(1, 20))
+
+        # Invoice details
+        story.append(Paragraph(f"<b>Дата:</b> {invoice.created_at.strftime('%d.%m.%Y')}", normal_style))
+        story.append(Paragraph(f"<b>Сумма:</b> {invoice.total_amount:,.2f} ₽", normal_style))
+        story.append(Paragraph(f"<b>Статус:</b> {invoice.status}", normal_style))
+        story.append(Spacer(1, 20))
+
+        # Items table
+        table_data = [["№", "Описание", "Кол-во", "Цена", "Сумма"]]
+        for idx, item in enumerate(items, 1):
+            table_data.append([
+                str(idx),
+                item.description,
+                str(item.quantity),
+                f"{item.unit_price:,.2f}",
+                f"{item.total_price:,.2f}"
+            ])
+
+        table = Table(table_data, colWidths=[30*mm, 80*mm, 25*mm, 30*mm, 30*mm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), RUSSIAN_FONT),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), RUSSIAN_FONT),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+
+        # Total
+        story.append(Paragraph(f"<b>ИТОГО: {invoice.total_amount:,.2f} ₽</b>", normal_style))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=invoice_{invoice.invoice_number}.pdf"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+
+@app.get("/api/sales/invoices/{invoice_id}/qr")
+async def generate_invoice_qr(invoice_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate QR code for invoice payment"""
+    try:
+        result = await db.execute(select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id))
+        invoice = result.scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        # Generate payment URL or data
+        payment_data = f"https://{settings.DOMAIN}/sales?invoice={invoice.id}"
+        if invoice.yookassa_payment_id:
+            payment_data = f"https://yookassa.ru/payments/{invoice.yookassa_payment_id}"
+
+        # Create QR code
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(payment_data)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="image/png", headers={
+            "Content-Disposition": f"inline; filename=invoice_{invoice.invoice_number}_qr.png"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"QR generation error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate QR code")
+
+@app.get("/api/contracts/{contract_id}/pdf")
+async def generate_contract_pdf(contract_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate PDF contract"""
+    try:
+        result = await db.execute(select(SignedContract).where(SignedContract.id == contract_id, SignedContract.user_id == current_user.id))
+        contract = result.scalar_one_or_none()
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contract not found")
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontName=RUSSIAN_FONT, fontSize=10)
+
+        story = []
+        story.append(Paragraph(contract.title or "Договор", styles['Heading1']))
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(contract.content.replace("
+", "<br/>"), normal_style))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=contract_{contract_id}.pdf"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Contract PDF error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate contract PDF")
 
 # ============ SEED DATA ============
 async def seed_data(db: AsyncSession):
