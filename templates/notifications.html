@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Уведомления — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Уведомления</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Центр уведомлений</h1>
+        <p class="page-subtitle">Все важные события в одном месте</p>
+      </div>
+      <div class="flex gap-sm">
+        <button class="btn btn-secondary" onclick="markAllRead()">✓ Прочитать все</button>
+        <button class="btn btn-ghost" onclick="clearAll()">🗑️ Очистить</button>
+      </div>
+    </div>
+
+    <div data-tabs>
+      <div class="tabs">
+        <div class="tab active" data-tab="all">Все <span class="badge badge-primary" style="margin-left:4px;">12</span></div>
+        <div class="tab" data-tab="unread">Непрочитанные <span class="badge badge-danger" style="margin-left:4px;">5</span></div>
+        <div class="tab" data-tab="deals">Сделки</div>
+        <div class="tab" data-tab="system">Системные</div>
+      </div>
+
+      <div class="tab-panel active" data-tab-panel="all">
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div style="display:flex;flex-direction:column;">
+              <div class="flex items-start gap-md" style="padding:var(--space-lg);border-bottom:1px solid var(--border-color);background:rgba(99,102,241,0.03);">
+                <div style="width:40px;height:40px;background:rgba(99,102,241,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">💰</div>
+                <div style="flex:1;">
+                  <p style="font-weight:600;">Новая сделка создана</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Клиент "ООО Ромашка" создал сделку на ₽15 000</p>
+                  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-xs);">5 минут назад</p>
+                </div>
+                <button class="btn btn-icon btn-ghost" onclick="this.closest('.flex').style.opacity='0.5'">✕</button>
+              </div>
+              <div class="flex items-start gap-md" style="padding:var(--space-lg);border-bottom:1px solid var(--border-color);background:rgba(99,102,241,0.03);">
+                <div style="width:40px;height:40px;background:rgba(16,185,129,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">✅</div>
+                <div style="flex:1;">
+                  <p style="font-weight:600;">Сделка завершена</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Сделка #245 с "ИП Иванов" успешно завершена</p>
+                  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-xs);">30 минут назад</p>
+                </div>
+                <button class="btn btn-icon btn-ghost">✕</button>
+              </div>
+              <div class="flex items-start gap-md" style="padding:var(--space-lg);border-bottom:1px solid var(--border-color);">
+                <div style="width:40px;height:40px;background:rgba(245,158,11,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">📅</div>
+                <div style="flex:1;">
+                  <p style="font-weight:600;">Напоминание о встрече</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Видеоконференция с Анной А. через 15 минут</p>
+                  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-xs);">1 час назад</p>
+                </div>
+                <button class="btn btn-icon btn-ghost">✕</button>
+              </div>
+              <div class="flex items-start gap-md" style="padding:var(--space-lg);border-bottom:1px solid var(--border-color);">
+                <div style="width:40px;height:40px;background:rgba(239,68,68,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">⚠️</div>
+                <div style="flex:1;">
+                  <p style="font-weight:600;">Просроченная задача</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Задача "Отправить документы" просрочена на 2 дня</p>
+                  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-xs);">Вчера</p>
+                </div>
+                <button class="btn btn-icon btn-ghost">✕</button>
+              </div>
+              <div class="flex items-start gap-md" style="padding:var(--space-lg);">
+                <div style="width:40px;height:40px;background:rgba(59,130,246,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🏆</div>
+                <div style="flex:1;">
+                  <p style="font-weight:600;">Новое достижение!</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Вы получили достижение "Первые ₽100K"</p>
+                  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-xs);">2 дня назад</p>
+                </div>
+                <button class="btn btn-icon btn-ghost">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="unread">
+        <div class="card">
+          <div class="card-body text-center" style="padding:var(--space-2xl);">
+            <p class="text-muted">Здесь будут непрочитанные уведомления</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="deals">
+        <div class="card">
+          <div class="card-body text-center" style="padding:var(--space-2xl);">
+            <p class="text-muted">Уведомления по сделкам</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="system">
+        <div class="card">
+          <div class="card-body text-center" style="padding:var(--space-2xl);">
+            <p class="text-muted">Системные уведомления</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+function markAllRead() { MS.Toast.show('Все уведомления отмечены как прочитанные', 'success'); }
+function clearAll() { MS.Confirm.show('Очистить все уведомления?').then(ok => { if(ok) MS.Toast.show('Уведомления очищены', 'success'); }); }
+</script>
+{% endblock %}

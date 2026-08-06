@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Настройки — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Настройки</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Настройки</h1>
+        <p class="page-subtitle">Персонализация и параметры приложения</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header"><h4 class="card-title">🎨 Внешний вид</h4></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Тема оформления</label>
+          <div class="flex gap-md" style="flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="MS.Theme.set('light')" style="gap:8px;"><span>☀️</span> Светлая</button>
+            <button class="btn btn-secondary" onclick="MS.Theme.set('dark')" style="gap:8px;"><span>🌙</span> Тёмная</button>
+            <button class="btn btn-secondary" onclick="MS.Theme.set('light')" style="gap:8px;"><span>🖥️</span> Системная</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Акцентный цвет</label>
+          <div class="flex gap-sm" style="flex-wrap:wrap;">
+            <button style="width:40px;height:40px;border-radius:50%;background:#6366f1;border:3px solid var(--c-primary);" onclick="setAccent('#6366f1')"></button>
+            <button style="width:40px;height:40px;border-radius:50%;background:#10b981;" onclick="setAccent('#10b981')"></button>
+            <button style="width:40px;height:40px;border-radius:50%;background:#f59e0b;" onclick="setAccent('#f59e0b')"></button>
+            <button style="width:40px;height:40px;border-radius:50%;background:#ef4444;" onclick="setAccent('#ef4444')"></button>
+            <button style="width:40px;height:40px;border-radius:50%;background:#8b5cf6;" onclick="setAccent('#8b5cf6')"></button>
+            <button style="width:40px;height:40px;border-radius:50%;background:#ec4899;" onclick="setAccent('#ec4899')"></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Плотность интерфейса</label>
+          <select class="form-select">
+            <option>Компактная</option>
+            <option selected>Стандартная</option>
+            <option>Комфортная</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header"><h4 class="card-title">🌐 Язык и регион</h4></div>
+      <div class="card-body">
+        <div class="flex gap-md" style="flex-wrap:wrap;">
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label class="form-label">Язык интерфейса</label>
+            <select class="form-select">
+              <option selected>Русский</option>
+              <option>English</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label class="form-label">Часовой пояс</label>
+            <select class="form-select">
+              <option selected>Europe/Moscow (UTC+3)</option>
+              <option>Europe/Samara (UTC+4)</option>
+              <option>Asia/Yekaterinburg (UTC+5)</option>
+              <option>Asia/Novosibirsk (UTC+7)</option>
+              <option>Asia/Vladivostok (UTC+10)</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label class="form-label">Валюта</label>
+            <select class="form-select">
+              <option selected>₽ Рубль (RUB)</option>
+              <option>$ Доллар (USD)</option>
+              <option>€ Евро (EUR)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header"><h4 class="card-title">🔌 Интеграции</h4></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div class="flex items-center gap-md">
+              <span style="font-size:24px;">📊</span>
+              <div>
+                <p style="font-weight:600;">Google Sheets</p>
+                <p class="text-secondary" style="font-size:var(--text-sm);">Экспорт данных в таблицы</p>
+              </div>
+            </div>
+            <span class="badge badge-success">Подключено</span>
+          </div>
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div class="flex items-center gap-md">
+              <span style="font-size:24px;">📅</span>
+              <div>
+                <p style="font-weight:600;">Google Calendar</p>
+                <p class="text-secondary" style="font-size:var(--text-sm);">Синхронизация событий</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm">Подключить</button>
+          </div>
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div class="flex items-center gap-md">
+              <span style="font-size:24px;">💬</span>
+              <div>
+                <p style="font-weight:600;">Telegram</p>
+                <p class="text-secondary" style="font-size:var(--text-sm);">Бот-уведомления</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm">Подключить</button>
+          </div>
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div class="flex items-center gap-md">
+              <span style="font-size:24px;">🏦</span>
+              <div>
+                <p style="font-weight:600;">Мой налог (ФНС)</p>
+                <p class="text-secondary" style="font-size:var(--text-sm);">Автоматическая отправка чеков</p>
+              </div>
+            </div>
+            <span class="badge badge-success">Подключено</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h4 class="card-title">💾 Данные</h4></div>
+      <div class="card-body">
+        <div class="flex gap-md" style="flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="MS.Export.downloadJSON({}, 'mir-samozanyatykh-backup.json')">📥 Экспорт данных</button>
+          <button class="btn btn-secondary">📤 Импорт данных</button>
+          <button class="btn btn-danger" onclick="MS.Confirm.show('Все данные будут удалены безвозвратно. Продолжить?').then(ok => { if(ok) MS.Toast.show('Данные очищены', 'success'); })">🗑️ Очистить все данные</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+function setAccent(color) {
+  document.documentElement.style.setProperty('--c-primary', color);
+  localStorage.setItem('ms_accent', color);
+  MS.Toast.show('Акцентный цвет изменён', 'success');
+}
+</script>
+{% endblock %}

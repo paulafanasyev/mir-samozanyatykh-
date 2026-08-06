@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Договоры — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Договоры</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Договоры и документы</h1>
+        <p class="page-subtitle">Генерация, подписание и хранение документов</p>
+      </div>
+      <button class="btn btn-primary" onclick="MS.Modal.open('createContractModal')">+ Создать договор</button>
+    </div>
+
+    <div data-tabs>
+      <div class="tabs">
+        <div class="tab active" data-tab="templates">Шаблоны</div>
+        <div class="tab" data-tab="my">Мои договоры</div>
+        <div class="tab" data-tab="signed">Подписанные</div>
+      </div>
+
+      <div class="tab-panel active" data-tab-panel="templates">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-lg);">
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">Договор подряда</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Стандартный договор на оказание услуг с физическим/юридическим лицом.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">Акт выполненных работ</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Акт сдачи-приёмки выполненных работ по договору подряда.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">Счёт на оплату</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Счёт для юридических лиц с реквизитами и QR-кодом.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">Чек самозанятого</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Чек для физических лиц по НПД с QR-кодом для ФНС.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">NDA (Соглашение о конфиденциальности)</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Защита коммерческой тайны при работе с клиентами.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div style="font-size:32px;margin-bottom:var(--space-md);">📄</div>
+              <h4 style="margin-bottom:var(--space-xs);">Авторский договор</h4>
+              <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Передача исключительных/неисключительных прав на произведение.</p>
+              <div class="flex gap-sm">
+                <button class="btn btn-primary btn-sm w-full">Использовать</button>
+                <button class="btn btn-secondary btn-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="my">
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead><tr><th>№</th><th>Название</th><th>Контрагент</th><th>Дата</th><th>Статус</th><th>Действия</th></tr></thead>
+              <tbody>
+                <tr><td>Д-245</td><td>Договор подряда №245</td><td>ООО Ромашка</td><td>06.08.2026</td><td><span class="badge badge-warning">На подписании</span></td><td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">📥</button></div></td></tr>
+                <tr><td>Д-244</td><td>Акт выполненных работ</td><td>ИП Иванов</td><td>05.08.2026</td><td><span class="badge badge-success">Подписан</span></td><td><div class="table-actions"><button class="btn btn-icon btn-ghost">👁️</button><button class="btn btn-icon btn-ghost">📥</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="signed">
+        <div class="card">
+          <div class="card-body text-center" style="padding:var(--space-2xl);">
+            <p class="text-muted">Здесь будут подписанные договоры</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Contract Modal -->
+    <div class="modal-overlay" id="createContractModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 class="modal-title">Создать договор</h3>
+          <button class="modal-close" onclick="MS.Modal.close('createContractModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Шаблон</label>
+            <select class="form-select">
+              <option>Договор подряда</option>
+              <option>Акт выполненных работ</option>
+              <option>Счёт на оплату</option>
+              <option>Чек самозанятого</option>
+            </select>
+          </div>
+          <div class="flex gap-md" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+              <label class="form-label">Контрагент</label>
+              <input type="text" class="form-input" placeholder="Название или ФИО">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+              <label class="form-label">ИНН контрагента</label>
+              <input type="text" class="form-input" placeholder="1234567890" maxlength="12">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Предмет договора</label>
+            <textarea class="form-textarea" placeholder="Описание услуг или работ..."></textarea>
+          </div>
+          <div class="flex gap-md" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:150px;">
+              <label class="form-label">Сумма (₽)</label>
+              <input type="number" class="form-input" placeholder="0">
+            </div>
+            <div class="form-group" style="flex:1;min-width:150px;">
+              <label class="form-label">Срок выполнения</label>
+              <input type="date" class="form-input">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="MS.Modal.close('createContractModal')">Отмена</button>
+          <button class="btn btn-primary" onclick="MS.Modal.close('createContractModal'); MS.Toast.show('Договор создан! QR-код сгенерирован.', 'success');">Создать и скачать PDF</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

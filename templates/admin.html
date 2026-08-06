@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Админ-панель — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Админ-панель</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">АД</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Администрирование</h1>
+        <p class="page-subtitle">Управление пользователями, контентом и системой</p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon primary">👤</div>
+        <div><div class="stat-value">1,247</div><div class="stat-label">Пользователей</div><div class="stat-change up">↑ 34 новых</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">💰</div>
+        <div><div class="stat-value">₽892K</div><div class="stat-label">Выручка (мес)</div><div class="stat-change up">↑ 18%</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">🛒</div>
+        <div><div class="stat-value">456</div><div class="stat-label">Товаров</div><div class="stat-change up">↑ 12 новых</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">🎫</div>
+        <div><div class="stat-value">23</div><div class="stat-label">Тикетов</div><div class="stat-change down">↓ 5 решено</div></div>
+      </div>
+    </div>
+
+    <div data-tabs>
+      <div class="tabs">
+        <div class="tab active" data-tab="users">Пользователи</div>
+        <div class="tab" data-tab="content">Контент</div>
+        <div class="tab" data-tab="finance">Финансы</div>
+        <div class="tab" data-tab="system">Система</div>
+        <div class="tab" data-tab="audit">Аудит</div>
+      </div>
+
+      <div class="tab-panel active" data-tab-panel="users">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">Все пользователи</h4>
+            <div class="flex gap-sm">
+              <input type="text" class="form-input" placeholder="Поиск..." style="width:240px;">
+              <button class="btn btn-primary">+ Добавить</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>ID</th><th>Пользователь</th><th>Email</th><th>Тариф</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead>
+              <tbody>
+                <tr><td>#1024</td><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">АА</div>Анна А.</div></td><td>anna@example.com</td><td><span class="badge badge-primary">Pro</span></td><td><span class="badge badge-success">Активен</span></td><td>05.08.2026</td><td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">🔒</button></div></td></tr>
+                <tr><td>#1023</td><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ПП</div>Пётр П.</div></td><td>petr@example.com</td><td><span class="badge badge-success">Business</span></td><td><span class="badge badge-success">Активен</span></td><td>04.08.2026</td><td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">🔒</button></div></td></tr>
+                <tr><td>#1022</td><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ММ</div>Мария М.</div></td><td>maria@example.com</td><td><span class="badge badge-secondary">Free</span></td><td><span class="badge badge-warning">Ожидание</span></td><td>03.08.2026</td><td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">🔒</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer flex items-center justify-between">
+            <span class="text-muted" style="font-size:var(--text-sm);">Показано 3 из 1,247</span>
+            <div class="flex gap-sm">
+              <button class="btn btn-secondary btn-sm">← Назад</button>
+              <button class="btn btn-secondary btn-sm">Вперёд →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="content">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">Управление контентом</h4></div>
+          <div class="card-body">
+            <div class="flex gap-md" style="flex-wrap:wrap;">
+              <div class="card" style="flex:1;min-width:200px;">
+                <div class="card-body text-center">
+                  <div style="font-size:32px;margin-bottom:var(--space-sm);">📝</div>
+                  <h5>Блог</h5>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">24 статьи</p>
+                  <button class="btn btn-primary btn-sm" style="margin-top:var(--space-md);">Управлять</button>
+                </div>
+              </div>
+              <div class="card" style="flex:1;min-width:200px;">
+                <div class="card-body text-center">
+                  <div style="font-size:32px;margin-bottom:var(--space-sm);">❓</div>
+                  <h5>FAQ</h5>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">56 вопросов</p>
+                  <button class="btn btn-primary btn-sm" style="margin-top:var(--space-md);">Управлять</button>
+                </div>
+              </div>
+              <div class="card" style="flex:1;min-width:200px;">
+                <div class="card-body text-center">
+                  <div style="font-size:32px;margin-bottom:var(--space-sm);">📢</div>
+                  <h5>Объявления</h5>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">8 активных</p>
+                  <button class="btn btn-primary btn-sm" style="margin-top:var(--space-md);">Управлять</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="finance">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">Финансовая сводка</h4></div>
+          <div class="card-body">
+            <div class="stats-grid" style="margin-bottom:0;">
+              <div class="stat-card"><div class="stat-icon primary">📊</div><div><div class="stat-value">₽892 340</div><div class="stat-label">MRR</div></div></div>
+              <div class="stat-card"><div class="stat-icon success">💳</div><div><div class="stat-value">₽156 780</div><div class="stat-label">Новые подписки</div></div></div>
+              <div class="stat-card"><div class="stat-icon warning">📉</div><div><div class="stat-value">3.2%</div><div class="stat-label">Churn rate</div></div></div>
+              <div class="stat-card"><div class="stat-icon danger">💰</div><div><div class="stat-value">₽2.1M</div><div class="stat-label">LTV средний</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="system">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">Системный мониторинг</h4></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-lg);">
+              <div>
+                <h5 style="margin-bottom:var(--space-md);">🖥️ Сервер</h5>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                  <div class="flex items-center justify-between"><span class="text-secondary">CPU</span><span>23%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:23%;"></div></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">RAM</span><span>4.2 / 16 GB</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:26%;"></div></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Диск</span><span>120 / 500 GB</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:24%;"></div></div>
+                </div>
+              </div>
+              <div>
+                <h5 style="margin-bottom:var(--space-md);">📡 API</h5>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                  <div class="flex items-center justify-between"><span class="text-secondary">Запросов/мин</span><span>1,247</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Среднее время</span><span>45 мс</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Ошибки (5xx)</span><span>0.02%</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Аптайм</span><span class="badge badge-success">99.98%</span></div>
+                </div>
+              </div>
+              <div>
+                <h5 style="margin-bottom:var(--space-md);">🗄️ База данных</h5>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                  <div class="flex items-center justify-between"><span class="text-secondary">Размер</span><span>2.4 GB</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Таблиц</span><span>32</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Записей</span><span>1.2M</span></div>
+                  <div class="flex items-center justify-between"><span class="text-secondary">Последний бэкап</span><span>05.08 03:00</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="audit">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">Журнал аудита</h4></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>IP</th><th>Статус</th></tr></thead>
+              <tbody>
+                <tr><td>06.08 11:15:32</td><td>admin@mir-samozanyatykh.ru</td><td>Вход в систему</td><td>192.168.1.1</td><td><span class="badge badge-success">Успех</span></td></tr>
+                <tr><td>06.08 11:10:45</td><td>anna@example.com</td><td>Обновление профиля</td><td>10.0.0.5</td><td><span class="badge badge-success">Успех</span></td></tr>
+                <tr><td>06.08 11:05:12</td><td>petr@example.com</td><td>Создание сделки</td><td>10.0.0.8</td><td><span class="badge badge-success">Успех</span></td></tr>
+                <tr><td>06.08 10:58:33</td><td>unknown</td><td>Попытка входа</td><td>185.220.101.42</td><td><span class="badge badge-danger">Отказ</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

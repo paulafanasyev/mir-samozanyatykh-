@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Реферальная программа — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Рефералы</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Реферальная программа</h1>
+        <p class="page-subtitle">Приглашайте друзей и зарабатывайте вместе</p>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card">
+        <div class="stat-icon primary">🔗</div>
+        <div><div class="stat-value">24</div><div class="stat-label">Приглашено</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">✅</div>
+        <div><div class="stat-value">18</div><div class="stat-label">Активных</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">💎</div>
+        <div><div class="stat-value">₽4 500</div><div class="stat-label">Заработано</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">🎯</div>
+        <div><div class="stat-value">75%</div><div class="stat-label">Конверсия</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header"><h4 class="card-title">🔗 Ваша реферальная ссылка</h4></div>
+      <div class="card-body">
+        <div class="input-group" style="margin-bottom:var(--space-md);">
+          <input type="text" class="form-input font-mono" value="https://мир-самозанятых.рф/ref/IVAN2026" readonly id="refLink">
+          <button class="btn btn-primary" onclick="MS.Clipboard.copy(document.getElementById('refLink').value)">📋 Копировать</button>
+        </div>
+        <div class="flex gap-sm" style="flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm">📱 Telegram</button>
+          <button class="btn btn-secondary btn-sm">💬 WhatsApp</button>
+          <button class="btn btn-secondary btn-sm">✉️ Email</button>
+          <button class="btn btn-secondary btn-sm">📋 Скопировать</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h4 class="card-title">👥 Ваши рефералы</h4></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Пользователь</th><th>Дата регистрации</th><th>Тариф</th><th>Статус</th><th>Ваш бонус</th></tr></thead>
+          <tbody>
+            <tr><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">АА</div>Анна А.</div></td><td>01.08.2026</td><td><span class="badge badge-primary">Pro</span></td><td><span class="badge badge-success">Активен</span></td><td>₽245</td></tr>
+            <tr><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ПП</div>Пётр П.</div></td><td>28.07.2026</td><td><span class="badge badge-success">Business</span></td><td><span class="badge badge-success">Активен</span></td><td>₽745</td></tr>
+            <tr><td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ММ</div>Мария М.</div></td><td>25.07.2026</td><td><span class="badge badge-secondary">Free</span></td><td><span class="badge badge-warning">Ожидание</span></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:var(--space-lg);">
+      <div class="card-header"><h4 class="card-title">🎁 Уровни реферальной программы</h4></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">1</div>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Новичок (0-5 рефералов)</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">10% от первой подписки реферала</p>
+            </div>
+            <span class="badge badge-secondary">Текущий</span>
+          </div>
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);opacity:0.6;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--c-secondary),#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">2</div>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Партнёр (6-15 рефералов)</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">15% от подписки + 5% от рефералов реферала</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);opacity:0.6;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--c-accent),#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">3</div>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Амбассадор (16+ рефералов)</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">20% от подписки + 10% от 2-го уровня + эксклюзивные бонусы</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

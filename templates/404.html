@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}404 — Страница не найдена{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-body);padding:var(--space-lg);">
+  <div class="text-center" style="max-width:480px;">
+    <div style="font-size:120px;font-weight:800;background:linear-gradient(135deg,var(--c-primary),var(--c-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:var(--space-lg);">404</div>
+    <h1 style="font-size:var(--text-3xl);margin-bottom:var(--space-md);">Страница не найдена</h1>
+    <p class="text-secondary" style="margin-bottom:var(--space-xl);">Возможно, страница была удалена или вы перешли по неверной ссылке. Проверьте адрес или вернитесь на главную.</p>
+    <div class="flex gap-md" style="justify-content:center;">
+      <a href="/dashboard" class="btn btn-primary">🏠 На главную</a>
+      <a href="/svetlana" class="btn btn-secondary">🤖 Спросить Светлану</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

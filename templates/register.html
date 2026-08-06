@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="auth-layout" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));padding:var(--space-lg);">
+  <div class="auth-card" style="background:var(--bg-surface);border-radius:var(--border-radius-xl);box-shadow:var(--shadow-xl);width:100%;max-width:480px;padding:var(--space-2xl);animation:scaleIn 0.4s ease;">
+    <div class="text-center" style="margin-bottom:var(--space-xl);">
+      <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));border-radius:var(--border-radius-lg);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);color:white;font-size:28px;font-weight:800;">МС</div>
+      <h1 style="font-size:var(--text-2xl);margin-bottom:var(--space-xs);">Создать аккаунт</h1>
+      <p class="text-secondary">Начните свой путь самозанятости</p>
+    </div>
+    <form id="registerForm" data-validate>
+      <div class="flex gap-md" style="margin-bottom:0;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Имя <span class="required">*</span></label>
+          <input type="text" class="form-input" name="first_name" placeholder="Иван" data-validate="required" required>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Фамилия <span class="required">*</span></label>
+          <input type="text" class="form-input" name="last_name" placeholder="Иванов" data-validate="required" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input type="email" class="form-input" name="email" placeholder="you@example.com" data-validate="required|email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Телефон</label>
+        <input type="tel" class="form-input" name="phone" placeholder="+7 (999) 000-00-00" data-validate="phone">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ИНН <span class="required">*</span></label>
+        <input type="text" class="form-input" name="inn" placeholder="1234567890" maxlength="12" data-validate="required|inn" required>
+        <p class="form-hint">Введите ИНН физического лица (12 цифр)</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль <span class="required">*</span></label>
+        <input type="password" class="form-input" id="password" name="password" placeholder="••••••••" data-validate="required|min:8" required>
+        <div class="password-strength" style="margin-top:var(--space-xs);">
+          <div class="progress-bar" style="height:4px;"><div class="progress-fill" id="strengthBar" style="width:0%;"></div></div>
+          <p class="form-hint" id="strengthText">Минимум 8 символов</p>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Подтвердите пароль <span class="required">*</span></label>
+        <input type="password" class="form-input" name="password_confirm" placeholder="••••••••" data-validate="required|match:password" required>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:flex-start;gap:var(--space-sm);font-size:var(--text-sm);color:var(--text-secondary);cursor:pointer;">
+          <input type="checkbox" name="agree" required style="width:16px;height:16px;margin-top:2px;" data-validate="required">
+          <span>Я согласен с <a href="/terms">условиями использования</a> и <a href="/privacy">политикой конфиденциальности</a></span>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary w-full" style="margin-bottom:var(--space-md);">Создать аккаунт</button>
+      <p class="text-center text-secondary" style="font-size:var(--text-sm);">Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </form>
+  </div>
+</div>
+<script>
+document.getElementById('password').addEventListener('input', function() {
+  const val = this.value;
+  let strength = 0;
+  if (val.length >= 8) strength++;
+  if (val.length >= 12) strength++;
+  if (/[A-Z]/.test(val)) strength++;
+  if (/[0-9]/.test(val)) strength++;
+  if (/[^A-Za-z0-9]/.test(val)) strength++;
+  const bar = document.getElementById('strengthBar');
+  const text = document.getElementById('strengthText');
+  const colors = ['#ef4444','#f59e0b','#f59e0b','#22c55e','#22c55e','#10b981'];
+  const labels = ['Очень слабый','Слабый','Средний','Хороший','Сильный','Отличный'];
+  bar.style.width = (strength / 5 * 100) + '%';
+  bar.style.background = colors[strength];
+  text.textContent = labels[strength];
+  text.style.color = colors[strength];
+});
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
+  try {
+    await MS.Auth.register(Object.fromEntries(new FormData(form)));
+    MS.Toast.show('Регистрация успешна! Подтвердите email.', 'success');
+    setTimeout(() => window.location.href = '/login', 2000);
+  } catch (err) {
+    MS.Toast.show(err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Создать аккаунт';
+  }
+});
+</script>
+{% endblock %}

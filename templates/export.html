@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Экспорт данных — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Экспорт</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Экспорт данных</h1>
+        <p class="page-subtitle">Выгрузите свои данные в удобном формате</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-lg);">
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">📊</div>
+          <h4 style="margin-bottom:var(--space-xs);">Финансы</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Доходы, расходы, чеки, налоги</p>
+          <div class="flex gap-sm" style="justify-content:center;">
+            <button class="btn btn-secondary btn-sm" onclick="MS.Export.downloadCSV([{date:'06.08.2026',type:'Доход',amount:15000,client:'ООО Ромашка'}], 'finances.csv')">CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="MS.Export.downloadJSON({finances:[]}, 'finances.json')">JSON</button>
+            <button class="btn btn-secondary btn-sm">PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">🤝</div>
+          <h4 style="margin-bottom:var(--space-xs);">Сделки (CRM)</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Клиенты, сделки, контакты</p>
+          <div class="flex gap-sm" style="justify-content:center;">
+            <button class="btn btn-secondary btn-sm">CSV</button>
+            <button class="btn btn-secondary btn-sm">JSON</button>
+            <button class="btn btn-secondary btn-sm">XLSX</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">📅</div>
+          <h4 style="margin-bottom:var(--space-xs);">Календарь</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">События, встречи, задачи</p>
+          <div class="flex gap-sm" style="justify-content:center;">
+            <button class="btn btn-secondary btn-sm">ICS</button>
+            <button class="btn btn-secondary btn-sm">CSV</button>
+            <button class="btn btn-secondary btn-sm">JSON</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">📄</div>
+          <h4 style="margin-bottom:var(--space-xs);">Договоры</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Шаблоны, подписанные договоры</p>
+          <div class="flex gap-sm" style="justify-content:center;">
+            <button class="btn btn-secondary btn-sm">PDF</button>
+            <button class="btn btn-secondary btn-sm">ZIP</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">💬</div>
+          <h4 style="margin-bottom:var(--space-xs);">Чаты</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">История переписки</p>
+          <div class="flex gap-sm" style="justify-content:center;">
+            <button class="btn btn-secondary btn-sm">JSON</button>
+            <button class="btn btn-secondary btn-sm">TXT</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="font-size:48px;margin-bottom:var(--space-md);">📦</div>
+          <h4 style="margin-bottom:var(--space-xs);">Полный архив</h4>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Все данные в одном файле</p>
+          <button class="btn btn-primary">📥 Скачать ZIP</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:var(--space-xl);">
+      <div class="card-header"><h4 class="card-title">📅 Автоматический экспорт</h4></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div>
+              <p style="font-weight:600;">Ежемесячный отчёт</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">Автоматическая отправка на email 1-го числа</p>
+            </div>
+            <input type="checkbox" checked style="width:20px;height:20px;">
+          </div>
+          <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <div>
+              <p style="font-weight:600;">Google Sheets синхронизация</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">Автообновление таблицы каждые 6 часов</p>
+            </div>
+            <span class="badge badge-success">Активно</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

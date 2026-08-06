@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Профиль</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <button class="header-btn">🔔<span class="badge">3</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Мой профиль</h1>
+        <p class="page-subtitle">Управление личными данными и настройками безопасности</p>
+      </div>
+    </div>
+
+    <div class="flex gap-lg" style="flex-wrap:wrap;">
+      <!-- Profile Card -->
+      <div class="card" style="flex:1;min-width:300px;">
+        <div class="card-body text-center" style="padding:var(--space-2xl);">
+          <div style="width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--c-primary),var(--c-secondary));display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-lg);color:white;font-size:48px;font-weight:800;">ИИ</div>
+          <h3 style="margin-bottom:var(--space-xs);">Иван Иванов</h3>
+          <p class="text-secondary">Самозанятый • НПД</p>
+          <div style="margin-top:var(--space-md);">
+            <span class="badge badge-success">✓ Верифицирован</span>
+          </div>
+          <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);justify-content:center;">
+            <button class="btn btn-primary btn-sm">Изменить фото</button>
+            <button class="btn btn-secondary btn-sm">Редактировать</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="flex:2;min-width:300px;">
+        <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:0;">
+          <div class="stat-card">
+            <div class="stat-icon primary">💰</div>
+            <div>
+              <div class="stat-value">₽128 450</div>
+              <div class="stat-label">Доход за месяц</div>
+              <div class="stat-change up">↑ 12% к прошлому месяцу</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon success">⭐</div>
+            <div>
+              <div class="stat-value">2 450</div>
+              <div class="stat-label">Баллы репутации</div>
+              <div class="stat-change up">↑ 5% за неделю</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon warning">🏆</div>
+            <div>
+              <div class="stat-value">8/10</div>
+              <div class="stat-label">Достижений</div>
+              <div class="stat-change up">↑ 2 новых</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon danger">📅</div>
+            <div>
+              <div class="stat-value">24</div>
+              <div class="stat-label">Сделок в работе</div>
+              <div class="stat-change down">↓ 3 завершено</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div data-tabs style="margin-top:var(--space-xl);">
+      <div class="tabs">
+        <div class="tab active" data-tab="personal">Личные данные</div>
+        <div class="tab" data-tab="security">Безопасность</div>
+        <div class="tab" data-tab="subscription">Подписка</div>
+        <div class="tab" data-tab="notifications">Уведомления</div>
+      </div>
+
+      <div class="tab-panel active" data-tab-panel="personal">
+        <div class="card">
+          <div class="card-body">
+            <form data-validate>
+              <div class="flex gap-md" style="flex-wrap:wrap;">
+                <div class="form-group" style="flex:1;min-width:200px;">
+                  <label class="form-label">Имя</label>
+                  <input type="text" class="form-input" value="Иван" data-validate="required">
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;">
+                  <label class="form-label">Фамилия</label>
+                  <input type="text" class="form-input" value="Иванов" data-validate="required">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" value="ivan@example.com" data-validate="required|email">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <input type="tel" class="form-input" value="+7 (999) 123-45-67" data-validate="phone">
+              </div>
+              <div class="form-group">
+                <label class="form-label">ИНН</label>
+                <input type="text" class="form-input" value="123456789012" maxlength="12" data-validate="inn" readonly style="background:var(--bg-elevated);">
+              </div>
+              <div class="form-group">
+                <label class="form-label">О себе</label>
+                <textarea class="form-textarea" placeholder="Расскажите о себе и своих услугах...">Веб-разработчик и дизайнер с 5-летним опытом. Специализируюсь на создании сайтов и мобильных приложений.</textarea>
+              </div>
+              <div class="flex gap-sm" style="justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="security">
+        <div class="card">
+          <div class="card-body">
+            <h4 style="margin-bottom:var(--space-lg);">🔐 Двухфакторная аутентификация</h4>
+            <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);margin-bottom:var(--space-lg);">
+              <div>
+                <p style="font-weight:600;">Аутентификатор (TOTP)</p>
+                <p class="text-secondary" style="font-size:var(--text-sm);">Используйте Google Authenticator или аналог</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <h4 style="margin-bottom:var(--space-lg);margin-top:var(--space-xl);">🔑 Изменить пароль</h4>
+            <form data-validate>
+              <div class="form-group">
+                <label class="form-label">Текущий пароль</label>
+                <input type="password" class="form-input" data-validate="required">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Новый пароль</label>
+                <input type="password" class="form-input" data-validate="required|min:8">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Подтвердите новый пароль</label>
+                <input type="password" class="form-input" data-validate="required">
+              </div>
+              <button type="submit" class="btn btn-primary">Обновить пароль</button>
+            </form>
+
+            <div style="margin-top:var(--space-xl);padding-top:var(--space-xl);border-top:1px solid var(--border-color);">
+              <h4 style="margin-bottom:var(--space-md);color:var(--c-danger);">⚠️ Опасная зона</h4>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p style="font-weight:600;">Удалить аккаунт</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Это действие необратимо. Все данные будут удалены.</p>
+                </div>
+                <button class="btn btn-danger" onclick="MS.Confirm.show('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.', {title:'Удаление аккаунта', okText:'Удалить', icon:'🗑️'}).then(ok => { if(ok) MS.Toast.show('Аккаунт удалён', 'success'); })">Удалить аккаунт</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="subscription">
+        <div class="card">
+          <div class="card-body">
+            <div class="flex items-center justify-between" style="margin-bottom:var(--space-lg);">
+              <div>
+                <h4 style="margin-bottom:var(--space-xs);">Текущий тариф: <span class="badge badge-primary">Pro</span></h4>
+                <p class="text-secondary">До 15 сентября 2026</p>
+              </div>
+              <button class="btn btn-primary">Продлить подписку</button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-lg);margin-top:var(--space-xl);">
+              <div class="card" style="border:2px solid var(--border-color);">
+                <div class="card-body text-center">
+                  <h5>Free</h5>
+                  <p style="font-size:var(--text-3xl);font-weight:800;margin:var(--space-md) 0;">₽0<span style="font-size:var(--text-sm);font-weight:400;color:var(--text-muted);">/мес</span></p>
+                  <ul style="text-align:left;font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-lg);">
+                    <li style="margin-bottom:var(--space-xs);">✓ Базовый ИИ-ассистент</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ До 10 сделок</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ Финансовый трекер</li>
+                    <li style="margin-bottom:var(--space-xs);">✗ CRM</li>
+                    <li>✗ Маркетплейс</li>
+                  </ul>
+                  <button class="btn btn-secondary w-full">Текущий</button>
+                </div>
+              </div>
+              <div class="card" style="border:2px solid var(--c-primary);position:relative;">
+                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--c-primary);color:white;padding:4px 16px;border-radius:999px;font-size:var(--text-xs);font-weight:600;">Популярный</div>
+                <div class="card-body text-center">
+                  <h5>Pro</h5>
+                  <p style="font-size:var(--text-3xl);font-weight:800;margin:var(--space-md) 0;">₽490<span style="font-size:var(--text-sm);font-weight:400;color:var(--text-muted);">/мес</span></p>
+                  <ul style="text-align:left;font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-lg);">
+                    <li style="margin-bottom:var(--space-xs);">✓ Расширенный ИИ Светлана</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ Безлимитные сделки</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ CRM + Календарь</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ Маркетплейс</li>
+                    <li>✓ Приоритетная поддержка</li>
+                  </ul>
+                  <button class="btn btn-primary w-full">Активен</button>
+                </div>
+              </div>
+              <div class="card" style="border:2px solid var(--border-color);">
+                <div class="card-body text-center">
+                  <h5>Business</h5>
+                  <p style="font-size:var(--text-3xl);font-weight:800;margin:var(--space-md) 0;">₽1 490<span style="font-size:var(--text-sm);font-weight:400;color:var(--text-muted);">/мес</span></p>
+                  <ul style="text-align:left;font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-lg);">
+                    <li style="margin-bottom:var(--space-xs);">✓ Всё из Pro</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ White-label</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ API доступ</li>
+                    <li style="margin-bottom:var(--space-xs);">✓ Аналитика</li>
+                    <li>✓ Персональный менеджер</li>
+                  </ul>
+                  <button class="btn btn-secondary w-full">Выбрать</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="notifications">
+        <div class="card">
+          <div class="card-body">
+            <h4 style="margin-bottom:var(--space-lg);">🔔 Настройки уведомлений</h4>
+            <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div>
+                  <p style="font-weight:600;">Email-уведомления</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Важные события и напоминания</p>
+                </div>
+                <input type="checkbox" checked style="width:20px;height:20px;">
+              </div>
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div>
+                  <p style="font-weight:600;">Push-уведомления</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Мгновенные оповещения в браузере</p>
+                </div>
+                <input type="checkbox" checked style="width:20px;height:20px;">
+              </div>
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div>
+                  <p style="font-weight:600;">SMS-уведомления</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Критические события на телефон</p>
+                </div>
+                <input type="checkbox" style="width:20px;height:20px;">
+              </div>
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div>
+                  <p style="font-weight:600;">Telegram-бот</p>
+                  <p class="text-secondary" style="font-size:var(--text-sm);">Уведомления через Telegram</p>
+                </div>
+                <button class="btn btn-primary btn-sm">Подключить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

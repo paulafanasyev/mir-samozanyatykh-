@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}О проекте — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">О проекте</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">О проекте «Мир Самозанятых»</h1>
+        <p class="page-subtitle">Платформа, которая меняет правила игры для самозанятых в России</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-body" style="padding:var(--space-2xl);">
+        <div style="text-align:center;margin-bottom:var(--space-2xl);">
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));border-radius:var(--border-radius-xl);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-lg);color:white;font-size:36px;font-weight:800;">МС</div>
+          <h2 style="margin-bottom:var(--space-md);">Наша миссия</h2>
+          <p style="font-size:var(--text-lg);color:var(--text-secondary);max-width:700px;margin:0 auto;">Сделать самозанятость простой, безопасной и прибыльной для каждого жителя России. Мы верим, что каждый человек заслуживает возможности реализовать свой потенциал.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:var(--space-lg);margin-bottom:var(--space-2xl);">
+          <div class="text-center">
+            <div style="font-size:48px;margin-bottom:var(--space-md);">🎯</div>
+            <h4 style="margin-bottom:var(--space-xs);">Прозрачность</h4>
+            <p class="text-secondary" style="font-size:var(--text-sm);">Все процессы открыты и понятны. Никаких скрытых комиссий и непонятных условий.</p>
+          </div>
+          <div class="text-center">
+            <div style="font-size:48px;margin-bottom:var(--space-md);">🛡️</div>
+            <h4 style="margin-bottom:var(--space-xs);">Безопасность</h4>
+            <p class="text-secondary" style="font-size:var(--text-sm);">Ваши данные надёжно защищены. Мы используем современные стандарты шифрования.</p>
+          </div>
+          <div class="text-center">
+            <div style="font-size:48px;margin-bottom:var(--space-md);">🚀</div>
+            <h4 style="margin-bottom:var(--space-xs);">Инновации</h4>
+            <p class="text-secondary" style="font-size:var(--text-sm);">ИИ-ассистент Светлана, автоматизация, интеграции — всё для вашего роста.</p>
+          </div>
+          <div class="text-center">
+            <div style="font-size:48px;margin-bottom:var(--space-md);">🤝</div>
+            <h4 style="margin-bottom:var(--space-xs);">Сообщество</h4>
+            <p class="text-secondary" style="font-size:var(--text-sm);">Маркетплейс, реферальная программа, чат — вы не одни в своём пути.</p>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-elevated);border-radius:var(--border-radius-lg);padding:var(--space-xl);margin-bottom:var(--space-2xl);">
+          <h3 style="text-align:center;margin-bottom:var(--space-xl);">📊 Наши показатели</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-lg);text-align:center;">
+            <div><div style="font-size:var(--text-3xl);font-weight:800;color:var(--c-primary);">1,247</div><p class="text-secondary">Пользователей</p></div>
+            <div><div style="font-size:var(--text-3xl);font-weight:800;color:var(--c-primary);">₽45M</div><p class="text-secondary">Оборот платформы</p></div>
+            <div><div style="font-size:var(--text-3xl);font-weight:800;color:var(--c-primary);">156</div><p class="text-secondary">Грантов найдено</p></div>
+            <div><div style="font-size:var(--text-3xl);font-weight:800;color:var(--c-primary);">99.9%</div><p class="text-secondary">Аптайм</p></div>
+          </div>
+        </div>
+
+        <h3 style="text-align:center;margin-bottom:var(--space-xl);">👥 Команда</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-lg);">
+          <div class="card text-center">
+            <div class="card-body">
+              <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--c-primary),var(--c-secondary));display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);color:white;font-size:28px;font-weight:800;">ПФ</div>
+              <h5>Павел Фанасьев</h5>
+              <p class="text-secondary" style="font-size:var(--text-sm);">Основатель и CEO</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--c-accent),#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);color:white;font-size:28px;font-weight:800;">СВ</div>
+              <h5>Светлана (AI)</h5>
+              <p class="text-secondary" style="font-size:var(--text-sm);">ИИ-ассистент</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:var(--space-2xl);padding-top:var(--space-2xl);border-top:1px solid var(--border-color);">
+          <h3 style="margin-bottom:var(--space-md);">📬 Свяжитесь с нами</h3>
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Есть вопросы или предложения? Мы всегда на связи!</p>
+          <div class="flex gap-md" style="justify-content:center;flex-wrap:wrap;">
+            <a href="mailto:it-laboratory@bk.ru" class="btn btn-secondary">✉️ it-laboratory@bk.ru</a>
+            <a href="https://t.me/mir_samozanyatykh" class="btn btn-secondary">💬 Telegram</a>
+            <a href="https://мир-самозанятых.рф" class="btn btn-primary">🌐 Сайт</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h4 class="card-title">📋 Версия и обновления</h4></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+            <span class="badge badge-primary">v5.0</span>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Текущая версия</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">AI Светлана, Finance tracker, CRM, Marketplace, Grants+AI, Gamification, 4 уровня подписок</p>
+            </div>
+            <span class="text-muted" style="font-size:var(--text-sm);">06.08.2026</span>
+          </div>
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);opacity:0.7;">
+            <span class="badge badge-secondary">v4.2</span>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Security Hardened</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">CSP, rate limiting, audit log, Traefik HTTPS</p>
+            </div>
+            <span class="text-muted" style="font-size:var(--text-sm);">05.08.2026</span>
+          </div>
+          <div class="flex items-center gap-md" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);opacity:0.7;">
+            <span class="badge badge-secondary">v4.0</span>
+            <div style="flex:1;">
+              <p style="font-weight:600;">Enterprise Release</p>
+              <p class="text-secondary" style="font-size:var(--text-sm);">FastAPI + SQLAlchemy async, 18 моделей, PWA</p>
+            </div>
+            <span class="text-muted" style="font-size:var(--text-sm);">04.08.2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

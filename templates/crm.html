@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}CRM — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">CRM</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">CRM система</h1>
+        <p class="page-subtitle">Управление клиентами и сделками</p>
+      </div>
+      <button class="btn btn-primary" onclick="MS.Modal.open('addDealModal')">+ Новая сделка</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);">
+      <div class="stat-card"><div class="stat-icon primary">📥</div><div><div class="stat-value">12</div><div class="stat-label">Новые</div></div></div>
+      <div class="stat-card"><div class="stat-icon warning">🔄</div><div><div class="stat-value">8</div><div class="stat-label">В работе</div></div></div>
+      <div class="stat-card"><div class="stat-icon info">📤</div><div><div class="stat-value">5</div><div class="stat-label">На проверке</div></div></div>
+      <div class="stat-card"><div class="stat-icon success">✅</div><div><div class="stat-value">24</div><div class="stat-label">Завершено</div></div></div>
+      <div class="stat-card"><div class="stat-icon danger">❌</div><div><div class="stat-value">3</div><div class="stat-label">Отменено</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">🤝 Воронка продаж</h4>
+        <div class="flex gap-sm">
+          <input type="text" class="form-input" placeholder="Поиск сделок..." style="width:240px;">
+          <select class="form-select" style="width:auto;"><option>Все статусы</option><option>Новые</option><option>В работе</option></select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-container">
+          <table>
+            <thead><tr><th>ID</th><th>Клиент</th><th>Услуга</th><th>Сумма</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>#245</td>
+                <td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ОР</div>ООО Ромашка</div></td>
+                <td>Дизайн сайта</td>
+                <td style="font-weight:700;">₽45 000</td>
+                <td><span class="badge badge-warning">В работе</span></td>
+                <td>06.08.2026</td>
+                <td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">👁️</button></div></td>
+              </tr>
+              <tr>
+                <td>#244</td>
+                <td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ИП</div>ИП Иванов</div></td>
+                <td>Разработка приложения</td>
+                <td style="font-weight:700;">₽120 000</td>
+                <td><span class="badge badge-primary">Новая</span></td>
+                <td>05.08.2026</td>
+                <td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">👁️</button></div></td>
+              </tr>
+              <tr>
+                <td>#243</td>
+                <td><div class="flex items-center gap-sm"><div class="user-avatar" style="width:28px;height:28px;font-size:12px;">АК</div>Алексей К.</div></td>
+                <td>SEO-аудит</td>
+                <td style="font-weight:700;">₽15 000</td>
+                <td><span class="badge badge-success">Завершена</span></td>
+                <td>01.08.2026</td>
+                <td><div class="table-actions"><button class="btn btn-icon btn-ghost">✏️</button><button class="btn btn-icon btn-ghost">👁️</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Deal Modal -->
+    <div class="modal-overlay" id="addDealModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Новая сделка</h3>
+          <button class="modal-close" onclick="MS.Modal.close('addDealModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <form data-validate>
+            <div class="form-group">
+              <label class="form-label">Клиент <span class="required">*</span></label>
+              <select class="form-select" data-validate="required">
+                <option value="">Выберите клиента</option>
+                <option>ООО Ромашка</option>
+                <option>ИП Иванов</option>
+                <option>+ Добавить нового</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Услуга <span class="required">*</span></label>
+              <input type="text" class="form-input" placeholder="Название услуги" data-validate="required">
+            </div>
+            <div class="flex gap-md" style="flex-wrap:wrap;">
+              <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">Сумма (₽) <span class="required">*</span></label>
+                <input type="number" class="form-input" placeholder="0" data-validate="required">
+              </div>
+              <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">Статус</label>
+                <select class="form-select">
+                  <option>Новая</option>
+                  <option>В работе</option>
+                  <option>На проверке</option>
+                  <option>Завершена</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Описание</label>
+              <textarea class="form-textarea" placeholder="Детали сделки..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="MS.Modal.close('addDealModal')">Отмена</button>
+          <button class="btn btn-primary" onclick="MS.Modal.close('addDealModal'); MS.Toast.show('Сделка создана!', 'success');">Создать сделку</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

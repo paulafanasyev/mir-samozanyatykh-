@@ -1,0 +1,58 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">МС</div>
+    <span class="sidebar-brand">Мир Самозанятых</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/dashboard" class="sidebar-nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+      <span class="nav-icon">📊</span><span class="nav-label">Дашборд</span>
+    </a>
+    <a href="/finance" class="sidebar-nav-item {% if request.path == '/finance' %}active{% endif %}">
+      <span class="nav-icon">💰</span><span class="nav-label">Финансы</span>
+    </a>
+    <a href="/crm" class="sidebar-nav-item {% if request.path == '/crm' %}active{% endif %}">
+      <span class="nav-icon">🤝</span><span class="nav-label">CRM</span>
+    </a>
+    <a href="/calendar" class="sidebar-nav-item {% if request.path == '/calendar' %}active{% endif %}">
+      <span class="nav-icon">📅</span><span class="nav-label">Календарь</span>
+    </a>
+    <a href="/marketplace" class="sidebar-nav-item {% if request.path == '/marketplace' %}active{% endif %}">
+      <span class="nav-icon">🛒</span><span class="nav-label">Маркетплейс</span>
+    </a>
+    <a href="/grants" class="sidebar-nav-item {% if request.path == '/grants' %}active{% endif %}">
+      <span class="nav-icon">🎁</span><span class="nav-label">Гранты</span>
+    </a>
+    <a href="/contracts" class="sidebar-nav-item {% if request.path == '/contracts' %}active{% endif %}">
+      <span class="nav-icon">📄</span><span class="nav-label">Договоры</span>
+    </a>
+    <a href="/analytics" class="sidebar-nav-item {% if request.path == '/analytics' %}active{% endif %}">
+      <span class="nav-icon">📈</span><span class="nav-label">Аналитика</span>
+    </a>
+    <a href="/referrals" class="sidebar-nav-item {% if request.path == '/referrals' %}active{% endif %}">
+      <span class="nav-icon">👥</span><span class="nav-label">Рефералы</span>
+    </a>
+    <a href="/svetlana" class="sidebar-nav-item {% if request.path == '/svetlana' %}active{% endif %}">
+      <span class="nav-icon">🤖</span><span class="nav-label">Светлана AI</span>
+    </a>
+    <a href="/chat" class="sidebar-nav-item {% if request.path == '/chat' %}active{% endif %}">
+      <span class="nav-icon">💬</span><span class="nav-label">Чат</span>
+    </a>
+    <a href="/video-call" class="sidebar-nav-item {% if request.path == '/video-call' %}active{% endif %}">
+      <span class="nav-icon">📹</span><span class="nav-label">Видеозвонки</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/profile" class="sidebar-nav-item {% if request.path == '/profile' %}active{% endif %}">
+      <span class="nav-icon">👤</span><span class="nav-label">Профиль</span>
+    </a>
+    <a href="/settings" class="sidebar-nav-item {% if request.path == '/settings' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Настройки</span>
+    </a>
+    <a href="/notifications" class="sidebar-nav-item {% if request.path == '/notifications' %}active{% endif %}">
+      <span class="nav-icon">🔔</span><span class="nav-label">Уведомления</span>
+    </a>
+    <a href="/admin" class="sidebar-nav-item {% if request.path == '/admin' %}active{% endif %}">
+      <span class="nav-icon">🔒</span><span class="nav-label">Админ</span>
+    </a>
+  </div>
+</aside>

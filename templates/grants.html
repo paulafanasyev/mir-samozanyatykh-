@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Гранты — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Гранты</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Гранты и господдержка</h1>
+        <p class="page-subtitle">Найдите подходящую программу поддержки с помощью ИИ</p>
+      </div>
+      <button class="btn btn-primary" onclick="MS.Modal.open('aiGrantModal')">🤖 AI-подбор гранта</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card">
+        <div class="stat-icon primary">🎁</div>
+        <div><div class="stat-value">156</div><div class="stat-label">Активных программ</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">💰</div>
+        <div><div class="stat-value">₽2.4M</div><div class="stat-label">Средний грант</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">📋</div>
+        <div><div class="stat-value">42</div><div class="stat-label">Моих заявок</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">🏆</div>
+        <div><div class="stat-value">8</div><div class="stat-label">Получено грантов</div></div>
+      </div>
+    </div>
+
+    <div class="flex gap-md" style="margin-bottom:var(--space-lg);flex-wrap:wrap;">
+      <div class="header-search" style="flex:1;max-width:400px;">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Поиск грантов...">
+      </div>
+      <select class="form-select" style="width:auto;">
+        <option>Все типы</option>
+        <option>Социальный контракт</option>
+        <option>Грант молодым</option>
+        <option>Агростартап</option>
+        <option>Региональная поддержка</option>
+      </select>
+      <select class="form-select" style="width:auto;">
+        <option>Все регионы</option>
+        <option>Москва</option>
+        <option>СПб</option>
+        <option>Казань</option>
+        <option>Новосибирск</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:var(--space-lg);">
+      <div class="card">
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-md);">
+            <span class="badge badge-primary">🏛️ Федеральный</span>
+            <span class="badge badge-success">✓ Подходит вам</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Социальный контракт 2026</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Финансовая поддержка начинающим предпринимателям на развитие бизнеса. Включает обучение и наставничество.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Сумма</p>
+              <p style="font-weight:700;">до ₽350 000</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Дедлайн</p>
+              <p style="font-weight:700;color:var(--c-danger);">15.09.2026</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Регион</p>
+              <p style="font-weight:700;">Все регионы РФ</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Вероятность</p>
+              <p style="font-weight:700;color:var(--c-success);">78% (ИИ-оценка)</p>
+            </div>
+          </div>
+          <div class="flex gap-sm">
+            <button class="btn btn-primary w-full">Подать заявку</button>
+            <button class="btn btn-secondary">Подробнее</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-md);">
+            <span class="badge badge-warning">🏙️ Региональный</span>
+            <span class="badge badge-success">✓ Подходит вам</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Грант молодым предпринимателям</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Поддержка для самозанятых до 35 лет на старт и развитие бизнеса в Московской области.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Сумма</p>
+              <p style="font-weight:700;">₽100 000 — ₽500 000</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Дедлайн</p>
+              <p style="font-weight:700;color:var(--c-warning);">30.10.2026</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Регион</p>
+              <p style="font-weight:700;">Московская обл.</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Вероятность</p>
+              <p style="font-weight:700;color:var(--c-success);">65% (ИИ-оценка)</p>
+            </div>
+          </div>
+          <div class="flex gap-sm">
+            <button class="btn btn-primary w-full">Подать заявку</button>
+            <button class="btn btn-secondary">Подробнее</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-md);">
+            <span class="badge badge-info">🌾 Сельское хозяйство</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Агростартап 2026</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Грантовая поддержка для начинающих агропредпринимателей. Оборудование, семена, техника.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Сумма</p>
+              <p style="font-weight:700;">до ₽1 000 000</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Дедлайн</p>
+              <p style="font-weight:700;">01.12.2026</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Регион</p>
+              <p style="font-weight:700;">Все регионы РФ</p>
+            </div>
+            <div style="padding:var(--space-sm);background:var(--bg-elevated);border-radius:var(--border-radius);">
+              <p class="text-muted" style="font-size:var(--text-xs);">Вероятность</p>
+              <p style="font-weight:700;color:var(--c-warning);">45% (ИИ-оценка)</p>
+            </div>
+          </div>
+          <div class="flex gap-sm">
+            <button class="btn btn-secondary w-full">Подробнее</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Grant Modal -->
+    <div class="modal-overlay" id="aiGrantModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">🤖 AI-подбор гранта</h3>
+          <button class="modal-close" onclick="MS.Modal.close('aiGrantModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="text-secondary" style="margin-bottom:var(--space-lg);">Ответьте на несколько вопросов, и Светлана подберёт для вас наиболее подходящие программы поддержки.</p>
+          <div class="form-group">
+            <label class="form-label">Ваш возраст</label>
+            <select class="form-select">
+              <option>До 25 лет</option>
+              <option selected>25-35 лет</option>
+              <option>35-50 лет</option>
+              <option>50+ лет</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Сфера деятельности</label>
+            <select class="form-select">
+              <option>IT и технологии</option>
+              <option selected>Дизайн и креатив</option>
+              <option>Торговля</option>
+              <option>Сельское хозяйство</option>
+              <option>Производство</option>
+              <option>Услуги</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Стаж самозанятости</label>
+            <select class="form-select">
+              <option>Менее 6 месяцев</option>
+              <option selected>6-12 месяцев</option>
+              <option>1-2 года</option>
+              <option>Более 2 лет</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Регион</label>
+            <select class="form-select">
+              <option selected>Москва</option>
+              <option>Санкт-Петербург</option>
+              <option>Московская область</option>
+              <option>Другой регион</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="MS.Modal.close('aiGrantModal')">Отмена</button>
+          <button class="btn btn-primary" onclick="MS.Modal.close('aiGrantModal'); MS.Toast.show('Светлана анализирует ваш профиль...', 'info'); setTimeout(() => MS.Toast.show('Найдено 5 подходящих грантов!', 'success'), 2000);">Подобрать гранты</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

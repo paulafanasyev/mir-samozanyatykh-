@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Аналитика — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Аналитика</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Аналитика</h1>
+        <p class="page-subtitle">Глубокий анализ вашего бизнеса</p>
+      </div>
+      <div class="flex gap-sm">
+        <select class="form-select" style="width:auto;">
+          <option>За неделю</option>
+          <option selected>За месяц</option>
+          <option>За квартал</option>
+          <option>За год</option>
+        </select>
+        <button class="btn btn-secondary" onclick="MS.Export.downloadJSON({}, 'analytics.json')">📥 Экспорт</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon primary">💰</div>
+        <div><div class="stat-value">₽128 450</div><div class="stat-label">Выручка</div><div class="stat-change up">↑ 12%</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">📈</div>
+        <div><div class="stat-value">34</div><div class="stat-label">Новых клиентов</div><div class="stat-change up">↑ 8%</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">⏱️</div>
+        <div><div class="stat-value">4.2 дн</div><div class="stat-label">Средний цикл сделки</div><div class="stat-change down">↓ 15%</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">🎯</div>
+        <div><div class="stat-value">68%</div><div class="stat-label">Конверсия</div><div class="stat-change up">↑ 5%</div></div>
+      </div>
+    </div>
+
+    <div class="flex gap-lg" style="flex-wrap:wrap;">
+      <div class="card" style="flex:2;min-width:300px;">
+        <div class="card-header"><h4 class="card-title">📊 Динамика доходов</h4></div>
+        <div class="card-body">
+          <div style="height:300px;display:flex;align-items:flex-end;gap:8px;padding:var(--space-md) 0;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:45%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Янв</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:55%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Фев</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:40%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Мар</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:70%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Апр</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:60%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Май</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:85%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Июн</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:75%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);">Июл</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width:100%;background:linear-gradient(to top,var(--c-primary),var(--c-primary-light));border-radius:4px 4px 0 0;height:100%;"></div>
+              <span class="text-muted" style="font-size:var(--text-xs);font-weight:700;">Авг</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:280px;">
+        <div class="card" style="margin-bottom:var(--space-lg);">
+          <div class="card-header"><h4 class="card-title">🥧 Источники дохода</h4></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div>
+                <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+                  <span style="font-size:var(--text-sm);">🎨 Дизайн</span>
+                  <span style="font-weight:600;">45%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--c-primary);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+                  <span style="font-size:var(--text-sm);">💻 Разработка</span>
+                  <span style="font-weight:600;">30%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--c-secondary);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+                  <span style="font-size:var(--text-sm);">📢 Маркетинг</span>
+                  <span style="font-weight:600;">15%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--c-accent);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+                  <span style="font-size:var(--text-sm);">📚 Консалтинг</span>
+                  <span style="font-weight:600;">10%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--c-info);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">🏆 Топ клиенты</h4></div>
+          <div class="card-body" style="padding:0;">
+            <div style="display:flex;flex-direction:column;">
+              <div class="flex items-center gap-md" style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-color);">
+                <div class="user-avatar" style="width:36px;height:36px;font-size:14px;">ОР</div>
+                <div style="flex:1;"><p style="font-weight:600;font-size:var(--text-sm);">ООО Ромашка</p><p class="text-muted" style="font-size:var(--text-xs);">12 сделок</p></div>
+                <span style="font-weight:700;">₽156K</span>
+              </div>
+              <div class="flex items-center gap-md" style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-color);">
+                <div class="user-avatar" style="width:36px;height:36px;font-size:14px;">ИП</div>
+                <div style="flex:1;"><p style="font-weight:600;font-size:var(--text-sm);">ИП Иванов</p><p class="text-muted" style="font-size:var(--text-xs);">8 сделок</p></div>
+                <span style="font-weight:700;">₽89K</span>
+              </div>
+              <div class="flex items-center gap-md" style="padding:var(--space-md) var(--space-lg);">
+                <div class="user-avatar" style="width:36px;height:36px;font-size:14px;">АК</div>
+                <div style="flex:1;"><p style="font-weight:600;font-size:var(--text-sm);">Алексей К.</p><p class="text-muted" style="font-size:var(--text-xs);">5 сделок</p></div>
+                <span style="font-weight:700;">₽45K</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:var(--space-xl);">
+      <div class="card-header"><h4 class="card-title">📋 Детальный отчёт</h4></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Период</th><th>Доход</th><th>Расход</th><th>Прибыль</th><th>Налог НПД</th><th>Клиенты</th><th>Сделки</th></tr></thead>
+          <tbody>
+            <tr><td>Август 2026</td><td>₽128 450</td><td>₽12 500</td><td>₽115 950</td><td>₽6 423</td><td>8</td><td>12</td></tr>
+            <tr><td>Июль 2026</td><td>₽114 200</td><td>₽10 800</td><td>₽103 400</td><td>₽5 710</td><td>6</td><td>10</td></tr>
+            <tr><td>Июнь 2026</td><td>₽98 750</td><td>₽8 200</td><td>₽90 550</td><td>₽4 938</td><td>5</td><td>8</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

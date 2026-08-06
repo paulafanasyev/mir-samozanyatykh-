@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Вход — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="auth-layout" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));padding:var(--space-lg);">
+  <div class="auth-card" style="background:var(--bg-surface);border-radius:var(--border-radius-xl);box-shadow:var(--shadow-xl);width:100%;max-width:420px;padding:var(--space-2xl);animation:scaleIn 0.4s ease;">
+    <div class="text-center" style="margin-bottom:var(--space-xl);">
+      <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));border-radius:var(--border-radius-lg);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);color:white;font-size:28px;font-weight:800;">МС</div>
+      <h1 style="font-size:var(--text-2xl);margin-bottom:var(--space-xs);">Добро пожаловать</h1>
+      <p class="text-secondary">Войдите в свой аккаунт</p>
+    </div>
+    <form id="loginForm" data-validate>
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input type="email" class="form-input" name="email" placeholder="you@example.com" data-validate="required|email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль <span class="required">*</span></label>
+        <div class="input-group">
+          <input type="password" class="form-input" name="password" placeholder="••••••••" data-validate="required|min:8" required>
+          <button type="button" class="btn btn-secondary" onclick="togglePassword(this)" style="border-radius:0 var(--border-radius) var(--border-radius) 0;">👁️</button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between" style="margin-bottom:var(--space-lg);">
+        <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:var(--text-sm);color:var(--text-secondary);cursor:pointer;">
+          <input type="checkbox" name="remember" style="width:16px;height:16px;"> Запомнить меня
+        </label>
+        <a href="/forgot-password" style="font-size:var(--text-sm);">Забыли пароль?</a>
+      </div>
+      <button type="submit" class="btn btn-primary w-full" style="margin-bottom:var(--space-md);">Войти</button>
+      <div class="text-center" style="margin-bottom:var(--space-md);">
+        <span class="text-muted" style="font-size:var(--text-sm);">или</span>
+      </div>
+      <div class="flex gap-md" style="margin-bottom:var(--space-lg);">
+        <button type="button" class="btn btn-secondary w-full" style="gap:8px;"><span>🔍</span> Google</button>
+        <button type="button" class="btn btn-secondary w-full" style="gap:8px;"><span>✉️</span> VK</button>
+      </div>
+      <p class="text-center text-secondary" style="font-size:var(--text-sm);">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+    </form>
+  </div>
+</div>
+<script>
+function togglePassword(btn) {
+  const input = btn.previousElementSibling;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+}
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
+  try {
+    await MS.Auth.login(form.email.value, form.password.value);
+    window.location.href = '/dashboard';
+  } catch (err) {
+    MS.Toast.show(err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Войти';
+  }
+});
+</script>
+{% endblock %}

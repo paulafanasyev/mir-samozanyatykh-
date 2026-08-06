@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}White-label — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">White-label</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">White-label решение</h1>
+        <p class="page-subtitle">Брендируйте платформу под свой бизнес</p>
+      </div>
+    </div>
+
+    <div class="flex gap-lg" style="flex-wrap:wrap;">
+      <div style="flex:1;min-width:300px;">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">🎨 Брендинг</h4></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Название компании</label>
+              <input type="text" class="form-input" value="Моя Компания" placeholder="Введите название">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Логотип</label>
+              <div class="dropzone" style="padding:var(--space-lg);">
+                <div class="dropzone-icon">📁</div>
+                <p class="dropzone-text">Перетащите логотип или <strong>выберите файл</strong></p>
+                <p class="form-hint">PNG, SVG. Макс. 2 МБ</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Фавикон</label>
+              <div class="dropzone" style="padding:var(--space-lg);">
+                <div class="dropzone-icon">🖼️</div>
+                <p class="dropzone-text">Перетащите фавикон или <strong>выберите файл</strong></p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Основной цвет</label>
+              <div class="flex gap-sm">
+                <input type="color" value="#6366f1" style="width:48px;height:48px;border:none;border-radius:var(--border-radius);cursor:pointer;">
+                <input type="text" class="form-input" value="#6366f1" style="width:120px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Акцентный цвет</label>
+              <div class="flex gap-sm">
+                <input type="color" value="#10b981" style="width:48px;height:48px;border:none;border-radius:var(--border-radius);cursor:pointer;">
+                <input type="text" class="form-input" value="#10b981" style="width:120px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Домен</label>
+              <div class="input-group">
+                <input type="text" class="form-input" value="mycompany" placeholder="your-domain">
+                <span class="btn btn-secondary" style="border-radius:0 var(--border-radius) var(--border-radius) 0;">.мир-самозанятых.рф</span>
+              </div>
+            </div>
+            <button class="btn btn-primary w-full">💾 Сохранить настройки</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:300px;">
+        <div class="card" style="margin-bottom:var(--space-lg);">
+          <div class="card-header"><h4 class="card-title">👁️ Превью</h4></div>
+          <div class="card-body" style="padding:0;overflow:hidden;border-radius:0 0 var(--border-radius-lg) var(--border-radius-lg);">
+            <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:var(--space-xl);text-align:center;color:white;">
+              <div style="width:64px;height:64px;background:white;border-radius:var(--border-radius-lg);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);color:#6366f1;font-size:28px;font-weight:800;">МК</div>
+              <h3 style="color:white;margin-bottom:var(--space-xs);">Моя Компания</h3>
+              <p style="opacity:0.8;">Платформа для самозанятых</p>
+            </div>
+            <div style="padding:var(--space-lg);">
+              <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-md);">
+                <div style="flex:1;height:80px;background:var(--bg-elevated);border-radius:var(--border-radius);"></div>
+                <div style="flex:1;height:80px;background:var(--bg-elevated);border-radius:var(--border-radius);"></div>
+              </div>
+              <div style="height:120px;background:var(--bg-elevated);border-radius:var(--border-radius);"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">🔗 Интеграция</h4></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">API ключ</label>
+              <div class="input-group">
+                <input type="text" class="form-input font-mono" value="wl_sk_abc123xyz789" readonly>
+                <button class="btn btn-secondary" onclick="MS.Clipboard.copy('wl_sk_abc123xyz789')">📋</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Webhook URL</label>
+              <input type="url" class="form-input" placeholder="https://your-domain.com/webhook">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CSS override</label>
+              <textarea class="form-textarea font-mono" style="min-height:80px;" placeholder="/* Ваши стили */
+.custom-header { background: #000; }"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

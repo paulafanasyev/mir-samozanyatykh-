@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Маркетплейс — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Маркетплейс</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <button class="header-btn">🛒<span class="badge">2</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Маркетплейс услуг</h1>
+        <p class="page-subtitle">Найдите исполнителя или разместите свою услугу</p>
+      </div>
+      <button class="btn btn-primary" onclick="MS.Modal.open('addServiceModal')">+ Разместить услугу</button>
+    </div>
+
+    <div class="flex gap-md" style="margin-bottom:var(--space-lg);flex-wrap:wrap;">
+      <div class="header-search" style="flex:1;max-width:400px;">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Поиск услуг...">
+      </div>
+      <select class="form-select" style="width:auto;">
+        <option>Все категории</option>
+        <option>🎨 Дизайн</option>
+        <option>💻 Разработка</option>
+        <option>📢 Маркетинг</option>
+        <option>📝 Копирайтинг</option>
+        <option>📸 Фото/Видео</option>
+        <option>🏗️ Строительство</option>
+        <option>🚗 Авто</option>
+      </select>
+      <select class="form-select" style="width:auto;">
+        <option>Цена: любая</option>
+        <option>До ₽5 000</option>
+        <option>₽5 000 — ₽20 000</option>
+        <option>₽20 000 — ₽50 000</option>
+        <option>От ₽50 000</option>
+      </select>
+      <select class="form-select" style="width:auto;">
+        <option>Рейтинг: любой</option>
+        <option>⭐ 4.5+</option>
+        <option>⭐ 4.0+</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-lg);">
+      <div class="card" style="transition:transform var(--transition-fast);">
+        <div style="height:180px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">🎨</div>
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-sm);">
+            <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">АА</div>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);">Анна А.</span>
+            <span class="badge badge-success" style="margin-left:auto;">⭐ 4.9</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Дизайн логотипа и фирменного стиля</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Создам уникальный логотип, визитки, брендбук. 3 варианта на выбор.</p>
+          <div class="flex items-center justify-between">
+            <span style="font-size:var(--text-xl);font-weight:800;color:var(--c-primary);">от ₽5 000</span>
+            <button class="btn btn-primary btn-sm">Заказать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="transition:transform var(--transition-fast);">
+        <div style="height:180px;background:linear-gradient(135deg,#f093fb,#f5576c);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">💻</div>
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-sm);">
+            <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ПП</div>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);">Пётр П.</span>
+            <span class="badge badge-success" style="margin-left:auto;">⭐ 4.7</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Разработка сайта на Next.js</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Современный сайт с адаптивным дизайном, SEO-оптимизацией, CMS.</p>
+          <div class="flex items-center justify-between">
+            <span style="font-size:var(--text-xl);font-weight:800;color:var(--c-primary);">от ₽25 000</span>
+            <button class="btn btn-primary btn-sm">Заказать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="transition:transform var(--transition-fast);">
+        <div style="height:180px;background:linear-gradient(135deg,#4facfe,#00f2fe);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">📢</div>
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-sm);">
+            <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">ММ</div>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);">Мария М.</span>
+            <span class="badge badge-success" style="margin-left:auto;">⭐ 4.8</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">SMM-ведение Instagram</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Контент-план, сторис, reels, аналитика. Рост подписчиков гарантирован.</p>
+          <div class="flex items-center justify-between">
+            <span style="font-size:var(--text-xl);font-weight:800;color:var(--c-primary);">от ₽15 000/мес</span>
+            <button class="btn btn-primary btn-sm">Заказать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="transition:transform var(--transition-fast);">
+        <div style="height:180px;background:linear-gradient(135deg,#43e97b,#38f9d7);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">📝</div>
+        <div class="card-body">
+          <div class="flex items-center gap-sm" style="margin-bottom:var(--space-sm);">
+            <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">СК</div>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);">Сергей К.</span>
+            <span class="badge badge-warning" style="margin-left:auto;">⭐ 4.2</span>
+          </div>
+          <h4 style="margin-bottom:var(--space-xs);">Копирайтинг и SEO-тексты</h4>
+          <p class="text-secondary" style="font-size:var(--text-sm);margin-bottom:var(--space-md);">Продающие тексты, статьи для блога, описания товаров. Уникальность 100%.</p>
+          <div class="flex items-center justify-between">
+            <span style="font-size:var(--text-xl);font-weight:800;color:var(--c-primary);">от ₽500/1000 зн</span>
+            <button class="btn btn-primary btn-sm">Заказать</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div class="modal-overlay" id="addServiceModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 class="modal-title">Разместить услугу</h3>
+          <button class="modal-close" onclick="MS.Modal.close('addServiceModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <form data-validate>
+            <div class="form-group">
+              <label class="form-label">Название услуги <span class="required">*</span></label>
+              <input type="text" class="form-input" placeholder="Например: Дизайн логотипа" data-validate="required">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Категория <span class="required">*</span></label>
+              <select class="form-select" data-validate="required">
+                <option value="">Выберите категорию</option>
+                <option>🎨 Дизайн</option>
+                <option>💻 Разработка</option>
+                <option>📢 Маркетинг</option>
+                <option>📝 Копирайтинг</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Описание <span class="required">*</span></label>
+              <textarea class="form-textarea" placeholder="Подробно опишите, что входит в услугу..." data-validate="required"></textarea>
+            </div>
+            <div class="flex gap-md" style="flex-wrap:wrap;">
+              <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">Цена от (₽) <span class="required">*</span></label>
+                <input type="number" class="form-input" placeholder="0" data-validate="required">
+              </div>
+              <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">Срок выполнения</label>
+                <select class="form-select">
+                  <option>1-3 дня</option>
+                  <option>3-7 дней</option>
+                  <option>1-2 недели</option>
+                  <option>2-4 недели</option>
+                  <option>1+ месяц</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Изображение услуги</label>
+              <div class="dropzone">
+                <div class="dropzone-icon">🖼️</div>
+                <p class="dropzone-text">Перетащите изображение или <strong>выберите файл</strong></p>
+                <p class="form-hint">JPG, PNG. Рекомендуемый размер 800x600</p>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="MS.Modal.close('addServiceModal')">Отмена</button>
+          <button class="btn btn-primary" onclick="MS.Modal.close('addServiceModal'); MS.Toast.show('Услуга размещена!', 'success');">Разместить</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Видеозвонки — Мир Самозанятых{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="sidebar-overlay"></div>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="header-btn" data-sidebar-toggle>☰</button>
+      <h2 style="font-size:var(--text-lg);">Видеозвонки</h2>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" data-theme-toggle><span data-theme-icon>🌙</span></button>
+      <div class="user-avatar">ИИ</div>
+    </div>
+  </header>
+  <main class="app-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Видеоконференции</h1>
+        <p class="page-subtitle">WebRTC-звонки с клиентами и партнёрами</p>
+      </div>
+      <button class="btn btn-primary" onclick="createRoom()">📹 Создать комнату</button>
+    </div>
+
+    <div class="flex gap-lg" style="flex-wrap:wrap;">
+      <div style="flex:2;min-width:300px;">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">📹 Активные комнаты</h4></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div class="flex items-center gap-md">
+                  <div style="width:48px;height:48px;background:var(--c-primary);border-radius:var(--border-radius);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">📹</div>
+                  <div>
+                    <p style="font-weight:600;">Консультация: Дизайн логотипа</p>
+                    <p class="text-secondary" style="font-size:var(--text-sm);">С Анной А. • Начало: 11:30</p>
+                  </div>
+                </div>
+                <div class="flex gap-sm">
+                  <span class="badge badge-success">● LIVE</span>
+                  <button class="btn btn-primary btn-sm">Присоединиться</button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between" style="padding:var(--space-md);background:var(--bg-elevated);border-radius:var(--border-radius);">
+                <div class="flex items-center gap-md">
+                  <div style="width:48px;height:48px;background:var(--c-secondary);border-radius:var(--border-radius);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">📹</div>
+                  <div>
+                    <p style="font-weight:600;">Обсуждение проекта</p>
+                    <p class="text-secondary" style="font-size:var(--text-sm);">С Петром П. • Запланировано: 14:00</p>
+                  </div>
+                </div>
+                <div class="flex gap-sm">
+                  <span class="badge badge-warning">⏳ Ожидание</span>
+                  <button class="btn btn-secondary btn-sm">Настройки</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:var(--space-lg);">
+          <div class="card-header"><h4 class="card-title">📅 Предстоящие встречи</h4></div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead><tr><th>Дата</th><th>Время</th><th>Тема</th><th>Участники</th><th>Действия</th></tr></thead>
+                <tbody>
+                  <tr><td>06.08</td><td>14:00</td><td>Обсуждение проекта</td><td>Пётр П.</td><td><button class="btn btn-primary btn-sm">Присоединиться</button></td></tr>
+                  <tr><td>07.08</td><td>10:00</td><td>Презентация макетов</td><td>Мария М., Анна А.</td><td><button class="btn btn-secondary btn-sm">Напомнить</button></td></tr>
+                  <tr><td>08.08</td><td>16:30</td><td>Финальное ревью</td><td>Алексей К.</td><td><button class="btn btn-secondary btn-sm">Напомнить</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:280px;">
+        <div class="card">
+          <div class="card-header"><h4 class="card-title">⚙️ Настройки камеры</h4></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Камера</label>
+              <select class="form-select"><option selected>Встроенная камера</option><option>Logitech C920</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Микрофон</label>
+              <select class="form-select"><option selected>Встроенный микрофон</option><option>USB Микрофон</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Динамики</label>
+              <select class="form-select"><option selected>Встроенные динамики</option><option>Наушники</option></select>
+            </div>
+            <div style="width:100%;aspect-ratio:16/9;background:var(--bg-elevated);border-radius:var(--border-radius);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-md);">
+              <span class="text-muted">Предпросмотр камеры</span>
+            </div>
+            <div class="flex gap-sm">
+              <button class="btn btn-secondary btn-sm">🎥 Вкл/Выкл</button>
+              <button class="btn btn-secondary btn-sm">🎤 Вкл/Выкл</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+function createRoom() {
+  const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
+  MS.Toast.show('Комната создана: ' + roomId, 'success');
+}
+</script>
+{% endblock %}

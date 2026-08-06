@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}500 — Ошибка сервера{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-body);padding:var(--space-lg);">
+  <div class="text-center" style="max-width:480px;">
+    <div style="font-size:120px;font-weight:800;background:linear-gradient(135deg,var(--c-danger),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:var(--space-lg);">500</div>
+    <h1 style="font-size:var(--text-3xl);margin-bottom:var(--space-md);">Что-то пошло не так</h1>
+    <p class="text-secondary" style="margin-bottom:var(--space-xl);">На сервере произошла ошибка. Мы уже работаем над её устранением. Попробуйте обновить страницу через несколько минут.</p>
+    <div class="flex gap-md" style="justify-content:center;">
+      <button class="btn btn-primary" onclick="location.reload()">🔄 Обновить</button>
+      <a href="/dashboard" class="btn btn-secondary">🏠 На главную</a>
+    </div>
+    <p class="text-muted" style="margin-top:var(--space-xl);font-size:var(--text-xs);">Код ошибки: ERR_INTERNAL_SERVER_ERROR | ID: 8f3a2b1c</p>
+  </div>
+</div>
+{% endblock %}

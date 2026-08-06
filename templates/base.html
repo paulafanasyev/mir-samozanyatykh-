@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Мир Самозанятых — платформа для самозанятых: ИИ-ассистент, финансы, CRM, гранты, маркетплейс">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/static/images/icon-192.png">
+  <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <title>{% block title %}Мир Самозанятых{% endblock %}</title>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script src="/static/js/app.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
