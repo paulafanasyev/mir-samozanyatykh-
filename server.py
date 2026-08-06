@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     CRYPTOPRO_ENABLED: bool = False
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_WEBHOOK_URL: str = ""
+    SMS_RU_API_KEY: str = ""
 
     class Config:
         env_file = ".env"
@@ -266,6 +267,20 @@ class GrantApplication(Base):
     ai_score = Column(Float)
     submitted_at = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class SMSLog(Base):
+    __tablename__ = "sms_logs"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    phone = Column(String(50), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(50), default="pending")  # pending, sent, delivered, failed
+    sms_ru_id = Column(String(100))
+    cost = Column(Float)
+    sent_at = Column(DateTime)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    user = relationship("User")
 
 # ============ FASTAPI SETUP ============
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
@@ -561,8 +576,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Мир Самозанятых",
-    description="Платформа для самозанятых — WebSocket Edition v5.1",
-    version="5.1.0",
+    description="Платформа для самозанятых — SMS Edition v5.2",
+    version="5.2.0",
     docs_url="/api/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT == "development" else None,
     openapi_url="/api/openapi.json" if settings.ENVIRONMENT == "development" else None,
@@ -1421,6 +1436,124 @@ async def websocket_admin(websocket: WebSocket, token: str = Query(None)):
     except Exception as e:
         logger.error(f"Admin WebSocket error: {e}")
         manager.disconnect(websocket, user_id)
+
+
+# ============ SMS API ============
+@app.post("/api/sms/send")
+@limiter.limit("20/minute")
+async def send_sms_api(request: Request, phone: str = Form(..., max_length=50, regex=r"^\+7\d{10}$"),
+                       message: str = Form(..., max_length=500),
+                       current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Send SMS via SMS.ru"""
+    try:
+        if not settings.SMS_RU_API_KEY:
+            raise HTTPException(status_code=503, detail="SMS.ru not configured")
+
+        # Validate phone format
+        if not phone.startswith("+7") or len(phone) != 12:
+            raise HTTPException(status_code=400, detail="Phone must be in format +7XXXXXXXXXX")
+
+        # Create log entry
+        sms_log = SMSLog(user_id=current_user.id, phone=phone, message=message, status="pending")
+        db.add(sms_log)
+        await db.commit()
+        await db.refresh(sms_log)
+
+        # Send via SMS.ru
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://sms.ru/sms/send",
+                params={
+                    "api_id": settings.SMS_RU_API_KEY,
+                    "to": phone,
+                    "msg": message,
+                    "json": 1,
+                    "from": "MirSamoz"
+                }
+            )
+            data = response.json()
+
+            if data.get("status") == "OK":
+                sms_id = list(data.get("sms", {}).keys())[0] if data.get("sms") else None
+                sms_info = data.get("sms", {}).get(sms_id, {}) if sms_id else {}
+
+                sms_log.status = "sent" if sms_info.get("status") == "OK" else "failed"
+                sms_log.sms_ru_id = str(sms_info.get("sms_id", ""))
+                sms_log.cost = float(data.get("balance", 0))
+                sms_log.sent_at = datetime.now(timezone.utc)
+
+                await db.commit()
+
+                return {
+                    "id": sms_log.id,
+                    "status": sms_log.status,
+                    "phone": phone,
+                    "message": message,
+                    "cost": sms_log.cost
+                }
+            else:
+                sms_log.status = "failed"
+                await db.commit()
+                raise HTTPException(status_code=400, detail=data.get("status_text", "SMS.ru error"))
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"SMS send error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send SMS")
+
+@app.get("/api/sms/history")
+async def get_sms_history(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+                         page: int = 1, per_page: int = 50):
+    """Get SMS sending history"""
+    try:
+        query = select(SMSLog).where(SMSLog.user_id == current_user.id).order_by(SMSLog.created_at.desc())
+        total_result = await db.execute(select(func.count(SMSLog.id)).where(SMSLog.user_id == current_user.id))
+        total = total_result.scalar()
+
+        query = query.offset((page - 1) * per_page).limit(per_page)
+        result = await db.execute(query)
+        logs = result.scalars().all()
+
+        return {
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "logs": [{
+                "id": log.id,
+                "phone": log.phone,
+                "message": log.message,
+                "status": log.status,
+                "cost": log.cost,
+                "sent_at": log.sent_at.isoformat() if log.sent_at else None,
+                "created_at": log.created_at.isoformat() if log.created_at else None
+            } for log in logs]
+        }
+    except Exception as e:
+        logger.error(f"SMS history error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get SMS history")
+
+@app.get("/api/sms/balance")
+async def get_sms_balance(current_user: User = Depends(get_current_user)):
+    """Get SMS.ru balance"""
+    try:
+        if not settings.SMS_RU_API_KEY:
+            return {"balance": 0, "currency": "RUB", "status": "not_configured"}
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://sms.ru/my/balance",
+                params={"api_id": settings.SMS_RU_API_KEY, "json": 1}
+            )
+            data = response.json()
+            return {
+                "balance": float(data.get("balance", 0)),
+                "currency": "RUB",
+                "status": data.get("status", "unknown")
+            }
+    except Exception as e:
+        logger.error(f"SMS balance error: {e}")
+        return {"balance": 0, "currency": "RUB", "status": "error"}
 
 # ============ SEED DATA ============
 async def seed_data(db: AsyncSession):
