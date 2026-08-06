@@ -282,6 +282,18 @@ class SMSLog(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     user = relationship("User")
 
+
+class UserMFA(Base):
+    __tablename__ = "user_mfa"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    totp_secret = Column(String(100), nullable=False)
+    is_enabled = Column(Boolean, default=False)
+    backup_codes = Column(Text)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    user = relationship("User", back_populates="mfa")
+
 # ============ FASTAPI SETUP ============
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -1749,6 +1761,98 @@ async def generate_contract_pdf(contract_id: int, current_user: User = Depends(g
     except Exception as e:
         logger.error(f"Contract PDF error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate contract PDF")
+
+
+@app.post("/api/auth/2fa/setup")
+async def setup_2fa(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    try:
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == current_user.id))
+        mfa = result.scalar_one_or_none()
+        if mfa and mfa.is_enabled:
+            raise HTTPException(status_code=400, detail="2FA already enabled")
+
+        secret = pyotp.random_base32()
+        backup_codes = [secrets.token_hex(4) for _ in range(8)]
+        hashed_backups = json.dumps([get_password_hash(code) for code in backup_codes])
+
+        if not mfa:
+            mfa = UserMFA(user_id=current_user.id, totp_secret=secret, backup_codes=hashed_backups)
+            db.add(mfa)
+        else:
+            mfa.totp_secret = secret
+            mfa.backup_codes = hashed_backups
+            mfa.is_enabled = False
+
+        await db.commit()
+        await db.refresh(mfa)
+
+        totp = pyotp.TOTP(secret)
+        uri = totp.provisioning_uri(name=current_user.email or str(current_user.id), issuer_name="Мир Самозанятых")
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+        return {"qr_code": f"data:image/png;base64,{qr_b64}", "secret": secret, "backup_codes": backup_codes, "message": "Save backup codes!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA setup error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to setup 2FA")
+
+@app.post("/api/auth/2fa/verify")
+async def verify_2fa_setup(code: str = Form(..., min_length=6, max_length=6),
+                           current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    try:
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == current_user.id))
+        mfa = result.scalar_one_or_none()
+        if not mfa:
+            raise HTTPException(status_code=400, detail="2FA not set up")
+        if mfa.is_enabled:
+            raise HTTPException(status_code=400, detail="2FA already enabled")
+
+        totp = pyotp.TOTP(mfa.totp_secret)
+        if not totp.verify(code, valid_window=1):
+            raise HTTPException(status_code=400, detail="Invalid TOTP code")
+
+        mfa.is_enabled = True
+        await db.commit()
+        await log_audit(db=db, action="2fa_enabled", user_id=current_user.id, resource="user_mfa")
+        return {"message": "2FA enabled successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA verify error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify 2FA")
+
+@app.post("/api/auth/2fa/disable")
+async def disable_2fa(password: str = Form(...),
+                      current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    try:
+        if not verify_password(password, current_user.password_hash):
+            raise HTTPException(status_code=403, detail="Invalid password")
+
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == current_user.id))
+        mfa = result.scalar_one_or_none()
+        if not mfa or not mfa.is_enabled:
+            raise HTTPException(status_code=400, detail="2FA not enabled")
+
+        mfa.is_enabled = False
+        mfa.totp_secret = ""
+        mfa.backup_codes = "[]"
+        await db.commit()
+        await log_audit(db=db, action="2fa_disabled", user_id=current_user.id, resource="user_mfa")
+        return {"message": "2FA disabled"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA disable error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to disable 2FA")
 
 # ============ SEED DATA ============
 async def seed_data(db: AsyncSession):

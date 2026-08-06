@@ -52,6 +52,57 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.middlewares=auth@file"
 
+  celery-worker:
+    build: .
+    container_name: mir-samozanyatykh-celery
+    restart: unless-stopped
+    command: celery -A tasks worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./data:/app/data
+    networks:
+      - web
+
+  celery-beat:
+    build: .
+    container_name: mir-samozanyatykh-beat
+    restart: unless-stopped
+    command: celery -A tasks beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./data:/app/data
+    networks:
+      - web
+
+  flower:
+    build: .
+    container_name: mir-samozanyatykh-flower
+    restart: unless-stopped
+    command: celery -A tasks flower --port=5555
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "5555:5555"
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flower.rule=Host(`flower.мир-самозанятых.рф`)"
+      - "traefik.http.routers.flower.entrypoints=websecure"
+      - "traefik.http.routers.flower.tls.certresolver=letsencrypt"
+      - "traefik.http.services.flower.loadbalancer.server.port=5555"
+
   app:
     build: .
     container_name: mir-samozanyatykh
