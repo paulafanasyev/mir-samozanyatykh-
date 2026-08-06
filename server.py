@@ -19,8 +19,8 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    SECRET_KEY: str = "change-me-in-production"
-    ENVIRONMENT: str = "development"
+    SECRET_KEY: str = ""
+    ENVIRONMENT: str = "production"
     DATABASE_URL: str = "postgresql+asyncpg://mir_user:change_me_in_production@localhost:5432/mir_samozanyatykh"
     REDIS_URL: str = "redis://localhost:6379/0"
     SMTP_HOST: str = ""
@@ -50,6 +50,11 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Validate SECRET_KEY in production
+if settings.ENVIRONMENT == "production" and len(settings.SECRET_KEY) < 32:
+    raise ValueError("SECRET_KEY must be at least 32 chars in production. Generate: openssl rand -hex 64")
+
+
 Path(settings.LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
@@ -61,6 +66,10 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("mir-samozanyatykh")
+
+def get_celery_tasks():
+    from tasks import send_email_task, send_sms_task, create_notification_task
+    return send_email_task, send_sms_task, create_notification_task
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, relationship
@@ -538,15 +547,34 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    nonce = getattr(request.state, "csp_nonce", "")
+    response.headers["Content-Security-Policy"] = (
+        f"default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        f"style-src 'self' 'unsafe-inline'; "
+        f"font-src 'self'; "
+        f"img-src 'self' data:; "
+        f"connect-src 'self'; "
+        f"frame-ancestors 'none'; "
+        f"base-uri 'none'; "
+        f"form-action 'self'"
+    )
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     if settings.ENVIRONMENT == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     return response
 
 @app.middleware("http")
+async def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
 async def csp_nonce_middleware(request: Request, call_next):
     request.state.csp_nonce = await generate_csp_nonce()
+    request.state.csrf_token = await generate_csrf_token()
     response = await call_next(request)
+    # Set CSRF cookie for forms
+    if request.method == "GET" and not request.cookies.get("csrf_token"):
+        response.set_cookie("csrf_token", request.state.csrf_token, httponly=False, samesite="strict", secure=settings.ENVIRONMENT == "production")
     return response
 
 @app.exception_handler(Exception)
@@ -701,6 +729,15 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=401, detail="Пользователь не найден или заблокирован")
     return user
 
+async def validate_csrf_token(request: Request):
+    """Validate CSRF token for state-changing operations"""
+    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        header_token = request.headers.get("X-CSRF-Token")
+        cookie_token = request.cookies.get("csrf_token")
+        if not header_token or not cookie_token or header_token != cookie_token:
+            raise HTTPException(status_code=403, detail="Invalid CSRF token")
+    return True
+
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Требуются права администратора")
@@ -754,6 +791,8 @@ async def create_transaction(request: Request, amount: float = Form(...), catego
         await db.commit()
         await db.refresh(transaction)
         await award_achievement(db, current_user.id, "first_transaction")
+        # TODO: Add optimistic locking (version column) for financial operations
+        # to prevent race conditions in concurrent transactions
         await log_audit(db=db, action="transaction_created", user_id=current_user.id,
                        resource="transactions", resource_id=str(transaction.id))
         return {"id": transaction.id, "message": "Транзакция добавлена"}
@@ -1127,7 +1166,8 @@ async def get_svetlana_categories():
 
 # ============ FNS INTEGRATION ============
 @app.get("/api/fns/check-inn")
-async def check_inn(inn: str = Query(..., min_length=10, max_length=12), current_user: User = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def check_inn(request: Request, inn: str = Query(..., min_length=10, max_length=12), current_user: User = Depends(get_current_user)):
     return await check_inn_fns(inn)
 
 # ============ FILE UPLOAD ============

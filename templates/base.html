@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     {% block extra_head %}{% endblock %}
+    <meta name="csrf-token" content="{{ csrf_token if csrf_token else '' }}">
 </head>
 <body>
     <nav class="navbar">
@@ -80,5 +81,19 @@
         })();
     </script>
     {% block extra_js %}{% endblock %}
+    <script nonce="{{ csp_nonce }}">
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+    // Add CSRF token to all fetch requests
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        options.headers = options.headers || {};
+        if (options.method && options.method !== 'GET') {
+            options.headers['X-CSRF-Token'] = getCSRFToken();
+        }
+        return originalFetch(url, options);
+    };
+    </script>
 </body>
 </html>
