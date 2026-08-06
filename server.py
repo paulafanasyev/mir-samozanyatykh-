@@ -1,6 +1,6 @@
 """
-Мир Самозанятых v4.2 — All-Features Edition
-FastAPI + SQLAlchemy async + AI + CRM + Finance + Marketplace + Gamification + Legal
+Мир Самозанятых v5.0 — PostgreSQL Edition
+FastAPI + SQLAlchemy async + PostgreSQL + AI + CRM + Finance + Marketplace + Gamification + Legal + Sales
 """
 
 import os
@@ -21,7 +21,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     ENVIRONMENT: str = "development"
-    DATABASE_URL: str = "sqlite+aiosqlite:///./data/mir_samozanyatykh.db"
+    DATABASE_URL: str = "postgresql+asyncpg://mir_user:change_me_in_production@localhost:5432/mir_samozanyatykh"
     REDIS_URL: str = "redis://localhost:6379/0"
     SMTP_HOST: str = ""
     SMTP_PORT: int = 465
@@ -70,7 +70,7 @@ from sqlalchemy import (
 )
 
 Base = declarative_base()
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+engine = create_async_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True, pool_recycle=300)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # ============ МОДЕЛИ ============
@@ -486,7 +486,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Mir Samozanyatykh v4.2...")
+    logger.info("Starting Mir Samozanyatykh v5.0 (PostgreSQL)...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database initialized")
@@ -496,8 +496,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Мир Самозанятых",
-    description="Платформа для самозанятых — All-Features Edition v4.2",
-    version="4.2.0",
+    description="Платформа для самозанятых — PostgreSQL Edition v5.0",
+    version="5.0.0",
     docs_url="/api/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT == "development" else None,
     openapi_url="/api/openapi.json" if settings.ENVIRONMENT == "development" else None,
@@ -794,7 +794,7 @@ async def get_transactions(current_user: User = Depends(get_current_user), db: A
 @app.get("/api/finance/stats")
 async def finance_stats(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     try:
-        result = await db.execute(select(func.strftime("%Y-%m", Transaction.transaction_date).label("month"),
+        result = await db.execute(select(func.to_char(Transaction.transaction_date, "YYYY-MM").label("month"),
                                           func.sum(Transaction.amount).label("total"))
                                    .where(Transaction.user_id == current_user.id, Transaction.amount > 0)
                                    .group_by("month").order_by("month"))

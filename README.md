@@ -1,4 +1,4 @@
-# Мир Самозанятых v4.2
+# Мир Самозанятых v5.0
 
 Платформа для самозанятых — безопасная версия с полным набором исправлений.
 
@@ -21,8 +21,38 @@
 - Alembic миграции
 - Jinja2 шаблоны
 - Traefik reverse proxy
-- SQLite (async)
+- PostgreSQL (с поддержкой SQLite для dev) (async)
 
 ## Лицензия
 
 MIT
+
+
+## PostgreSQL (v5.0+)
+
+Проект мигрирован на PostgreSQL для production-использования.
+
+### Локальная разработка (SQLite)
+```bash
+DATABASE_URL=sqlite+aiosqlite:///./data/mir_samozanyatykh.db
+```
+
+### Production (PostgreSQL)
+```bash
+# Docker Compose запускает PostgreSQL автоматически
+DATABASE_URL=postgresql+asyncpg://mir_user:пароль@postgres:5432/mir_samozanyatykh
+```
+
+### Миграции
+```bash
+# Создать миграцию
+alembic revision --autogenerate -m "init"
+
+# Применить миграции
+alembic upgrade head
+```
+
+### Переход с SQLite на PostgreSQL
+1. Запустите PostgreSQL: `docker-compose up -d postgres`
+2. Примените миграции: `alembic upgrade head`
+3. Запустите приложение: `docker-compose up -d app`

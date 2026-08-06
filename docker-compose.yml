@@ -1,6 +1,24 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mir-samozanyatykh-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mir_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: mir_samozanyatykh
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mir_user -d mir_samozanyatykh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   traefik:
     image: traefik:v3.0
     container_name: traefik
