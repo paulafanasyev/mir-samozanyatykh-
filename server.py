@@ -27,7 +27,6 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 465
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_TLS: bool = True
     DOMAIN: str = "localhost:8000"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -410,11 +409,8 @@ async def send_verification_email(email: str, token: str) -> bool:
         <div style="text-align:center;margin:30px 0;"><a href="{verification_url}" style="background:#00d4ff;color:#1a1a2e;padding:15px 40px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;">Подтвердить email</a></div>
         <p style="color:#666;font-size:14px;">Если кнопка не работает:<br><code style="background:#e9ecef;padding:5px;border-radius:4px;">{verification_url}</code></p></div></body></html>"""
         msg.attach(MIMEText(html, "html", "utf-8"))
-        if settings.SMTP_TLS:
-            server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
-        else:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
-            server.starttls()
+        # Always use SSL/TLS — never unencrypted connections
+        server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
         server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
         server.sendmail(settings.SMTP_USER, [email], msg.as_string())
         server.quit()
@@ -427,9 +423,13 @@ async def send_verification_email(email: str, token: str) -> bool:
 # ============ AI / OPENROUTER ============
 import httpx
 
+class AIError(Exception):
+    """Custom exception for AI service errors"""
+    pass
+
 async def ask_ai(question: str, context: str = "", model: str = "anthropic/claude-3.5-sonnet") -> str:
     if not settings.OPENROUTER_API_KEY:
-        return None
+        raise AIError("OpenRouter API key not configured")
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -441,10 +441,14 @@ async def ask_ai(question: str, context: str = "", model: str = "anthropic/claud
                     {"role": "user", "content": question}
                 ], "temperature": 0.7, "max_tokens": 1000})
             data = response.json()
+            if "choices" not in data or not data["choices"]:
+                raise AIError(f"Invalid AI response: {data.get('error', 'Unknown error')}")
             return data["choices"][0]["message"]["content"]
+    except AIError:
+        raise
     except Exception as e:
         logger.error(f"AI error: {e}")
-        return None
+        raise AIError(f"Failed to get AI response: {str(e)}")
 
 # ============ FNS API ============
 async def check_inn_fns(inn: str) -> dict:
@@ -1211,7 +1215,10 @@ async def ask_svetlana(request: Request, question: str = Form(..., max_length=50
             context = ""
             if current_user:
                 context = f"Пользователь: {current_user.full_name}, ИНН: {current_user.inn or 'не указан'}"
-            ai_answer = await ask_ai(question, context=context)
+            ai_try:
+                    answer = await ask_ai(question, context=context)
+                except AIError:
+                    answer = "Извините, произошла ошибка при обработке запроса. Попробуйте позже."
             if ai_answer:
                 return {"answer": ai_answer, "confidence": 0.95, "source": "ai_openrouter"}
         knowledge = load_svetlana_knowledge()
