@@ -1392,6 +1392,14 @@ async def websocket_notifications(websocket: WebSocket, token: str = Query(None)
             await websocket.close(code=4001, reason="Invalid token")
             return
 
+    # Origin check for production
+    if settings.ENVIRONMENT == "production":
+        allowed_origins = [f"https://{settings.DOMAIN}", f"https://www.{settings.DOMAIN}"]
+        origin = websocket.headers.get("origin", "")
+        if origin not in allowed_origins:
+            await websocket.close(code=4002, reason="Invalid origin")
+            return
+
     await manager.connect(websocket, user_id)
     try:
         while True:
@@ -1423,6 +1431,14 @@ async def websocket_admin(websocket: WebSocket, token: str = Query(None)):
             # Note: In production, verify against DB
         except JWTError:
             await websocket.close(code=4001, reason="Invalid token")
+            return
+
+    # Origin check for production
+    if settings.ENVIRONMENT == "production":
+        allowed_origins = [f"https://{settings.DOMAIN}", f"https://www.{settings.DOMAIN}"]
+        origin = websocket.headers.get("origin", "")
+        if origin not in allowed_origins:
+            await websocket.close(code=4002, reason="Invalid origin")
             return
 
     await manager.connect(websocket, user_id)
@@ -1534,6 +1550,7 @@ async def get_sms_history(current_user: User = Depends(get_current_user), db: As
         raise HTTPException(status_code=500, detail="Failed to get SMS history")
 
 @app.get("/api/sms/balance")
+@limiter.limit("30/minute")
 async def get_sms_balance(current_user: User = Depends(get_current_user)):
     """Get SMS.ru balance"""
     try:
