@@ -95,5 +95,88 @@
         return originalFetch(url, options);
     };
     </script>
+
+    <!-- WebSocket Client -->
+    <script nonce="{{ csp_nonce }}">
+    (function() {
+        let ws = null;
+        let reconnectInterval = 5000;
+        let token = localStorage.getItem('token');
+
+        function connectWS() {
+            if (!token) return;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/notifications?token=${token}`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                console.log('[WS] Connected');
+                reconnectInterval = 5000; // Reset interval
+                // Send ping every 30s to keep alive
+                setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('ping');
+                    }
+                }, 30000);
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'notification') {
+                        // Show browser notification
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification(data.title, {
+                                body: data.message,
+                                icon: '/static/icon-192.png'
+                            });
+                        }
+                        // Update notification badge
+                        const badge = document.querySelector('.notification-badge');
+                        if (badge) {
+                            badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+                            badge.style.display = 'inline';
+                        }
+                        // Show toast
+                        showToast(data.title, data.message, data.notification_type);
+                    }
+                } catch (e) {
+                    console.log('[WS] Message:', event.data);
+                }
+            };
+
+            ws.onclose = function() {
+                console.log('[WS] Disconnected, reconnecting...');
+                setTimeout(connectWS, reconnectInterval);
+                reconnectInterval = Math.min(reconnectInterval * 2, 60000);
+            };
+
+            ws.onerror = function(error) {
+                console.error('[WS] Error:', error);
+            };
+        }
+
+        function showToast(title, message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<strong>${title}</strong><br>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Connect when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', connectWS);
+        } else {
+            connectWS();
+        }
+    })();
+    </script>
 </body>
 </html>

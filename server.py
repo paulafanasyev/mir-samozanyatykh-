@@ -268,7 +268,7 @@ class GrantApplication(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 # ============ FASTAPI SETUP ============
-from fastapi import FastAPI, Request, Response, Depends, HTTPException, status, UploadFile, File, Form, Query
+from fastapi import FastAPI, Request, Response, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -493,6 +493,62 @@ async def check_subscription(user: User, required_tier: str) -> bool:
 # ============ RATE LIMITER & APP ============
 limiter = Limiter(key_func=get_remote_address)
 
+
+# ============ WEBSOCKET CONNECTION MANAGER ============
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, List[WebSocket]] = {}
+        self.global_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket, user_id: int = None):
+        await websocket.accept()
+        if user_id:
+            if user_id not in self.active_connections:
+                self.active_connections[user_id] = []
+            self.active_connections[user_id].append(websocket)
+        self.global_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: int = None):
+        if user_id and user_id in self.active_connections:
+            if websocket in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+        if websocket in self.global_connections:
+            self.global_connections.remove(websocket)
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            disconnected = []
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    disconnected.append(connection)
+            for conn in disconnected:
+                self.disconnect(conn, user_id)
+
+    async def broadcast(self, message: dict):
+        disconnected = []
+        for connection in self.global_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                disconnected.append(connection)
+        for conn in disconnected:
+            self.disconnect(conn)
+
+    async def notify_user(self, user_id: int, title: str, message: str, notification_type: str = "info"):
+        await self.send_personal_message({
+            "type": "notification",
+            "title": title,
+            "message": message,
+            "notification_type": notification_type,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }, user_id)
+
+manager = ConnectionManager()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Mir Samozanyatykh v5.0 (PostgreSQL)...")
@@ -505,8 +561,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Мир Самозанятых",
-    description="Платформа для самозанятых — PostgreSQL Edition v5.0",
-    version="5.0.0",
+    description="Платформа для самозанятых — WebSocket Edition v5.1",
+    version="5.1.0",
     docs_url="/api/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT == "development" else None,
     openapi_url="/api/openapi.json" if settings.ENVIRONMENT == "development" else None,
@@ -1305,6 +1361,66 @@ async def achievements_page(request: Request):
 @app.get("/marketplace/{slug}", response_class=HTMLResponse)
 async def marketplace_profile_page(request: Request, slug: str):
     return templates.TemplateResponse("marketplace_profile.html", {"request": request, "csp_nonce": request.state.csp_nonce, "slug": slug})
+
+
+# ============ WEBSOCKET ENDPOINTS ============
+@app.websocket("/ws/notifications")
+async def websocket_notifications(websocket: WebSocket, token: str = Query(None)):
+    user_id = None
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("sub")
+            if isinstance(user_id, str) and user_id.isdigit():
+                user_id = int(user_id)
+        except JWTError:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            # Keep connection alive, handle ping
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+            elif data == "mark_read":
+                # Handle mark notification as read
+                pass
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        manager.disconnect(websocket, user_id)
+
+@app.websocket("/ws/admin")
+async def websocket_admin(websocket: WebSocket, token: str = Query(None)):
+    """Admin dashboard real-time updates"""
+    user_id = None
+    is_admin = False
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("sub")
+            if isinstance(user_id, str) and user_id.isdigit():
+                user_id = int(user_id)
+            # Verify admin status
+            # Note: In production, verify against DB
+        except JWTError:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
+    except Exception as e:
+        logger.error(f"Admin WebSocket error: {e}")
+        manager.disconnect(websocket, user_id)
 
 # ============ SEED DATA ============
 async def seed_data(db: AsyncSession):

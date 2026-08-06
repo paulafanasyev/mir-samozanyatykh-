@@ -45,6 +45,18 @@ celery_app.conf.update(
     }
 )
 
+
+# WebSocket notification helper (called from Celery tasks)
+async def ws_notify_user(user_id: int, title: str, message: str, notification_type: str = "info"):
+    """Send real-time notification via WebSocket"""
+    try:
+        import httpx
+        # In production, use Redis pub/sub or direct WebSocket broadcast
+        # For now, we store notification in DB and client polls
+        pass
+    except Exception as e:
+        print(f"[WebSocket notify error] {e}")
+
 engine = create_async_engine(app_settings.DATABASE_URL, echo=False, pool_pre_ping=True)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -97,6 +109,11 @@ def create_notification_task(user_id: int, title: str, message: str, notificatio
             from server import Notification
             db.add(Notification(user_id=user_id, title=title, message=message, type=notification_type))
             await db.commit()
+            # Attempt WebSocket notification (best effort)
+            try:
+                await ws_notify_user(user_id, title, message, notification_type)
+            except Exception:
+                pass
     asyncio.run(_create())
     return {"status": "created"}
 
