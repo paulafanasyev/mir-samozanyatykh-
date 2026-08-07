@@ -1,182 +1,99 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <meta name="description" content="Мир Самозанятых — платформа для самозанятых">
-    <meta name="theme-color" content="#0f0f23">
-    <meta name="color-scheme" content="dark">
-    <title>{% block title %}Мир Самозанятых{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
-    {% block extra_head %}{% endblock %}
-    <meta name="csrf-token" content="{{ csrf_token if csrf_token else '' }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Мир Самозанятых — платформа поддержки самозанятых граждан. ИИ-ассистент Светлана, налоговый калькулятор, CRM, маркетплейс.">
+  <meta name="theme-color" content="#0D47A1">
+  <title>{% block title %}Мир Самозанятых{% endblock %}</title>
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/app_v5.1.css">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+
+  {% block extra_head %}{% endblock %}
 </head>
-<body>
-    <nav class="navbar">
-        <a href="/" class="logo">Мир Самозанятых</a>
-        <button class="hamburger" id="hamburger" aria-label="Меню" aria-expanded="false">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        <div class="nav-links" id="nav-links">
-            <a href="/">Главная</a>
-            <a href="/svetlana">🤖 Светлана</a>
-            <a href="/finance">💰 Финансы</a>
-            <a href="/crm">🤝 CRM</a>
-            <a href="/contracts">📄 Договоры</a>
-            <a href="/marketplace">🏪 Маркетплейс</a>
-            <a href="/grants">🚀 Гранты</a>
-            <a href="/achievements">🏆</a>
-            <a href="/dashboard">👤 Кабинет</a>
-            <a href="/login" id="nav-login">Вход</a>
-        </div>
-    </nav>
+<body data-page="{% block page %}{% endblock %}">
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+  <!-- Navigation -->
+  <nav class="navbar" role="navigation" aria-label="Главное меню">
+    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+      <a href="/" class="navbar-brand">
+        🏢 Мир <span>Самозанятых</span>
+      </a>
 
-    <footer>
-        <p>© 2026 Мир Самозанятых | it-laboratory@bk.ru</p>
-    </footer>
+      <button class="mobile-menu-btn" aria-label="Открыть меню">☰</button>
 
-    <script nonce="{{ csp_nonce }}">
-        // Гамбургер-меню
-        (function() {
-            const hamburger = document.getElementById('hamburger');
-            const navLinks = document.getElementById('nav-links');
+      <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/about">О проекте</a></li>
+        <li><a href="/calculator">Калькулятор</a></li>
+        <li><a href="/dashboard">Кабинет</a></li>
+        <li><a href="/marketplace">Маркетплейс</a></li>
+        <li><a href="/grants">Гранты</a></li>
+        {% if user %}
+          <li><a href="/profile">{{ user.name or 'Профиль' }}</a></li>
+          <li><a href="/logout">Выйти</a></li>
+        {% else %}
+          <li><a href="/login">Войти</a></li>
+          <li><a href="/register" class="btn btn-sm btn-primary">Регистрация</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
 
-            if (hamburger && navLinks) {
-                hamburger.addEventListener('click', function() {
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    this.setAttribute('aria-expanded', !isExpanded);
-                    this.classList.toggle('active');
-                    navLinks.classList.toggle('active');
-                });
+  <!-- Main Content -->
+  <main style="padding-top: 80px;">
+    {% block content %}{% endblock %}
+  </main>
 
-                // Закрытие при клике на ссылку
-                navLinks.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', () => {
-                        hamburger.setAttribute('aria-expanded', 'false');
-                        hamburger.classList.remove('active');
-                        navLinks.classList.remove('active');
-                    });
-                });
-            }
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <h4>🏢 Мир Самозанятых</h4>
+        <p style="color: var(--neutral-400); font-size: 0.9375rem; margin-top: var(--space-3);">
+          Платформа поддержки самозанятых граждан. ИИ-ассистент, налоговый калькулятор, CRM, маркетплейс.
+        </p>
+      </div>
+      <div>
+        <h4>Навигация</h4>
+        <a href="/">Главная</a>
+        <a href="/about">О проекте</a>
+        <a href="/calculator">Калькулятор</a>
+        <a href="/dashboard">Личный кабинет</a>
+      </div>
+      <div>
+        <h4>Сервисы</h4>
+        <a href="/marketplace">Маркетплейс</a>
+        <a href="/grants">Гранты</a>
+        <a href="/contracts">Договоры</a>
+        <a href="/crm">CRM</a>
+      </div>
+      <div>
+        <h4>Поддержка</h4>
+        <a href="/faq">FAQ</a>
+        <a href="/contacts">Контакты</a>
+        <a href="mailto:it-laboratory@bk.ru">it-laboratory@bk.ru</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Мир Самозанятых. Все права защищены. | <a href="/privacy">Политика конфиденциальности</a></p>
+    </div>
+  </footer>
 
-            // Проверка авторизации
-            const token = localStorage.getItem('access_token');
-            const navLogin = document.getElementById('nav-login');
-            if (token && navLogin) {
-                navLogin.textContent = 'Профиль';
-                navLogin.href = '/dashboard';
-            }
-        })();
-    </script>
-    {% block extra_js %}{% endblock %}
-    <script nonce="{{ csp_nonce }}">
-    function getCSRFToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.content || '';
-    }
-    // Add CSRF token to all fetch requests
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-        options.headers = options.headers || {};
-        if (options.method && options.method !== 'GET') {
-            options.headers['X-CSRF-Token'] = getCSRFToken();
-        }
-        return originalFetch(url, options);
-    };
-    </script>
-
-    <!-- WebSocket Client -->
-    <script nonce="{{ csp_nonce }}">
-    (function() {
-        let ws = null;
-        let reconnectInterval = 5000;
-        let token = localStorage.getItem('token');
-
-        function connectWS() {
-            if (!token) return;
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/notifications?token=${token}`;
-
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = function() {
-                console.log('[WS] Connected');
-                reconnectInterval = 5000; // Reset interval
-                // Send ping every 30s to keep alive
-                setInterval(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send('ping');
-                    }
-                }, 30000);
-            };
-
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'notification') {
-                        // Show browser notification
-                        if ('Notification' in window && Notification.permission === 'granted') {
-                            new Notification(data.title, {
-                                body: data.message,
-                                icon: '/static/icon-192.png'
-                            });
-                        }
-                        // Update notification badge
-                        const badge = document.querySelector('.notification-badge');
-                        if (badge) {
-                            badge.textContent = (parseInt(badge.textContent) || 0) + 1;
-                            badge.style.display = 'inline';
-                        }
-                        // Show toast
-                        showToast(data.title, data.message, data.notification_type);
-                    }
-                } catch (e) {
-                    console.log('[WS] Message:', event.data);
-                }
-            };
-
-            ws.onclose = function() {
-                console.log('[WS] Disconnected, reconnecting...');
-                setTimeout(connectWS, reconnectInterval);
-                reconnectInterval = Math.min(reconnectInterval * 2, 60000);
-            };
-
-            ws.onerror = function(error) {
-                console.error('[WS] Error:', error);
-            };
-        }
-
-        function showToast(title, message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<strong>${title}</strong><br>${message}`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
-        }
-
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-
-        // Connect when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', connectWS);
-        } else {
-            connectWS();
-        }
-    })();
-    </script>
+  <!-- Scripts -->
+  <script src="/static/app_v5.1.js"></script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>
