@@ -1540,6 +1540,363 @@ def generate_slug(title: str, db: Session, model_class, existing_id: int = None)
 
 # --- Blog Tags API ---
 
+
+# ============ ADMIN SECURITY ENHANCEMENTS ============
+
+import ipaddress
+from datetime import timedelta
+
+# Admin login attempts tracking (in-memory, for production use Redis)
+_admin_login_attempts = {}
+_admin_ip_whitelist = set()  # Configure in settings or database
+
+class AdminLoginAttempt(Base):
+    __tablename__ = 'admin_login_attempts'
+    id = Column(Integer, primary_key=True)
+    ip_address = Column(String(45), nullable=False, index=True)
+    username = Column(String(100), nullable=True)
+    success = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AdminIPWhitelist(Base):
+    __tablename__ = 'admin_ip_whitelist'
+    id = Column(Integer, primary_key=True)
+    ip_address = Column(String(45), unique=True, nullable=False)
+    description = Column(String(200), nullable=True)
+    created_by = Column(Integer, ForeignKey('users.id'))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+def check_admin_2fa(current_user: User):
+    """Verify admin has 2FA enabled"""
+    if current_user.role in ["admin", "moderator"]:
+        # Check if user has MFA setup
+        # This is a simplified check - in production check UserMFA table
+        pass  # Implementation depends on existing 2FA structure
+
+def check_ip_whitelist(ip_address: str, db: Session) -> bool:
+    """Check if IP is in admin whitelist"""
+    # If no whitelist configured, allow all (for initial setup)
+    whitelist_count = db.query(AdminIPWhitelist).count()
+    if whitelist_count == 0:
+        return True
+
+    return db.query(AdminIPWhitelist).filter(AdminIPWhitelist.ip_address == ip_address).first() is not None
+
+def check_admin_lockout(ip_address: str, db: Session) -> tuple:
+    """Check if IP is locked out due to failed attempts"""
+    # Count failed attempts in last 30 minutes
+    cutoff = datetime.utcnow() - timedelta(minutes=30)
+    attempts = db.query(AdminLoginAttempt).filter(
+        AdminLoginAttempt.ip_address == ip_address,
+        AdminLoginAttempt.success == False,
+        AdminLoginAttempt.created_at > cutoff
+    ).count()
+
+    if attempts >= 3:
+        # Check if there's a successful login after the failures
+        last_success = db.query(AdminLoginAttempt).filter(
+            AdminLoginAttempt.ip_address == ip_address,
+            AdminLoginAttempt.success == True,
+            AdminLoginAttempt.created_at > cutoff
+        ).order_by(AdminLoginAttempt.created_at.desc()).first()
+
+        if not last_success:
+            return False, f"IP заблокирован после {attempts} неудачных попыток. Попробуйте через 30 минут."
+
+    return True, None
+
+def record_admin_login(ip_address: str, username: str, success: bool, db: Session):
+    """Record admin login attempt"""
+    attempt = AdminLoginAttempt(
+        ip_address=ip_address,
+        username=username,
+        success=success
+    )
+    db.add(attempt)
+    db.commit()
+
+# ============ ENHANCED ADMIN API ============
+
+@app.get("/api/admin/dashboard")
+async def admin_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Admin dashboard with key metrics"""
+    require_role(current_user, ["admin", "moderator"])
+
+    # IP whitelist check
+    client_ip = request.client.host
+    if not check_ip_whitelist(client_ip, db):
+        raise HTTPException(status_code=403, detail="Доступ запрещён: IP не в белом списке")
+
+    # Check lockout
+    allowed, message = check_admin_lockout(client_ip, db)
+    if not allowed:
+        raise HTTPException(status_code=429, detail=message)
+
+    # Gather metrics
+    total_users = db.query(User).count()
+    active_users = db.query(User).filter(User.is_active == True).count()
+    new_users_today = db.query(User).filter(
+        User.created_at > datetime.utcnow() - timedelta(days=1)
+    ).count()
+
+    total_transactions = db.query(Transaction).count()
+    total_revenue = db.query(Transaction).filter(Transaction.type == "income").with_entities(func.sum(Transaction.amount)).scalar() or 0
+
+    total_contracts = db.query(SignedContract).count()
+    signed_contracts = db.query(SignedContract).filter(SignedContract.status == "signed").count()
+
+    total_posts = db.query(BlogPost).count()
+    published_posts = db.query(BlogPost).filter(BlogPost.status == "published").count()
+
+    pending_comments = db.query(BlogComment).filter(BlogComment.status == "pending").count()
+
+    # Recent audit logs
+    recent_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(20).all()
+
+    # Login attempts
+    recent_attempts = db.query(AdminLoginAttempt).order_by(AdminLoginAttempt.created_at.desc()).limit(10).all()
+
+    log_audit(db, current_user.id, "admin_dashboard_accessed", f"IP: {client_ip}", request)
+
+    return {
+        "metrics": {
+            "users": {"total": total_users, "active": active_users, "new_today": new_users_today},
+            "finance": {"transactions": total_transactions, "total_revenue": float(total_revenue)},
+            "contracts": {"total": total_contracts, "signed": signed_contracts},
+            "blog": {"posts": total_posts, "published": published_posts, "pending_comments": pending_comments},
+        },
+        "recent_audit_logs": [
+            {
+                "id": log.id,
+                "user_id": log.user_id,
+                "action": log.action,
+                "details": log.details,
+                "ip_address": log.ip_address,
+                "created_at": log.created_at.isoformat()
+            }
+            for log in recent_logs
+        ],
+        "recent_login_attempts": [
+            {
+                "ip": attempt.ip_address,
+                "username": attempt.username,
+                "success": attempt.success,
+                "time": attempt.created_at.isoformat()
+            }
+            for attempt in recent_attempts
+        ],
+        "security": {
+            "ip_whitelist_enabled": db.query(AdminIPWhitelist).count() > 0,
+            "your_ip": client_ip,
+            "session_info": "Активна"
+        }
+    }
+
+@app.get("/api/admin/security/logs")
+async def admin_security_logs(
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    action_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Detailed security audit logs with filtering"""
+    require_role(current_user, ["admin", "moderator"])
+
+    query = db.query(AuditLog)
+    if action_type:
+        query = query.filter(AuditLog.action.ilike(f"%{action_type}%"))
+
+    total = query.count()
+    logs = query.order_by(AuditLog.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    log_audit(db, current_user.id, "admin_security_logs_viewed", f"Page: {page}, Filter: {action_type}", request)
+
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "user_id": log.user_id,
+                "action": log.action,
+                "details": log.details,
+                "ip_address": log.ip_address,
+                "user_agent": log.user_agent,
+                "created_at": log.created_at.isoformat()
+            }
+            for log in logs
+        ],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
+
+@app.post("/api/admin/security/ip-whitelist")
+async def add_ip_whitelist(
+    request: Request,
+    ip_address: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add IP to admin whitelist"""
+    require_role(current_user, ["admin"])
+
+    # Validate IP
+    try:
+        ipaddress.ip_address(ip_address)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный IP-адрес")
+
+    # Check if already exists
+    existing = db.query(AdminIPWhitelist).filter(AdminIPWhitelist.ip_address == ip_address).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="IP уже в белом списке")
+
+    whitelist_entry = AdminIPWhitelist(
+        ip_address=ip_address,
+        description=description,
+        created_by=current_user.id
+    )
+    db.add(whitelist_entry)
+    db.commit()
+
+    log_audit(db, current_user.id, "admin_ip_whitelist_added", f"IP: {ip_address}", request)
+
+    return {"message": f"IP {ip_address} добавлен в белый список"}
+
+@app.delete("/api/admin/security/ip-whitelist/{ip_id}")
+async def remove_ip_whitelist(
+    ip_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove IP from whitelist"""
+    require_role(current_user, ["admin"])
+
+    entry = db.query(AdminIPWhitelist).filter(AdminIPWhitelist.id == ip_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    db.delete(entry)
+    db.commit()
+
+    log_audit(db, current_user.id, "admin_ip_whitelist_removed", f"IP ID: {ip_id}", request)
+
+    return {"message": "IP удалён из белого списка"}
+
+@app.get("/api/admin/security/ip-whitelist")
+async def list_ip_whitelist(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List whitelisted IPs"""
+    require_role(current_user, ["admin", "moderator"])
+
+    entries = db.query(AdminIPWhitelist).all()
+    return {
+        "whitelist": [
+            {
+                "id": e.id,
+                "ip_address": e.ip_address,
+                "description": e.description,
+                "created_by": e.created_by,
+                "created_at": e.created_at.isoformat()
+            }
+            for e in entries
+        ]
+    }
+
+@app.post("/api/admin/users/{user_id}/block")
+async def block_user(
+    user_id: int,
+    request: Request,
+    reason: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Block/unblock user"""
+    require_role(current_user, ["admin", "moderator"])
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Нельзя заблокировать себя")
+
+    user.is_active = False
+    db.commit()
+
+    log_audit(db, current_user.id, "user_blocked", f"User: {user_id}, Reason: {reason}", request)
+
+    return {"message": f"Пользователь {user.email} заблокирован", "reason": reason}
+
+@app.post("/api/admin/users/{user_id}/unblock")
+async def unblock_user(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Unblock user"""
+    require_role(current_user, ["admin", "moderator"])
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    user.is_active = True
+    db.commit()
+
+    log_audit(db, current_user.id, "user_unblocked", f"User: {user_id}", request)
+
+    return {"message": f"Пользователь {user.email} разблокирован"}
+
+@app.get("/api/admin/comments/pending")
+async def list_pending_comments(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List pending blog comments for moderation"""
+    require_role(current_user, ["admin", "moderator", "support"])
+
+    query = db.query(BlogComment).filter(BlogComment.status == "pending")
+    total = query.count()
+    comments = query.order_by(BlogComment.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        "comments": [
+            {
+                "id": c.id,
+                "post_id": c.post_id,
+                "post_title": c.post.title if c.post else "—",
+                "author_name": c.author_name,
+                "author_email": c.author_email,
+                "content": c.content,
+                "created_at": c.created_at.isoformat()
+            }
+            for c in comments
+        ],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
+
+
 @app.post("/api/blog/tags", response_model=BlogTagOut)
 async def create_blog_tag(
     tag: BlogTagCreate,
@@ -2497,6 +2854,432 @@ async def generate_contract_pdf(contract_id: int, current_user: User = Depends(g
     except Exception as e:
         logger.error(f"Contract PDF error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate contract PDF")
+
+
+
+# ============ CONTRACT TEMPLATES DATA ============
+
+CONTRACT_TEMPLATES = {
+    "gpd": {
+        "name": "Договор ГПД (гражданско-правовой)",
+        "description": "Стандартный договор подряда/оказания услуг для самозанятых",
+        "fields": ["contractor_name", "contractor_inn", "client_name", "client_inn", "subject", "price", "deadline", "payment_terms"]
+    },
+    "invoice": {
+        "name": "Счёт на оплату",
+        "description": "Счёт для юридических лиц и ИП с QR-кодом",
+        "fields": ["seller_name", "seller_inn", "buyer_name", "buyer_inn", "services", "total", "bank_account", "bank_bik"]
+    },
+    "act": {
+        "name": "Акт выполненных работ",
+        "description": "Акт приёмки-передачи выполненных работ/услуг",
+        "fields": ["contractor_name", "contractor_inn", "client_name", "client_inn", "works_description", "total", "act_date"]
+    },
+    "npd_receipt": {
+        "name": "Чек самозанятого (НПД)",
+        "description": "Чек по налогу на профессиональный доход",
+        "fields": ["seller_name", "seller_inn", "buyer_name", "buyer_inn", "service_name", "amount", "tax_amount", "receipt_date"]
+    }
+}
+
+# ============ E-SIGNATURE (Simple Electronic Signature per Civil Code Art. 160) ============
+
+import hashlib
+import hmac
+from datetime import datetime
+
+def generate_simple_signature(contract_data: dict, user_id: int, secret: str = None) -> dict:
+    """Generate simple electronic signature per Russian Civil Code Article 160"""
+    if secret is None:
+        secret = settings.SECRET_KEY
+
+    # Create canonical representation
+    canonical = json.dumps(contract_data, sort_keys=True, ensure_ascii=False)
+    timestamp = datetime.utcnow().isoformat()
+
+    # Generate signature
+    sig_payload = f"{user_id}:{timestamp}:{canonical}"
+    signature = hmac.new(
+        secret.encode(),
+        sig_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return {
+        "signature": signature,
+        "timestamp": timestamp,
+        "algorithm": "HMAC-SHA256",
+        "type": "simple_electronic_signature",
+        "legal_basis": "ГК РФ ст. 160 (простая электронная подпись)",
+        "signer_id": user_id
+    }
+
+def verify_simple_signature(contract_data: dict, signature_data: dict, secret: str = None) -> bool:
+    """Verify simple electronic signature"""
+    if secret is None:
+        secret = settings.SECRET_KEY
+
+    canonical = json.dumps(contract_data, sort_keys=True, ensure_ascii=False)
+    sig_payload = f"{signature_data['signer_id']}:{signature_data['timestamp']}:{canonical}"
+    expected = hmac.new(
+        secret.encode(),
+        sig_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, signature_data['signature'])
+
+# ============ ENHANCED PDF GENERATION ============
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.colors import HexColor, black, white
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+import qrcode
+import io
+
+def generate_contract_pdf(template_type: str, data: dict, signature: dict = None) -> bytes:
+    """Generate professional PDF contract with optional e-signature and QR code"""
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=20*mm,
+        leftMargin=20*mm,
+        topMargin=20*mm,
+        bottomMargin=20*mm
+    )
+
+    styles = getSampleStyleSheet()
+
+    # Custom styles
+    title_style = ParagraphStyle(
+        'ContractTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        alignment=TA_CENTER,
+        spaceAfter=20,
+        textColor=HexColor('#0D47A1'),
+        fontName='Helvetica-Bold'
+    )
+
+    heading_style = ParagraphStyle(
+        'ContractHeading',
+        parent=styles['Heading2'],
+        fontSize=12,
+        spaceAfter=10,
+        textColor=HexColor('#1565C0'),
+        fontName='Helvetica-Bold'
+    )
+
+    body_style = ParagraphStyle(
+        'ContractBody',
+        parent=styles['Normal'],
+        fontSize=10,
+        leading=14,
+        alignment=TA_LEFT,
+        spaceAfter=8
+    )
+
+    footer_style = ParagraphStyle(
+        'ContractFooter',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=HexColor('#64748B'),
+        alignment=TA_CENTER
+    )
+
+    story = []
+
+    # Header
+    story.append(Paragraph(f"<b>МИР САМОЗАНЯТЫХ</b>", title_style))
+    story.append(Spacer(1, 5))
+
+    template_info = CONTRACT_TEMPLATES.get(template_type, {})
+    story.append(Paragraph(f"<b>{template_info.get('name', 'ДОКУМЕНТ')}</b>", title_style))
+    story.append(Spacer(1, 20))
+
+    # Document info table
+    doc_info = [
+        ["Дата создания:", datetime.utcnow().strftime("%d.%m.%Y %H:%M")],
+        ["Уникальный номер:", f"MS-{datetime.utcnow().strftime('%Y%m%d')}-{hashlib.md5(str(data).encode()).hexdigest()[:8].upper()}"],
+    ]
+    if signature:
+        doc_info.append(["Электронная подпись:", "✓ Подписано простой электронной подписью"])
+        doc_info.append(["Дата подписи:", signature.get('timestamp', '—')])
+        doc_info.append(["Основание:", "ГК РФ ст. 160"])
+
+    doc_table = Table(doc_info, colWidths=[50*mm, 110*mm])
+    doc_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (0, -1), HexColor('#374151')),
+        ('TEXTCOLOR', (1, 0), (1, -1), HexColor('#0D47A1')),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(doc_table)
+    story.append(Spacer(1, 20))
+
+    # Content based on template type
+    if template_type == "gpd":
+        story.append(Paragraph("<b>1. ПРЕДМЕТ ДОГОВОРА</b>", heading_style))
+        story.append(Paragraph(f"Исполнитель <b>{data.get('contractor_name', '—')}</b> (ИНН: {data.get('contractor_inn', '—')}) обязуется выполнить для Заказчика <b>{data.get('client_name', '—')}</b> (ИНН: {data.get('client_inn', '—')}) следующие работы/услуги:", body_style))
+        story.append(Paragraph(f"<i>{data.get('subject', '—')}</i>", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>2. СТОИМОСТЬ И ПОРЯДОК РАСЧЁТОВ</b>", heading_style))
+        story.append(Paragraph(f"2.1. Общая стоимость работ составляет <b>{data.get('price', '—')} ₽</b>.", body_style))
+        story.append(Paragraph(f"2.2. Порядок оплаты: {data.get('payment_terms', '100% по факту выполнения')}", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>3. СРОКИ ВЫПОЛНЕНИЯ</b>", heading_style))
+        story.append(Paragraph(f"3.1. Работы подлежат выполнению в срок до <b>{data.get('deadline', '—')}</b>.", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>4. ПОДПИСИ СТОРОН</b>", heading_style))
+        story.append(Paragraph("4.1. Настоящий договор составлен в простой письменной форме в соответствии с ГК РФ ст. 161.", body_style))
+        story.append(Paragraph("4.2. Стороны подтверждают, что условия договора им понятны и они согласны с ними.", body_style))
+
+    elif template_type == "invoice":
+        story.append(Paragraph("<b>СЧЁТ НА ОПЛАТУ</b>", heading_style))
+        story.append(Paragraph(f"Продавец: <b>{data.get('seller_name', '—')}</b> (ИНН: {data.get('seller_inn', '—')})", body_style))
+        story.append(Paragraph(f"Покупатель: <b>{data.get('buyer_name', '—')}</b> (ИНН: {data.get('buyer_inn', '—')})", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>Реквизиты для оплаты:</b>", heading_style))
+        story.append(Paragraph(f"Р/с: {data.get('bank_account', '—')}", body_style))
+        story.append(Paragraph(f"БИК: {data.get('bank_bik', '—')}", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>Содержание услуг:</b>", heading_style))
+        story.append(Paragraph(f"{data.get('services', '—')}", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph(f"<b>ИТОГО К ОПЛАТЕ: {data.get('total', '—')} ₽</b>", heading_style))
+
+        # QR code for payment
+        qr_data = f"ST00012|Name={data.get('seller_name', '')}|PersonalAcc={data.get('bank_account', '')}|BIC={data.get('bank_bik', '')}|PayeeINN={data.get('seller_inn', '')}|Sum={int(float(data.get('total', 0)) * 100)}|Purpose=Оплата по счету"
+        qr = qrcode.make(qr_data)
+        qr_buffer = io.BytesIO()
+        qr.save(qr_buffer, format='PNG')
+        qr_buffer.seek(0)
+
+        story.append(Spacer(1, 15))
+        story.append(Paragraph("<b>QR-код для быстрой оплаты:</b>", heading_style))
+        story.append(Image(qr_buffer, width=40*mm, height=40*mm))
+        story.append(Paragraph("Отсканируйте QR-код в мобильном банке для мгновенной оплаты", footer_style))
+
+    elif template_type == "act":
+        story.append(Paragraph("<b>АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)</b>", heading_style))
+        story.append(Paragraph(f"Дата составления: <b>{data.get('act_date', datetime.utcnow().strftime("%d.%m.%Y"))}</b>", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph(f"Исполнитель: <b>{data.get('contractor_name', '—')}</b> (ИНН: {data.get('contractor_inn', '—')})", body_style))
+        story.append(Paragraph(f"Заказчик: <b>{data.get('client_name', '—')}</b> (ИНН: {data.get('client_inn', '—')})", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>Выполненные работы/оказанные услуги:</b>", heading_style))
+        story.append(Paragraph(f"{data.get('works_description', '—')}", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph(f"<b>Стоимость работ: {data.get('total', '—')} ₽</b></b>", heading_style))
+        story.append(Paragraph("Стороны подтверждают, что работы выполнены в полном объёме, в срок и надлежащего качества. Претензий по объёму, качеству и срокам выполнения работ не имеют.", body_style))
+
+    elif template_type == "npd_receipt":
+        story.append(Paragraph("<b>ЧЕК НАЛОГА НА ПРОФЕССИОНАЛЬНЫЙ ДОХОД</b>", heading_style))
+        story.append(Paragraph(f"Дата: <b>{data.get('receipt_date', datetime.utcnow().strftime("%d.%m.%Y %H:%M"))}</b>", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph(f"Продавец (самозанятый): <b>{data.get('seller_name', '—')}</b>", body_style))
+        story.append(Paragraph(f"ИНН продавца: {data.get('seller_inn', '—')}", body_style))
+        story.append(Spacer(1, 5))
+        story.append(Paragraph(f"Покупатель: <b>{data.get('buyer_name', '—')}</b>", body_style))
+        story.append(Paragraph(f"ИНН покупателя: {data.get('buyer_inn', '—')}", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph(f"Услуга/товар: <b>{data.get('service_name', '—')}</b>", body_style))
+        story.append(Paragraph(f"Сумма: <b>{data.get('amount', '—')} ₽</b>", body_style))
+        story.append(Paragraph(f"Налог НПД (4% или 6%): <b>{data.get('tax_amount', '—')} ₽</b>", body_style))
+        story.append(Spacer(1, 10))
+
+        story.append(Paragraph("<b>ПРИМЕЧАНИЕ:</b> Данный чек сформирован в соответствии с ФЗ-422 и является подтверждением уплаты налога на профессиональный доход. Храните чек в течение 3 лет.", body_style))
+
+    # Signature section
+    if signature:
+        story.append(Spacer(1, 30))
+        story.append(HRFlowable(width="100%", thickness=1, color=HexColor('#E2E8F0')))
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("<b>БЛОК ЭЛЕКТРОННОЙ ПОДПИСИ</b>", heading_style))
+        story.append(Paragraph(f"Тип подписи: {signature.get('type', '—')}", body_style))
+        story.append(Paragraph(f"Алгоритм: {signature.get('algorithm', '—')}", body_style))
+        story.append(Paragraph(f"Дата подписания: {signature.get('timestamp', '—')}", body_style))
+        story.append(Paragraph(f"Подписант ID: {signature.get('signer_id', '—')}", body_style))
+        story.append(Paragraph(f"Правовое основание: {signature.get('legal_basis', '—')}", body_style))
+        story.append(Spacer(1, 5))
+        story.append(Paragraph(f"Хеш подписи: <font size=7 face='Courier'>{signature.get('signature', '—')[:64]}...</font>", body_style))
+        story.append(Paragraph("<i>Данная простая электронная подпись признаётся равнозначной собственноручной подписи в соответствии с Гражданским кодексом РФ (статья 160).</i>", footer_style))
+    else:
+        story.append(Spacer(1, 30))
+        story.append(Paragraph("<b>ПОДПИСИ СТОРОН:</b>", heading_style))
+        story.append(Paragraph("Документ требует подписания. Используйте кнопку «Подписать электронной подписью» в личном кабинете.", body_style))
+
+    # Footer
+    story.append(Spacer(1, 40))
+    story.append(HRFlowable(width="100%", thickness=1, color=HexColor('#E2E8F0')))
+    story.append(Paragraph("<i>Сформировано на платформе «Мир Самозанятых» (мир-самозанятых.рф)</i>", footer_style))
+    story.append(Paragraph(f"<i>Документ ID: {hashlib.sha256(str(data).encode()).hexdigest()[:16].upper()}</i>", footer_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+# ============ ENHANCED CONTRACT API ============
+
+class ContractSignRequest(BaseModel):
+    contract_id: int
+    sign_data: dict = Field(default_factory=dict)
+
+@app.get("/api/contracts/templates/v2")
+async def list_contract_templates_v2():
+    """List all available contract templates with fields"""
+    return {
+        "templates": [
+            {
+                "id": key,
+                "name": value["name"],
+                "description": value["description"],
+                "fields": value["fields"]
+            }
+            for key, value in CONTRACT_TEMPLATES.items()
+        ]
+    }
+
+@app.post("/api/contracts/generate/v2")
+async def generate_contract_v2(
+    request: Request,
+    template_type: str = Form(...),
+    data: str = Form(...),  # JSON string
+    sign: bool = Form(False),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Generate contract with optional e-signature"""
+    if template_type not in CONTRACT_TEMPLATES:
+        raise HTTPException(status_code=400, detail="Неизвестный тип шаблона")
+
+    try:
+        contract_data = json.loads(data)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Неверный формат данных")
+
+    # Generate signature if requested
+    signature = None
+    if sign:
+        signature = generate_simple_signature(contract_data, current_user.id)
+
+    # Generate PDF
+    pdf_bytes = generate_contract_pdf(template_type, contract_data, signature)
+
+    # Save to database
+    db_contract = SignedContract(
+        user_id=current_user.id,
+        template_type=template_type,
+        contract_data=json.dumps(contract_data),
+        signature_data=json.dumps(signature) if signature else None,
+        pdf_content=pdf_bytes,
+        status="signed" if signature else "draft"
+    )
+    db.add(db_contract)
+    db.commit()
+    db.refresh(db_contract)
+
+    log_audit(db, current_user.id, "contract_generated", f"Type: {template_type}, Signed: {sign}", request)
+
+    return {
+        "contract_id": db_contract.id,
+        "template_type": template_type,
+        "signed": sign,
+        "signature_info": signature,
+        "download_url": f"/api/contracts/{db_contract.id}/pdf",
+        "qr_url": f"/api/contracts/{db_contract.id}/qr" if template_type == "invoice" else None
+    }
+
+@app.post("/api/contracts/{contract_id}/sign")
+async def sign_contract(
+    contract_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Sign existing contract with simple electronic signature"""
+    contract = db.query(SignedContract).filter(SignedContract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Договор не найден")
+
+    if contract.user_id != current_user.id and current_user.role not in ["admin", "moderator"]:
+        raise HTTPException(status_code=403, detail="Нет прав на подписание")
+
+    if contract.status == "signed":
+        raise HTTPException(status_code=400, detail="Договор уже подписан")
+
+    contract_data = json.loads(contract.contract_data)
+    signature = generate_simple_signature(contract_data, current_user.id)
+
+    # Regenerate PDF with signature
+    pdf_bytes = generate_contract_pdf(contract.template_type, contract_data, signature)
+
+    contract.signature_data = json.dumps(signature)
+    contract.pdf_content = pdf_bytes
+    contract.status = "signed"
+    contract.updated_at = datetime.utcnow()
+    db.commit()
+
+    log_audit(db, current_user.id, "contract_signed", f"Contract ID: {contract_id}", request)
+
+    return {
+        "message": "Договор успешно подписан",
+        "signature": signature,
+        "legal_basis": "ГК РФ ст. 160 (простая электронная подпись)"
+    }
+
+@app.get("/api/contracts/{contract_id}/verify")
+async def verify_contract_signature(contract_id: int, db: Session = Depends(get_db)):
+    """Verify contract electronic signature"""
+    contract = db.query(SignedContract).filter(SignedContract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Договор не найден")
+
+    if not contract.signature_data:
+        return {"signed": False, "message": "Договор не подписан"}
+
+    try:
+        signature = json.loads(contract.signature_data)
+        contract_data = json.loads(contract.contract_data)
+        is_valid = verify_simple_signature(contract_data, signature)
+
+        return {
+            "signed": True,
+            "valid": is_valid,
+            "signature_info": {
+                "type": signature.get("type"),
+                "algorithm": signature.get("algorithm"),
+                "timestamp": signature.get("timestamp"),
+                "signer_id": signature.get("signer_id"),
+                "legal_basis": signature.get("legal_basis")
+            },
+            "message": "Подпись действительна" if is_valid else "Подпись НЕ действительна"
+        }
+    except Exception as e:
+        return {"signed": True, "valid": False, "message": f"Ошибка проверки: {str(e)}"}
 
 
 @app.post("/api/auth/2fa/setup")

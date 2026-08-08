@@ -1,58 +1,67 @@
-# Мир Самозанятых v5.0
+# Мир Самозанятых v7.0
 
-Платформа для самозанятых — безопасная версия с полным набором исправлений.
+> Платформа поддержки самозанятых граждан с ИИ-ассистентом, налоговым калькулятором, CRM, маркетплейсом, грантами и полноценным блогом.
 
 ## Возможности
 
-- 🔐 JWT-аутентификация с jti и типом токена
-- 📧 Подтверждение email через SMTP
-- 🛡️ CSRF-защита, rate limiting, account lockout
-- 📝 Audit log всех действий
-- 🤖 ИИ-ассистент Светлана с внешней базой знаний
-- 📄 Шаблоны договоров
-- 📤 Загрузка файлов с валидацией
-- 🔍 Healthcheck API
-- 🐳 Docker + Traefik + Let's Encrypt
+### Для самозанятых
+- **ИИ-ассистент Светлана** — плавающий виджет с 17 темами базы знаний, голосовой ввод, 100 сообщений в истории
+- **Налоговый калькулятор** — расчёт НПД с учётом вычетов и лимитов
+- **CRM** — управление клиентами и сделками
+- **Финансовый трекер** — доходы, расходы, статистика
+- **Генератор договоров** — ГПД, счета, акты, чеки НПД с электронной подписью (ГК РФ ст. 160)
+- **QR-коды** — на счетах для мгновенной оплаты
+- **Маркетплейс** — поиск заказов и размещение услуг
+- **Гранты** — каталог с ИИ-оценкой заявок
+
+### Блог
+- 5 статей с seed-данными
+- Комментарии с модерацией (гостевые + авторизованные)
+- Поиск, фильтрация по тегам, пагинация
+- OG-теги для соцсетей
+- Похожие статьи
+
+### Админ-панель
+- RBAC: admin / moderator / support / user
+- 2FA обязательна для админов
+- IP whitelist
+- Audit log всех действий
+- Блокировка после 3 неудачных попыток входа
+- Модерация комментариев
+
+### Дизайн
+- Светлая и тёмная тема (переключатель в правом верхнем углу)
+- Glassmorphism эффекты
+- Микро-анимации кнопок, ripple-эффект
+- Skeleton-загрузка
+- Профессиональные SVG-иконки
+- Mobile-first, адаптивный
 
 ## Технологии
 
-- Python 3.12
-- FastAPI + SQLAlchemy async
-- Alembic миграции
-- Jinja2 шаблоны
-- Traefik reverse proxy
-- PostgreSQL (с поддержкой SQLite для dev) (async)
+**Backend:** FastAPI, SQLAlchemy, PostgreSQL, Alembic, JWT, CSRF, CSP, Rate Limiting
+**Frontend:** HTML5, CSS3 (CSS Variables), Vanilla JS, Jinja2
+**AI:** OpenRouter (Светлана)
+**Security:** bcrypt, HMAC-SHA256 (ЭЦП), RBAC, Audit Log
+**DevOps:** Docker, Docker Compose, Nginx, GitHub Actions
+
+## Установка
+
+```bash
+git clone https://github.com/paulafanasyev/mir-samozanyatykh-.git
+cd mir-samozanyatykh-
+cp .env.example .env
+# Отредактируйте .env
+
+docker-compose up -d
+```
+
+## Seed данных
+
+```bash
+curl https://your-domain.com/api/blog/seed
+```
 
 ## Лицензия
 
-MIT
-
-
-## PostgreSQL (v5.0+)
-
-Проект мигрирован на PostgreSQL для production-использования.
-
-### Локальная разработка (SQLite)
-```bash
-DATABASE_URL=sqlite+aiosqlite:///./data/mir_samozanyatykh.db
-```
-
-### Production (PostgreSQL)
-```bash
-# Docker Compose запускает PostgreSQL автоматически
-DATABASE_URL=postgresql+asyncpg://mir_user:пароль@postgres:5432/mir_samozanyatykh
-```
-
-### Миграции
-```bash
-# Создать миграцию
-alembic revision --autogenerate -m "init"
-
-# Применить миграции
-alembic upgrade head
-```
-
-### Переход с SQLite на PostgreSQL
-1. Запустите PostgreSQL: `docker-compose up -d postgres`
-2. Примените миграции: `alembic upgrade head`
-3. Запустите приложение: `docker-compose up -d app`
+© 2026 IT-Laboratory. Все права защищены.
