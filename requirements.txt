@@ -26,3 +26,6 @@ psycopg2-binary==2.9.9
 
 pyotp==2.9.0
 qrcode[pil]==7.4.2
+aiohttp>=3.8
+
+celery>=3.8

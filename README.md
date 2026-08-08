@@ -1,65 +1,74 @@
-# Мир Самозанятых v7.0
+# Мир Самозанятых v8.0
 
-> Платформа поддержки самозанятых граждан с ИИ-ассистентом, налоговым калькулятором, CRM, маркетплейсом, грантами и полноценным блогом.
+> Платформа поддержки самозанятых граждан с ИИ-ассистентом, налоговым калькулятором, CRM, маркетплейсом, грантами, блогом и real-time уведомлениями.
 
 ## Возможности
 
 ### Для самозанятых
-- **ИИ-ассистент Светлана** — плавающий виджет с 17 темами базы знаний, голосовой ввод, 100 сообщений в истории
-- **Налоговый калькулятор** — расчёт НПД с учётом вычетов и лимитов
-- **CRM** — управление клиентами и сделками
-- **Финансовый трекер** — доходы, расходы, статистика
-- **Генератор договоров** — ГПД, счета, акты, чеки НПД с электронной подписью (ГК РФ ст. 160)
-- **QR-коды** — на счетах для мгновенной оплаты
-- **Маркетплейс** — поиск заказов и размещение услуг
-- **Гранты** — каталог с ИИ-оценкой заявок
+- **ИИ-ассистент Светлана** — плавающий виджет, 17 тем, голосовой ввод, история
+- **Налоговый калькулятор** — НПД с учётом вычетов, лимитов, проверка ИНН
+- **CRM** — клиенты, сделки, задачи
+- **Финансовый трекер** — доходы/расходы, графики, CBR курсы валют
+- **Генератор договоров** — ГПД, счета, акты, чеки НПД + ЭЦП (ГК РФ ст. 160) + QR-код
+- **Маркетплейс** — поиск заказов, размещение услуг
+- **Гранты** — каталог с ИИ-оценкой
+- **Блог** — статьи, комментарии, модерация, OG-теги, похожие статьи
 
-### Блог
-- 5 статей с seed-данными
-- Комментарии с модерацией (гостевые + авторизованные)
-- Поиск, фильтрация по тегам, пагинация
-- OG-теги для соцсетей
-- Похожие статьи
+### Технологии v8.0
+- **Backend:** FastAPI, SQLAlchemy, PostgreSQL, Alembic
+- **Async:** Celery + Redis для фоновых задач
+- **Real-time:** WebSocket уведомления
+- **AI:** OpenRouter (Светлана)
+- **Payments:** YooKassa интеграция
+- **SMS:** SMS.ru интеграция
+- **Finance:** CBR (ЦБ РФ) курсы валют с кэшированием
+- **Security:** JWT, CSRF, CSP, Rate Limiting, RBAC, Audit Log, IP Whitelist
+- **DevOps:** Docker, Docker Compose, Nginx
 
-### Админ-панель
-- RBAC: admin / moderator / support / user
-- 2FA обязательна для админов
-- IP whitelist
-- Audit log всех действий
-- Блокировка после 3 неудачных попыток входа
-- Модерация комментариев
-
-### Дизайн
-- Светлая и тёмная тема (переключатель в правом верхнем углу)
-- Glassmorphism эффекты
-- Микро-анимации кнопок, ripple-эффект
-- Skeleton-загрузка
-- Профессиональные SVG-иконки
-- Mobile-first, адаптивный
-
-## Технологии
-
-**Backend:** FastAPI, SQLAlchemy, PostgreSQL, Alembic, JWT, CSRF, CSP, Rate Limiting
-**Frontend:** HTML5, CSS3 (CSS Variables), Vanilla JS, Jinja2
-**AI:** OpenRouter (Светлана)
-**Security:** bcrypt, HMAC-SHA256 (ЭЦП), RBAC, Audit Log
-**DevOps:** Docker, Docker Compose, Nginx, GitHub Actions
-
-## Установка
+## Быстрый старт
 
 ```bash
 git clone https://github.com/paulafanasyev/mir-samozanyatykh-.git
 cd mir-samozanyatykh-
 cp .env.example .env
-# Отредактируйте .env
-
+# Настройте .env (см. ниже)
 docker-compose up -d
 ```
 
-## Seed данных
+## Переменные окружения (.env)
+
+```env
+# Database
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost/mir_samozanyatykh
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Security
+SECRET_KEY=your-64-char-hex-key
+
+# AI (OpenRouter)
+OPENROUTER_API_KEY=sk-or-v1-...
+
+# Payments (YooKassa)
+YOOKASSA_SHOP_ID=...
+YOOKASSA_SECRET_KEY=...
+
+# SMS (SMS.ru)
+SMS_API_KEY=...
+
+# Email (SMTP)
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=465
+SMTP_USER=...
+SMTP_PASS=...
+```
+
+## Celery (фоновые задачи)
 
 ```bash
-curl https://your-domain.com/api/blog/seed
+celery -A server.celery_app worker --loglevel=info
+celery -A server.celery_app beat --loglevel=info
 ```
 
 ## Лицензия

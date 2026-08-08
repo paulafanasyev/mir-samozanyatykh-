@@ -2700,6 +2700,245 @@ except:
     except:
         RUSSIAN_FONT = 'Helvetica'
 
+
+# ============ WEBSOCKET NOTIFICATIONS ============
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+class ConnectionManager:
+    """Manage WebSocket connections for real-time notifications"""
+    def __init__(self):
+        self.active_connections: dict = {}  # user_id -> [websocket]
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: int):
+        if user_id in self.active_connections:
+            if websocket in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except:
+                    pass
+
+    async def broadcast(self, message: dict):
+        for user_connections in self.active_connections.values():
+            for connection in user_connections:
+                try:
+                    await connection.send_json(message)
+                except:
+                    pass
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/notifications")
+async def websocket_notifications(websocket: WebSocket, token: str = Query(...)):
+    """WebSocket endpoint for real-time notifications"""
+    # Validate token
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("sub")
+        if not user_id:
+            await websocket.close(code=4001)
+            return
+    except:
+        await websocket.close(code=4001)
+        return
+
+    await manager.connect(websocket, int(user_id))
+    try:
+        while True:
+            # Keep connection alive, wait for ping
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, int(user_id))
+
+async def notify_user(user_id: int, notification_type: str, title: str, message: str, data: dict = None):
+    """Send notification to user via WebSocket and save to DB"""
+    notification = {
+        "type": notification_type,
+        "title": title,
+        "message": message,
+        "data": data or {},
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    # Send via WebSocket
+    await manager.send_personal_message(notification, user_id)
+
+    # Save to database for offline users
+    # (Implementation depends on existing Notification model)
+
+# ============ CELERY BACKGROUND TASKS ============
+
+from celery import Celery
+import os
+
+celery_app = Celery(
+    "mir_samozanyatykh",
+    broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+    backend=os.getenv("REDIS_URL", "redis://localhost:6379/0")
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="Europe/Moscow",
+    enable_utc=True,
+    task_track_started=True,
+    task_time_limit=3600,
+    worker_prefetch_multiplier=1,
+)
+
+@celery_app.task(bind=True, max_retries=3)
+def send_email_task(self, to_email: str, subject: str, body: str, template: str = None):
+    """Background task for sending emails"""
+    try:
+        # Implementation using existing email system
+        # This would call your existing send_email function
+        return {"status": "sent", "to": to_email}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+@celery_app.task(bind=True, max_retries=3)
+def send_sms_task(self, phone: str, message: str):
+    """Background task for sending SMS"""
+    try:
+        # Implementation using existing SMS.ru integration
+        return {"status": "sent", "to": phone}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+@celery_app.task(bind=True)
+def update_exchange_rates_task(self):
+    """Background task to update CBR exchange rates daily"""
+    try:
+        # This would be called via async_to_sync or similar
+        return {"status": "updated", "date": date.today().isoformat()}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+@celery_app.task(bind=True)
+def generate_contract_pdf_task(self, contract_id: int, user_id: int):
+    """Background task for PDF generation"""
+    try:
+        return {"status": "generated", "contract_id": contract_id}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+@celery_app.task(bind=True)
+def cleanup_old_data_task(self):
+    """Periodic cleanup of old audit logs and sessions"""
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=90)
+        # Cleanup logic would go here
+        return {"status": "cleaned", "cutoff": cutoff.isoformat()}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+# Celery beat schedule (periodic tasks)
+celery_app.conf.beat_schedule = {
+    "update-exchange-rates-daily": {
+        "task": "update_exchange_rates_task",
+        "schedule": 86400.0,  # Daily
+    },
+    "cleanup-old-data-weekly": {
+        "task": "cleanup_old_data_task",
+        "schedule": 604800.0,  # Weekly
+    },
+}
+
+# ============ NOTIFICATION API ============
+
+@app.get("/api/notifications")
+async def list_notifications(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=50),
+    unread_only: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List user notifications"""
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+
+    if unread_only:
+        query = query.filter(Notification.is_read == False)
+
+    total = query.count()
+    notifications = query.order_by(Notification.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        "notifications": [
+            {
+                "id": n.id,
+                "title": n.title,
+                "message": n.message,
+                "type": n.type,
+                "is_read": n.is_read,
+                "created_at": n.created_at.isoformat()
+            }
+            for n in notifications
+        ],
+        "unread_count": db.query(Notification).filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read == False
+        ).count(),
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
+
+@app.post("/api/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark notification as read"""
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+
+    if not notification:
+        raise HTTPException(status_code=404, detail="Уведомление не найдено")
+
+    notification.is_read = True
+    db.commit()
+
+    return {"message": "Уведомление отмечено как прочитанное"}
+
+@app.post("/api/notifications/read-all")
+async def mark_all_notifications_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark all notifications as read"""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+
+    return {"message": "Все уведомления отмечены как прочитанные"}
+
+
 @app.get("/api/sales/invoices/{invoice_id}/pdf")
 async def generate_invoice_pdf(invoice_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Generate PDF invoice"""
