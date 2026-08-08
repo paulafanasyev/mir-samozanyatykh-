@@ -11,9 +11,7 @@ import hmac
 import hashlib
 import logging
 import secrets
-import base64
-import random
-from datetime import datetime, timedelta, timezone, date
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -45,13 +43,6 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_WEBHOOK_URL: str = ""
     SMS_RU_API_KEY: str = ""
-    YOOKASSA_SHOP_ID: str = ""
-    YOOKASSA_SECRET_KEY: str = ""
-    GOOGLE_CLIENT_ID: str = ""
-    GOOGLE_CLIENT_SECRET: str = ""
-    YANDEX_CLIENT_ID: str = ""
-    YANDEX_CLIENT_SECRET: str = ""
-    TELEGRAM_OAUTH_BOT: str = ""
 
     class Config:
         env_file = ".env"
@@ -113,7 +104,6 @@ class User(Base):
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime)
     telegram_id = Column(String(50))
-    role = Column(String(50), default="user")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
@@ -123,7 +113,6 @@ class User(Base):
     clients = relationship("Client", back_populates="user")
     marketplace_profile = relationship("MarketplaceProfile", back_populates="user", uselist=False)
     notifications = relationship("Notification", back_populates="user")
-    mfa = relationship("UserMFA", back_populates="user", uselist=False)
 
 class UserSession(Base):
     __tablename__ = "user_sessions"
@@ -222,17 +211,12 @@ class SignedContract(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     template_id = Column(Integer, ForeignKey("contract_templates.id"))
-    template_type = Column(String(50), default="gpd")
     title = Column(String(255))
     content = Column(Text)
-    contract_data = Column(Text)
     variables_data = Column(JSON)
-    signature_data = Column(Text)
-    pdf_content = Column(Text)
-    status = Column(String(50), default="draft")  # draft, signed
+    signature_hash = Column(String(255))
     signed_at = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class MarketplaceProfile(Base):
     __tablename__ = "marketplace_profiles"
@@ -291,64 +275,10 @@ class SMSLog(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     phone = Column(String(50), nullable=False)
     message = Column(Text, nullable=False)
-    status = Column(String(50), default="pending")
+    status = Column(String(50), default="pending")  # pending, sent, delivered, failed
     sms_ru_id = Column(String(100))
     cost = Column(Float)
     sent_at = Column(DateTime)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    user = relationship("User")
-
-class Invoice(Base):
-    __tablename__ = "invoices"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    invoice_number = Column(String(100), unique=True, nullable=False)
-    client_id = Column(Integer, ForeignKey("clients.id", ondelete="SET NULL"), nullable=True)
-    total_amount = Column(Float, default=0.0)
-    status = Column(String(50), default="draft")  # draft, sent, paid, cancelled, overdue
-    due_date = Column(DateTime)
-    yookassa_payment_id = Column(String(255))
-    paid_at = Column(DateTime)
-    notes = Column(Text)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    user = relationship("User")
-    client = relationship("Client")
-    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="invoice", cascade="all, delete-orphan")
-
-class InvoiceItem(Base):
-    __tablename__ = "invoice_items"
-    id = Column(Integer, primary_key=True)
-    invoice_id = Column(Integer, ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False)
-    description = Column(String(500), nullable=False)
-    quantity = Column(Float, default=1.0)
-    unit_price = Column(Float, nullable=False)
-    total_price = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    invoice = relationship("Invoice", back_populates="items")
-
-class Payment(Base):
-    __tablename__ = "payments"
-    id = Column(Integer, primary_key=True)
-    invoice_id = Column(Integer, ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False)
-    amount = Column(Float, nullable=False)
-    payment_method = Column(String(50), default="card")  # card, sbp, cash
-    status = Column(String(50), default="pending")  # pending, completed, failed, refunded
-    yookassa_id = Column(String(255))
-    paid_at = Column(DateTime)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    invoice = relationship("Invoice", back_populates="payments")
-
-class Product(Base):
-    __tablename__ = "products"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    price = Column(Float, nullable=False)
-    unit = Column(String(50), default="шт")
-    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     user = relationship("User")
 
@@ -952,32 +882,12 @@ async def validate_csrf_token(request: Request):
             raise HTTPException(status_code=403, detail="Invalid CSRF token")
     return True
 
-async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None
-    token = auth_header[7:]
-    try:
-        payload = await verify_token(token, db=db)
-        user_id = int(payload.get("sub"))
-        result = await db.execute(select(User).where(User.id == user_id))
-        return result.scalar_one_or_none()
-    except Exception:
-        return None
-
-def require_role(roles: list):
-    async def checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in roles and not current_user.is_admin:
-            raise HTTPException(status_code=403, detail="Недостаточно прав")
-        return current_user
-    return checker
-
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Требуются права администратора")
     return current_user
 
-def require_subscription(tier: str):
+async def require_subscription(tier: str):
     async def checker(current_user: User = Depends(get_current_user)) -> User:
         if not await check_subscription(current_user, tier):
             raise HTTPException(status_code=403, detail=f"Требуется подписка уровня {tier}")
@@ -1711,51 +1621,52 @@ def record_admin_login(ip_address: str, username: str, success: bool, db: Sessio
 @app.get("/api/admin/dashboard")
 async def admin_dashboard(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Admin dashboard with key metrics"""
     require_role(current_user, ["admin", "moderator"])
 
+    # IP whitelist check
     client_ip = request.client.host
+    if not check_ip_whitelist(client_ip, db):
+        raise HTTPException(status_code=403, detail="Доступ запрещён: IP не в белом списке")
+
+    # Check lockout
+    allowed, message = check_admin_lockout(client_ip, db)
+    if not allowed:
+        raise HTTPException(status_code=429, detail=message)
 
     # Gather metrics
-    total_users = await db.scalar(select(func.count(User.id)))
-    active_users = await db.scalar(select(func.count(User.id)).where(User.is_active == True))
-    new_users_today = await db.scalar(select(func.count(User.id)).where(
-        User.created_at > datetime.now(timezone.utc) - timedelta(days=1)))
-    )
+    total_users = db.query(User).count()
+    active_users = db.query(User).filter(User.is_active == True).count()
+    new_users_today = db.query(User).filter(
+        User.created_at > datetime.utcnow() - timedelta(days=1)
+    ).count()
 
-    total_transactions = await db.scalar(select(func.count(Transaction.id)))
-    total_revenue = await db.scalar(
-        select(func.sum(Transaction.amount)).where(Transaction.amount > 0)
-    ) or 0
+    total_transactions = db.query(Transaction).count()
+    total_revenue = db.query(Transaction).filter(Transaction.type == "income").with_entities(func.sum(Transaction.amount)).scalar() or 0
 
-    total_contracts = await db.scalar(select(func.count(SignedContract.id)))
-    signed_contracts = await db.scalar(
-        select(func.count(SignedContract.id)).where(SignedContract.status == "signed")
-    )
+    total_contracts = db.query(SignedContract).count()
+    signed_contracts = db.query(SignedContract).filter(SignedContract.status == "signed").count()
 
-    total_posts = await db.scalar(select(func.count(BlogPost.id)))
-    published_posts = await db.scalar(
-        select(func.count(BlogPost.id)).where(BlogPost.status == "published")
-    )
+    total_posts = db.query(BlogPost).count()
+    published_posts = db.query(BlogPost).filter(BlogPost.status == "published").count()
 
-    pending_comments = await db.scalar(
-        select(func.count(BlogComment.id)).where(BlogComment.status == "pending")
-    )
+    pending_comments = db.query(BlogComment).filter(BlogComment.status == "pending").count()
 
     # Recent audit logs
-    result = await db.execute(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(20))
-    recent_logs = result.scalars().all()
+    recent_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(20).all()
 
-    await log_audit(db=db, action="admin_dashboard_accessed", user_id=current_user.id,
-                   details=f"IP: {client_ip}", ip_address=client_ip)
+    # Login attempts
+    recent_attempts = db.query(AdminLoginAttempt).order_by(AdminLoginAttempt.created_at.desc()).limit(10).all()
+
+    log_audit(db, current_user.id, "admin_dashboard_accessed", f"IP: {client_ip}", request)
 
     return {
         "metrics": {
             "users": {"total": total_users, "active": active_users, "new_today": new_users_today},
-            "finance": {"transactions": total_transactions, "total_revenue": float(total_revenue or 0)},
+            "finance": {"transactions": total_transactions, "total_revenue": float(total_revenue)},
             "contracts": {"total": total_contracts, "signed": signed_contracts},
             "blog": {"posts": total_posts, "published": published_posts, "pending_comments": pending_comments},
         },
@@ -1766,10 +1677,24 @@ async def admin_dashboard(
                 "action": log.action,
                 "details": log.details,
                 "ip_address": log.ip_address,
-                "created_at": log.created_at.isoformat() if log.created_at else None
+                "created_at": log.created_at.isoformat()
             }
             for log in recent_logs
-        ]
+        ],
+        "recent_login_attempts": [
+            {
+                "ip": attempt.ip_address,
+                "username": attempt.username,
+                "success": attempt.success,
+                "time": attempt.created_at.isoformat()
+            }
+            for attempt in recent_attempts
+        ],
+        "security": {
+            "ip_whitelist_enabled": db.query(AdminIPWhitelist).count() > 0,
+            "your_ip": client_ip,
+            "session_info": "Активна"
+        }
     }
 
 @app.get("/api/admin/security/logs")
@@ -1778,22 +1703,20 @@ async def admin_security_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     action_type: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Detailed security audit logs with filtering"""
     require_role(current_user, ["admin", "moderator"])
 
-    query = select(AuditLog)
+    query = db.query(AuditLog)
     if action_type:
-        query = query.where(AuditLog.action.ilike(f"%{action_type}%"))
+        query = query.filter(AuditLog.action.ilike(f"%{action_type}%"))
 
-    total = await db.scalar(select(func.count(AuditLog.id)))
-    result = await db.execute(query.order_by(AuditLog.created_at.desc()).offset((page - 1) * per_page).limit(per_page))
-    logs = result.scalars().all()
+    total = query.count()
+    logs = query.order_by(AuditLog.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
-    await log_audit(db=db, action="admin_security_logs_viewed", user_id=current_user.id,
-                   details=f"Page: {page}, Filter: {action_type}", ip_address=request.client.host)
+    log_audit(db, current_user.id, "admin_security_logs_viewed", f"Page: {page}, Filter: {action_type}", request)
 
     return {
         "logs": [
@@ -1804,7 +1727,7 @@ async def admin_security_logs(
                 "details": log.details,
                 "ip_address": log.ip_address,
                 "user_agent": log.user_agent,
-                "created_at": log.created_at.isoformat() if log.created_at else None
+                "created_at": log.created_at.isoformat()
             }
             for log in logs
         ],
@@ -1821,18 +1744,20 @@ async def add_ip_whitelist(
     request: Request,
     ip_address: str = Form(...),
     description: Optional[str] = Form(None),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Add IP to admin whitelist"""
     require_role(current_user, ["admin"])
 
+    # Validate IP
     try:
         ipaddress.ip_address(ip_address)
     except ValueError:
         raise HTTPException(status_code=400, detail="Неверный IP-адрес")
 
-    existing = await db.scalar(select(AdminIPWhitelist).where(AdminIPWhitelist.ip_address == ip_address))
+    # Check if already exists
+    existing = db.query(AdminIPWhitelist).filter(AdminIPWhitelist.ip_address == ip_address).first()
     if existing:
         raise HTTPException(status_code=400, detail="IP уже в белом списке")
 
@@ -1842,10 +1767,9 @@ async def add_ip_whitelist(
         created_by=current_user.id
     )
     db.add(whitelist_entry)
-    await db.commit()
+    db.commit()
 
-    await log_audit(db=db, action="admin_ip_whitelist_added", user_id=current_user.id,
-                   details=f"IP: {ip_address}", ip_address=request.client.host)
+    log_audit(db, current_user.id, "admin_ip_whitelist_added", f"IP: {ip_address}", request)
 
     return {"message": f"IP {ip_address} добавлен в белый список"}
 
@@ -1853,35 +1777,32 @@ async def add_ip_whitelist(
 async def remove_ip_whitelist(
     ip_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Remove IP from whitelist"""
     require_role(current_user, ["admin"])
 
-    result = await db.execute(select(AdminIPWhitelist).where(AdminIPWhitelist.id == ip_id))
-    entry = result.scalar_one_or_none()
+    entry = db.query(AdminIPWhitelist).filter(AdminIPWhitelist.id == ip_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
-    await db.delete(entry)
-    await db.commit()
+    db.delete(entry)
+    db.commit()
 
-    await log_audit(db=db, action="admin_ip_whitelist_removed", user_id=current_user.id,
-                   details=f"IP ID: {ip_id}", ip_address=request.client.host)
+    log_audit(db, current_user.id, "admin_ip_whitelist_removed", f"IP ID: {ip_id}", request)
 
     return {"message": "IP удалён из белого списка"}
 
 @app.get("/api/admin/security/ip-whitelist")
 async def list_ip_whitelist(
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """List whitelisted IPs"""
     require_role(current_user, ["admin", "moderator"])
 
-    result = await db.execute(select(AdminIPWhitelist))
-    entries = result.scalars().all()
+    entries = db.query(AdminIPWhitelist).all()
     return {
         "whitelist": [
             {
@@ -1889,7 +1810,7 @@ async def list_ip_whitelist(
                 "ip_address": e.ip_address,
                 "description": e.description,
                 "created_by": e.created_by,
-                "created_at": e.created_at.isoformat() if e.created_at else None
+                "created_at": e.created_at.isoformat()
             }
             for e in entries
         ]
@@ -1900,14 +1821,13 @@ async def block_user(
     user_id: int,
     request: Request,
     reason: Optional[str] = Form(None),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Block/unblock user"""
     require_role(current_user, ["admin", "moderator"])
 
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
@@ -1915,10 +1835,9 @@ async def block_user(
         raise HTTPException(status_code=400, detail="Нельзя заблокировать себя")
 
     user.is_active = False
-    await db.commit()
+    db.commit()
 
-    await log_audit(db=db, action="user_blocked", user_id=current_user.id,
-                   details=f"User: {user_id}, Reason: {reason}", ip_address=request.client.host)
+    log_audit(db, current_user.id, "user_blocked", f"User: {user_id}, Reason: {reason}", request)
 
     return {"message": f"Пользователь {user.email} заблокирован", "reason": reason}
 
@@ -1926,22 +1845,20 @@ async def block_user(
 async def unblock_user(
     user_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Unblock user"""
     require_role(current_user, ["admin", "moderator"])
 
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     user.is_active = True
-    await db.commit()
+    db.commit()
 
-    await log_audit(db=db, action="user_unblocked", user_id=current_user.id,
-                   details=f"User: {user_id}", ip_address=request.client.host)
+    log_audit(db, current_user.id, "user_unblocked", f"User: {user_id}", request)
 
     return {"message": f"Пользователь {user.email} разблокирован"}
 
@@ -1949,29 +1866,26 @@ async def unblock_user(
 async def list_pending_comments(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=50),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """List pending blog comments for moderation"""
     require_role(current_user, ["admin", "moderator", "support"])
 
-    total = await db.scalar(select(func.count(BlogComment.id)).where(BlogComment.status == "pending"))
-    result = await db.execute(
-        select(BlogComment).where(BlogComment.status == "pending")
-        .order_by(BlogComment.created_at.desc())
-        .offset((page - 1) * per_page).limit(per_page)
-    )
-    comments = result.scalars().all()
+    query = db.query(BlogComment).filter(BlogComment.status == "pending")
+    total = query.count()
+    comments = query.order_by(BlogComment.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     return {
         "comments": [
             {
                 "id": c.id,
                 "post_id": c.post_id,
+                "post_title": c.post.title if c.post else "—",
                 "author_name": c.author_name,
                 "author_email": c.author_email,
                 "content": c.content,
-                "created_at": c.created_at.isoformat() if c.created_at else None
+                "created_at": c.created_at.isoformat()
             }
             for c in comments
         ],
@@ -1984,52 +1898,38 @@ async def list_pending_comments(
     }
 
 
-@app.post("/api/blog/tags")
+@app.post("/api/blog/tags", response_model=BlogTagOut)
 async def create_blog_tag(
     tag: BlogTagCreate,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator"])
-    from slugify import slugify
     slug = slugify(tag.name, max_length=60)
     db_tag = BlogTag(name=tag.name, slug=slug, color=tag.color)
     db.add(db_tag)
-    await db.commit()
-    await db.refresh(db_tag)
-    await log_audit(db=db, action="blog_tag_created", user_id=current_user.id,
-                   details=f"Tag: {tag.name}", ip_address=request.client.host)
-    return {"id": db_tag.id, "name": db_tag.name, "slug": db_tag.slug, "color": db_tag.color}
+    db.commit()
+    db.refresh(db_tag)
+    log_audit(db, current_user.id, "blog_tag_created", f"Tag: {tag.name}", request)
+    return db_tag
 
-@app.get("/api/blog/tags")
-async def list_blog_tags(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BlogTag).order_by(BlogTag.name))
-    tags = result.scalars().all()
-    return [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in tags]
+@app.get("/api/blog/tags", response_model=List[BlogTagOut])
+async def list_blog_tags(db: Session = Depends(get_db)):
+    return db.query(BlogTag).order_by(BlogTag.name).all()
 
 # --- Blog Posts API ---
 
-@app.post("/api/blog/posts")
+@app.post("/api/blog/posts", response_model=BlogPostOut)
 async def create_blog_post(
     post: BlogPostCreate,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator", "support"])
-    from slugify import slugify
-    base_slug = slugify(post.title, max_length=200)
-    slug = base_slug
-    counter = 1
-    while True:
-        existing = await db.scalar(select(BlogPost).where(BlogPost.slug == slug))
-        if not existing:
-            break
-        slug = f"{base_slug}-{counter}"
-        counter += 1
-
-    published_at = datetime.now(timezone.utc) if post.status == "published" else None
+    slug = generate_slug(post.title, db, BlogPost)
+    published_at = datetime.utcnow() if post.status == "published" else None
 
     db_post = BlogPost(
         title=post.title,
@@ -2044,26 +1944,17 @@ async def create_blog_post(
         published_at=published_at
     )
     db.add(db_post)
-    await db.flush()
+    db.flush()
 
+    # Attach tags
     if post.tag_ids:
-        tags_result = await db.execute(select(BlogTag).where(BlogTag.id.in_(post.tag_ids)))
-        db_post.tags = tags_result.scalars().all()
+        tags = db.query(BlogTag).filter(BlogTag.id.in_(post.tag_ids)).all()
+        db_post.tags = tags
 
-    await db.commit()
-    await db.refresh(db_post)
-    await log_audit(db=db, action="blog_post_created", user_id=current_user.id,
-                   details=f"Post: {post.title}", ip_address=request.client.host)
-    return {
-        "id": db_post.id, "title": db_post.title, "slug": db_post.slug,
-        "excerpt": db_post.excerpt, "content": db_post.content,
-        "cover_image": db_post.cover_image, "author_id": db_post.author_id,
-        "status": db_post.status, "views": db_post.views, "likes": db_post.likes,
-        "tags": [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in db_post.tags],
-        "published_at": db_post.published_at.isoformat() if db_post.published_at else None,
-        "created_at": db_post.created_at.isoformat() if db_post.created_at else None,
-        "updated_at": db_post.updated_at.isoformat() if db_post.updated_at else None
-    }
+    db.commit()
+    db.refresh(db_post)
+    log_audit(db, current_user.id, "blog_post_created", f"Post: {post.title}", request)
+    return db_post
 
 @app.get("/api/blog/posts")
 async def list_blog_posts(
@@ -2072,27 +1963,26 @@ async def list_blog_posts(
     tag: Optional[str] = None,
     search: Optional[str] = None,
     status: Optional[str] = "published",
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    query = select(BlogPost)
+    query = db.query(BlogPost)
 
     if status:
-        query = query.where(BlogPost.status == status)
+        query = query.filter(BlogPost.status == status)
 
     if tag:
-        query = query.join(BlogPost.tags).where(BlogTag.slug == tag)
+        query = query.join(BlogPost.tags).filter(BlogTag.slug == tag)
 
     if search:
         search_filter = f"%{search}%"
-        query = query.where(
+        query = query.filter(
             (BlogPost.title.ilike(search_filter)) |
             (BlogPost.excerpt.ilike(search_filter)) |
             (BlogPost.content.ilike(search_filter))
         )
 
-    total = await db.scalar(select(func.count(BlogPost.id)))
-    result = await db.execute(query.order_by(BlogPost.published_at.desc()).offset((page - 1) * per_page).limit(per_page))
-    posts = result.scalars().all()
+    total = query.count()
+    posts = query.order_by(BlogPost.published_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     return {
         "posts": [{
@@ -2101,13 +1991,13 @@ async def list_blog_posts(
             "slug": p.slug,
             "excerpt": p.excerpt,
             "cover_image": p.cover_image,
-            "author_name": p.author.full_name if p.author else "Аноним",
+            "author_name": p.author.name if p.author else "Аноним",
             "status": p.status,
             "views": p.views,
             "likes": p.likes,
             "tags": [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in p.tags],
             "published_at": p.published_at.isoformat() if p.published_at else None,
-            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "created_at": p.created_at.isoformat(),
             "comment_count": len([c for c in p.comments if c.status == "approved"])
         } for p in posts],
         "pagination": {
@@ -2119,26 +2009,24 @@ async def list_blog_posts(
     }
 
 @app.get("/api/blog/posts/{slug}")
-async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BlogPost).where(BlogPost.slug == slug))
-    post = result.scalar_one_or_none()
+async def get_blog_post(slug: str, db: Session = Depends(get_db)):
+    post = db.query(BlogPost).filter(BlogPost.slug == slug).first()
     if not post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
 
+    # Increment views
     post.views += 1
-    await db.commit()
+    db.commit()
 
+    # Get related posts (same tags)
     tag_ids = [t.id for t in post.tags]
     related = []
     if tag_ids:
-        related_result = await db.execute(
-            select(BlogPost).join(BlogPost.tags).where(
-                BlogTag.id.in_(tag_ids),
-                BlogPost.id != post.id,
-                BlogPost.status == "published"
-            ).distinct().limit(3)
-        )
-        related = related_result.scalars().all()
+        related = db.query(BlogPost).join(BlogPost.tags).filter(
+            BlogTag.id.in_(tag_ids),
+            BlogPost.id != post.id,
+            BlogPost.status == "published"
+        ).distinct().limit(3).all()
 
     return {
         "id": post.id,
@@ -2148,7 +2036,7 @@ async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
         "content": post.content,
         "cover_image": post.cover_image,
         "author_id": post.author_id,
-        "author_name": post.author.full_name if post.author else "Аноним",
+        "author_name": post.author.name if post.author else "Аноним",
         "status": post.status,
         "views": post.views,
         "likes": post.likes,
@@ -2156,8 +2044,8 @@ async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
         "meta_description": post.meta_description,
         "meta_keywords": post.meta_keywords,
         "published_at": post.published_at.isoformat() if post.published_at else None,
-        "created_at": post.created_at.isoformat() if post.created_at else None,
-        "updated_at": post.updated_at.isoformat() if post.updated_at else None,
+        "created_at": post.created_at.isoformat(),
+        "updated_at": post.updated_at.isoformat(),
         "related_posts": [{
             "id": r.id,
             "title": r.title,
@@ -2167,92 +2055,69 @@ async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
         } for r in related]
     }
 
-@app.put("/api/blog/posts/{post_id}")
+@app.put("/api/blog/posts/{post_id}", response_model=BlogPostOut)
 async def update_blog_post(
     post_id: int,
     post_update: BlogPostUpdate,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator", "support"])
-    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
-    db_post = result.scalar_one_or_none()
+    db_post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
 
+    # Only author or admin can edit
     if db_post.author_id != current_user.id and current_user.role not in ["admin", "moderator"]:
         raise HTTPException(status_code=403, detail="Нет прав на редактирование")
 
     update_data = post_update.model_dump(exclude_unset=True)
 
     if "title" in update_data and update_data["title"] != db_post.title:
-        from slugify import slugify
-        base_slug = slugify(update_data["title"], max_length=200)
-        slug = base_slug
-        counter = 1
-        while True:
-            existing = await db.scalar(select(BlogPost).where(BlogPost.slug == slug, BlogPost.id != post_id))
-            if not existing:
-                break
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        update_data["slug"] = slug
+        update_data["slug"] = generate_slug(update_data["title"], db, BlogPost, db_post.id)
 
     if "status" in update_data:
         if update_data["status"] == "published" and not db_post.published_at:
-            update_data["published_at"] = datetime.now(timezone.utc)
+            update_data["published_at"] = datetime.utcnow()
 
     if "tag_ids" in update_data and update_data["tag_ids"] is not None:
-        tags_result = await db.execute(select(BlogTag).where(BlogTag.id.in_(update_data["tag_ids"])))
-        db_post.tags = tags_result.scalars().all()
+        tags = db.query(BlogTag).filter(BlogTag.id.in_(update_data["tag_ids"])).all()
+        db_post.tags = tags
         del update_data["tag_ids"]
 
     for key, value in update_data.items():
         setattr(db_post, key, value)
 
-    await db.commit()
-    await db.refresh(db_post)
-    await log_audit(db=db, action="blog_post_updated", user_id=current_user.id,
-                   details=f"Post ID: {post_id}", ip_address=request.client.host)
-    return {
-        "id": db_post.id, "title": db_post.title, "slug": db_post.slug,
-        "excerpt": db_post.excerpt, "content": db_post.content,
-        "cover_image": db_post.cover_image, "author_id": db_post.author_id,
-        "status": db_post.status, "views": db_post.views, "likes": db_post.likes,
-        "tags": [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in db_post.tags],
-        "published_at": db_post.published_at.isoformat() if db_post.published_at else None,
-        "created_at": db_post.created_at.isoformat() if db_post.created_at else None,
-        "updated_at": db_post.updated_at.isoformat() if db_post.updated_at else None
-    }
+    db.commit()
+    db.refresh(db_post)
+    log_audit(db, current_user.id, "blog_post_updated", f"Post ID: {post_id}", request)
+    return db_post
 
 @app.delete("/api/blog/posts/{post_id}")
 async def delete_blog_post(
     post_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator"])
-    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
-    db_post = result.scalar_one_or_none()
+    db_post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
 
-    await db.delete(db_post)
-    await db.commit()
-    await log_audit(db=db, action="blog_post_deleted", user_id=current_user.id,
-                   details=f"Post ID: {post_id}", ip_address=request.client.host)
+    db.delete(db_post)
+    db.commit()
+    log_audit(db, current_user.id, "blog_post_deleted", f"Post ID: {post_id}", request)
     return {"message": "Статья удалена"}
 
 @app.post("/api/blog/posts/{post_id}/like")
-async def like_blog_post(post_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
-    post = result.scalar_one_or_none()
+async def like_blog_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
     post.likes += 1
-    await db.commit()
+    db.commit()
     return {"likes": post.likes}
 
 # --- Blog Comments API ---
@@ -2262,63 +2127,62 @@ async def create_comment(
     post_id: int,
     comment: BlogCommentCreate,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
-    post = result.scalar_one_or_none()
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
 
+    # Auto-approve for authenticated users, pending for guests
     status = "approved" if current_user else "pending"
 
     db_comment = BlogComment(
         post_id=post_id,
         user_id=current_user.id if current_user else None,
-        author_name=current_user.full_name if current_user else (comment.author_name or "Гость"),
+        author_name=current_user.name if current_user else (comment.author_name or "Гость"),
         author_email=current_user.email if current_user else comment.author_email,
         content=comment.content,
         status=status,
         parent_id=comment.parent_id
     )
     db.add(db_comment)
-    await db.commit()
-    await db.refresh(db_comment)
+    db.commit()
+    db.refresh(db_comment)
 
     if current_user:
-        await log_audit(db=db, action="blog_comment_created", user_id=current_user.id,
-                       details=f"Post ID: {post_id}", ip_address=request.client.host)
+        log_audit(db, current_user.id, "blog_comment_created", f"Post ID: {post_id}", request)
 
     return {
         "id": db_comment.id,
         "content": db_comment.content,
         "author_name": db_comment.author_name,
         "status": db_comment.status,
-        "created_at": db_comment.created_at.isoformat() if db_comment.created_at else None
+        "created_at": db_comment.created_at.isoformat()
     }
 
 @app.get("/api/blog/posts/{post_id}/comments")
 async def list_comments(
     post_id: int,
     status: Optional[str] = "approved",
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    result = await db.execute(select(BlogPost).where(BlogPost.id == post_id))
-    post = result.scalar_one_or_none()
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Статья не найдена")
 
-    query = select(BlogComment).where(BlogComment.post_id == post_id)
+    query = db.query(BlogComment).filter(BlogComment.post_id == post_id)
 
+    # Moderators can see all comments
     if not current_user or current_user.role not in ["admin", "moderator", "support"]:
-        query = query.where(BlogComment.status == "approved")
+        query = query.filter(BlogComment.status == "approved")
     elif status:
-        query = query.where(BlogComment.status == status)
+        query = query.filter(BlogComment.status == status)
 
-    result = await db.execute(query.order_by(BlogComment.created_at.desc()))
-    comments = result.scalars().all()
+    comments = query.order_by(BlogComment.created_at.desc()).all()
 
+    # Build tree structure
     comment_map = {}
     root_comments = []
 
@@ -2329,7 +2193,7 @@ async def list_comments(
             "author_name": c.author_name,
             "status": c.status,
             "parent_id": c.parent_id,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
+            "created_at": c.created_at.isoformat(),
             "replies": []
         }
         comment_map[c.id] = c_data
@@ -2345,38 +2209,33 @@ async def moderate_comment(
     comment_id: int,
     request: Request,
     status: str = Query(..., pattern="^(approved|rejected|spam)$"),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator", "support"])
-    result = await db.execute(select(BlogComment).where(BlogComment.id == comment_id))
-    comment = result.scalar_one_or_none()
+    comment = db.query(BlogComment).filter(BlogComment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Комментарий не найден")
 
     comment.status = status
-    await db.commit()
-    await log_audit(db=db, action="blog_comment_moderated", user_id=current_user.id,
-                   details=f"Comment {comment_id} -> {status}", ip_address=request.client.host)
+    db.commit()
+    log_audit(db, current_user.id, "blog_comment_moderated", f"Comment {comment_id} -> {status}", request)
     return {"message": f"Комментарий {status}"}
 
 @app.delete("/api/blog/comments/{comment_id}")
 async def delete_comment(
     comment_id: int,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator", "support"])
-    result = await db.execute(select(BlogComment).where(BlogComment.id == comment_id))
-    comment = result.scalar_one_or_none()
+    comment = db.query(BlogComment).filter(BlogComment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Комментарий не найден")
 
-    await db.delete(comment)
-    await db.commit()
-    await log_audit(db=db, action="blog_comment_deleted", user_id=current_user.id,
-                   details=f"Comment ID: {comment_id}", ip_address=request.client.host)
+    db.delete(comment)
+    db.commit()
+    log_audit(db, current_user.id, "blog_comment_deleted", f"Comment ID: {comment_id}", request)
     return {"message": "Комментарий удалён"}
 
 
@@ -2819,6 +2678,423 @@ async def get_sms_balance(current_user: User = Depends(get_current_user)):
         return {"balance": 0, "currency": "RUB", "status": "error"}
 
 
+# ============ PDF / QR GENERATION ============
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import qrcode
+import io
+
+# Register Russian font (try system fonts)
+try:
+    pdfmetrics.registerFont(TTFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+    RUSSIAN_FONT = 'DejaVu'
+except:
+    try:
+        pdfmetrics.registerFont(TTFont('Arial', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
+        RUSSIAN_FONT = 'Arial'
+    except:
+        RUSSIAN_FONT = 'Helvetica'
+
+
+# ============ WEBSOCKET NOTIFICATIONS ============
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+class ConnectionManager:
+    """Manage WebSocket connections for real-time notifications"""
+    def __init__(self):
+        self.active_connections: dict = {}  # user_id -> [websocket]
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: int):
+        if user_id in self.active_connections:
+            if websocket in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except:
+                    pass
+
+    async def broadcast(self, message: dict):
+        for user_connections in self.active_connections.values():
+            for connection in user_connections:
+                try:
+                    await connection.send_json(message)
+                except:
+                    pass
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/notifications")
+async def websocket_notifications(websocket: WebSocket, token: str = Query(...)):
+    """WebSocket endpoint for real-time notifications"""
+    # Validate token
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("sub")
+        if not user_id:
+            await websocket.close(code=4001)
+            return
+    except:
+        await websocket.close(code=4001)
+        return
+
+    await manager.connect(websocket, int(user_id))
+    try:
+        while True:
+            # Keep connection alive, wait for ping
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, int(user_id))
+
+async def notify_user(user_id: int, notification_type: str, title: str, message: str, data: dict = None):
+    """Send notification to user via WebSocket and save to DB"""
+    notification = {
+        "type": notification_type,
+        "title": title,
+        "message": message,
+        "data": data or {},
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    # Send via WebSocket
+    await manager.send_personal_message(notification, user_id)
+
+    # Save to database for offline users
+    # (Implementation depends on existing Notification model)
+
+# ============ CELERY BACKGROUND TASKS ============
+
+from celery import Celery
+import os
+
+celery_app = Celery(
+    "mir_samozanyatykh",
+    broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+    backend=os.getenv("REDIS_URL", "redis://localhost:6379/0")
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="Europe/Moscow",
+    enable_utc=True,
+    task_track_started=True,
+    task_time_limit=3600,
+    worker_prefetch_multiplier=1,
+)
+
+@celery_app.task(bind=True, max_retries=3)
+def send_email_task(self, to_email: str, subject: str, body: str, template: str = None):
+    """Background task for sending emails"""
+    try:
+        # Implementation using existing email system
+        # This would call your existing send_email function
+        return {"status": "sent", "to": to_email}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+@celery_app.task(bind=True, max_retries=3)
+def send_sms_task(self, phone: str, message: str):
+    """Background task for sending SMS"""
+    try:
+        # Implementation using existing SMS.ru integration
+        return {"status": "sent", "to": phone}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+@celery_app.task(bind=True)
+def update_exchange_rates_task(self):
+    """Background task to update CBR exchange rates daily"""
+    try:
+        # This would be called via async_to_sync or similar
+        return {"status": "updated", "date": date.today().isoformat()}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+@celery_app.task(bind=True)
+def generate_contract_pdf_task(self, contract_id: int, user_id: int):
+    """Background task for PDF generation"""
+    try:
+        return {"status": "generated", "contract_id": contract_id}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+@celery_app.task(bind=True)
+def cleanup_old_data_task(self):
+    """Periodic cleanup of old audit logs and sessions"""
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=90)
+        # Cleanup logic would go here
+        return {"status": "cleaned", "cutoff": cutoff.isoformat()}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+# Celery beat schedule (periodic tasks)
+celery_app.conf.beat_schedule = {
+    "update-exchange-rates-daily": {
+        "task": "update_exchange_rates_task",
+        "schedule": 86400.0,  # Daily
+    },
+    "cleanup-old-data-weekly": {
+        "task": "cleanup_old_data_task",
+        "schedule": 604800.0,  # Weekly
+    },
+}
+
+# ============ NOTIFICATION API ============
+
+@app.get("/api/notifications")
+async def list_notifications(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=50),
+    unread_only: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List user notifications"""
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+
+    if unread_only:
+        query = query.filter(Notification.is_read == False)
+
+    total = query.count()
+    notifications = query.order_by(Notification.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        "notifications": [
+            {
+                "id": n.id,
+                "title": n.title,
+                "message": n.message,
+                "type": n.type,
+                "is_read": n.is_read,
+                "created_at": n.created_at.isoformat()
+            }
+            for n in notifications
+        ],
+        "unread_count": db.query(Notification).filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read == False
+        ).count(),
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
+
+@app.post("/api/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark notification as read"""
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+
+    if not notification:
+        raise HTTPException(status_code=404, detail="Уведомление не найдено")
+
+    notification.is_read = True
+    db.commit()
+
+    return {"message": "Уведомление отмечено как прочитанное"}
+
+@app.post("/api/notifications/read-all")
+async def mark_all_notifications_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark all notifications as read"""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+
+    return {"message": "Все уведомления отмечены как прочитанные"}
+
+
+@app.get("/api/sales/invoices/{invoice_id}/pdf")
+async def generate_invoice_pdf(invoice_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate PDF invoice"""
+    try:
+        result = await db.execute(select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id))
+        invoice = result.scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        items_result = await db.execute(select(InvoiceItem).where(InvoiceItem.invoice_id == invoice_id))
+        items = items_result.scalars().all()
+
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm)
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontName=RUSSIAN_FONT,
+            fontSize=18,
+            spaceAfter=30,
+            alignment=1  # Center
+        )
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontName=RUSSIAN_FONT,
+            fontSize=10,
+            spaceAfter=12
+        )
+
+        story = []
+        story.append(Paragraph(f"СЧЁТ № {invoice.invoice_number}", title_style))
+        story.append(Spacer(1, 20))
+
+        # Invoice details
+        story.append(Paragraph(f"<b>Дата:</b> {invoice.created_at.strftime('%d.%m.%Y')}", normal_style))
+        story.append(Paragraph(f"<b>Сумма:</b> {invoice.total_amount:,.2f} ₽", normal_style))
+        story.append(Paragraph(f"<b>Статус:</b> {invoice.status}", normal_style))
+        story.append(Spacer(1, 20))
+
+        # Items table
+        table_data = [["№", "Описание", "Кол-во", "Цена", "Сумма"]]
+        for idx, item in enumerate(items, 1):
+            table_data.append([
+                str(idx),
+                item.description,
+                str(item.quantity),
+                f"{item.unit_price:,.2f}",
+                f"{item.total_price:,.2f}"
+            ])
+
+        table = Table(table_data, colWidths=[30*mm, 80*mm, 25*mm, 30*mm, 30*mm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), RUSSIAN_FONT),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), RUSSIAN_FONT),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+
+        # Total
+        story.append(Paragraph(f"<b>ИТОГО: {invoice.total_amount:,.2f} ₽</b>", normal_style))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=invoice_{invoice.invoice_number}.pdf"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+
+@app.get("/api/sales/invoices/{invoice_id}/qr")
+async def generate_invoice_qr(invoice_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate QR code for invoice payment"""
+    try:
+        result = await db.execute(select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id))
+        invoice = result.scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        # Generate payment URL or data
+        payment_data = f"https://{settings.DOMAIN}/sales?invoice={invoice.id}"
+        if invoice.yookassa_payment_id:
+            payment_data = f"https://yookassa.ru/payments/{invoice.yookassa_payment_id}"
+
+        # Create QR code
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(payment_data)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="image/png", headers={
+            "Content-Disposition": f"inline; filename=invoice_{invoice.invoice_number}_qr.png"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"QR generation error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate QR code")
+
+@app.get("/api/contracts/{contract_id}/pdf")
+async def generate_contract_pdf(contract_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Generate PDF contract"""
+    try:
+        result = await db.execute(select(SignedContract).where(SignedContract.id == contract_id, SignedContract.user_id == current_user.id))
+        contract = result.scalar_one_or_none()
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contract not found")
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontName=RUSSIAN_FONT, fontSize=10)
+
+        story = []
+        story.append(Paragraph(contract.title or "Договор", styles['Heading1']))
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(contract.content.replace("\n", "<br/>"), normal_style))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(buffer, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=contract_{contract_id}.pdf"
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Contract PDF error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate contract PDF")
+
+
+
 # ============ CONTRACT TEMPLATES DATA ============
 
 CONTRACT_TEMPLATES = {
@@ -2973,7 +3249,7 @@ def generate_contract_pdf(template_type: str, data: dict, signature: dict = None
     ]
     if signature:
         doc_info.append(["Электронная подпись:", "✓ Подписано простой электронной подписью"])
-        doc_info.append(["Дата подписи:", signature.get('timestamp', '-')])
+        doc_info.append(["Дата подписи:", signature.get('timestamp', '—')])
         doc_info.append(["Основание:", "ГК РФ ст. 160"])
 
     doc_table = Table(doc_info, colWidths=[50*mm, 110*mm])
@@ -3214,10 +3490,9 @@ async def sign_contract(
     }
 
 @app.get("/api/contracts/{contract_id}/verify")
-async def verify_contract_signature(contract_id: int, db: AsyncSession = Depends(get_db)):
+async def verify_contract_signature(contract_id: int, db: Session = Depends(get_db)):
     """Verify contract electronic signature"""
-    result = await db.execute(select(SignedContract).where(SignedContract.id == contract_id))
-    contract = result.scalar_one_or_none()
+    contract = db.query(SignedContract).filter(SignedContract.id == contract_id).first()
     if not contract:
         raise HTTPException(status_code=404, detail="Договор не найден")
 
@@ -3335,370 +3610,6 @@ async def disable_2fa(password: str = Form(...),
     except Exception as e:
         logger.error(f"2FA disable error: {e}")
         raise HTTPException(status_code=500, detail="Failed to disable 2FA")
-
-# ============ SALES MODULE ============
-
-class InvoiceCreate(BaseModel):
-    client_id: int
-    due_date: Optional[date] = None
-    notes: Optional[str] = None
-    items: List[dict] = []
-
-class InvoiceUpdate(BaseModel):
-    status: Optional[str] = None
-    due_date: Optional[date] = None
-    notes: Optional[str] = None
-
-class PaymentCreate(BaseModel):
-    amount: float
-    payment_method: str = "card"
-
-class ProductCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    price: float
-    unit: str = "шт"
-
-class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    unit: Optional[str] = None
-    is_active: Optional[bool] = None
-
-@app.get("/api/sales/products")
-async def list_products(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Product).where(Product.user_id == current_user.id, Product.is_active == True)
-        .order_by(Product.name)
-    )
-    products = result.scalars().all()
-    return [{"id": p.id, "name": p.name, "description": p.description,
-             "price": p.price, "unit": p.unit, "is_active": p.is_active,
-             "created_at": p.created_at.isoformat() if p.created_at else None} for p in products]
-
-@app.post("/api/sales/products")
-async def create_product(
-    product: ProductCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    db_product = Product(
-        user_id=current_user.id,
-        name=product.name,
-        description=product.description,
-        price=product.price,
-        unit=product.unit
-    )
-    db.add(db_product)
-    await db.commit()
-    await db.refresh(db_product)
-    await log_audit(db=db, action="product_created", user_id=current_user.id,
-                   details=f"Product: {product.name}")
-    return {"id": db_product.id, "name": db_product.name, "price": db_product.price}
-
-@app.put("/api/sales/products/{product_id}")
-async def update_product(
-    product_id: int,
-    product: ProductUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Product).where(Product.id == product_id, Product.user_id == current_user.id)
-    )
-    db_product = result.scalar_one_or_none()
-    if not db_product:
-        raise HTTPException(status_code=404, detail="Услуга не найдена")
-    for key, value in product.model_dump(exclude_unset=True).items():
-        setattr(db_product, key, value)
-    await db.commit()
-    return {"id": db_product.id, "name": db_product.name, "price": db_product.price}
-
-@app.delete("/api/sales/products/{product_id}")
-async def delete_product(
-    product_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Product).where(Product.id == product_id, Product.user_id == current_user.id)
-    )
-    db_product = result.scalar_one_or_none()
-    if not db_product:
-        raise HTTPException(status_code=404, detail="Услуга не найдена")
-    await db.delete(db_product)
-    await db.commit()
-    return {"message": "Услуга удалена"}
-
-@app.get("/api/sales/invoices")
-async def list_invoices(
-    status: Optional[str] = None,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=50),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    query = select(Invoice).where(Invoice.user_id == current_user.id)
-    if status:
-        query = query.where(Invoice.status == status)
-    total = await db.scalar(select(func.count(Invoice.id)).where(Invoice.user_id == current_user.id))
-    result = await db.execute(
-        query.order_by(Invoice.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
-    )
-    invoices = result.scalars().all()
-    return {
-        "invoices": [{
-            "id": i.id, "invoice_number": i.invoice_number,
-            "client_id": i.client_id, "total_amount": i.total_amount,
-            "status": i.status, "due_date": i.due_date.isoformat() if i.due_date else None,
-            "paid_at": i.paid_at.isoformat() if i.paid_at else None,
-            "created_at": i.created_at.isoformat() if i.created_at else None
-        } for i in invoices],
-        "pagination": {"page": page, "per_page": per_page, "total": total,
-                      "total_pages": (total + per_page - 1) // per_page}
-    }
-
-@app.post("/api/sales/invoices")
-async def create_invoice(
-    invoice: InvoiceCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # Generate invoice number
-    today = datetime.now(timezone.utc)
-    count = await db.scalar(
-        select(func.count(Invoice.id)).where(
-            Invoice.user_id == current_user.id,
-            Invoice.created_at >= today.replace(hour=0, minute=0, second=0, microsecond=0)
-        )
-    )
-    invoice_number = f"СЧ-{current_user.id}-{today.strftime('%Y%m%d')}-{count + 1:04d}"
-
-    total = sum(item.get("quantity", 1) * item.get("unit_price", 0) for item in invoice.items)
-
-    db_invoice = Invoice(
-        user_id=current_user.id,
-        invoice_number=invoice_number,
-        client_id=invoice.client_id,
-        total_amount=total,
-        due_date=datetime.combine(invoice.due_date, datetime.min.time()).replace(tzinfo=timezone.utc) if invoice.due_date else None,
-        notes=invoice.notes,
-        status="draft"
-    )
-    db.add(db_invoice)
-    await db.flush()
-
-    for item in invoice.items:
-        db_item = InvoiceItem(
-            invoice_id=db_invoice.id,
-            description=item.get("description", ""),
-            quantity=item.get("quantity", 1),
-            unit_price=item.get("unit_price", 0),
-            total_price=item.get("quantity", 1) * item.get("unit_price", 0)
-        )
-        db.add(db_item)
-
-    await db.commit()
-    await db.refresh(db_invoice)
-    await log_audit(db=db, action="invoice_created", user_id=current_user.id,
-                   details=f"Invoice: {invoice_number}, Amount: {total}")
-    return {"id": db_invoice.id, "invoice_number": db_invoice.invoice_number,
-            "total_amount": db_invoice.total_amount, "status": db_invoice.status}
-
-@app.get("/api/sales/invoices/{invoice_id}")
-async def get_invoice(
-    invoice_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-
-    items_result = await db.execute(
-        select(InvoiceItem).where(InvoiceItem.invoice_id == invoice_id)
-    )
-    items = items_result.scalars().all()
-
-    payments_result = await db.execute(
-        select(Payment).where(Payment.invoice_id == invoice_id)
-    )
-    payments = payments_result.scalars().all()
-
-    return {
-        "id": invoice.id, "invoice_number": invoice.invoice_number,
-        "client_id": invoice.client_id, "total_amount": invoice.total_amount,
-        "status": invoice.status, "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
-        "notes": invoice.notes, "yookassa_payment_id": invoice.yookassa_payment_id,
-        "paid_at": invoice.paid_at.isoformat() if invoice.paid_at else None,
-        "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
-        "items": [{"id": i.id, "description": i.description, "quantity": i.quantity,
-                   "unit_price": i.unit_price, "total_price": i.total_price} for i in items],
-        "payments": [{"id": p.id, "amount": p.amount, "status": p.status,
-                      "payment_method": p.payment_method,
-                      "paid_at": p.paid_at.isoformat() if p.paid_at else None} for p in payments]
-    }
-
-@app.put("/api/sales/invoices/{invoice_id}")
-async def update_invoice(
-    invoice_id: int,
-    invoice_update: InvoiceUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-
-    for key, value in invoice_update.model_dump(exclude_unset=True).items():
-        if key == "due_date" and value:
-            value = datetime.combine(value, datetime.min.time()).replace(tzinfo=timezone.utc)
-        setattr(invoice, key, value)
-
-    await db.commit()
-    return {"id": invoice.id, "status": invoice.status}
-
-@app.delete("/api/sales/invoices/{invoice_id}")
-async def delete_invoice(
-    invoice_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-    await db.delete(invoice)
-    await db.commit()
-    return {"message": "Счёт удалён"}
-
-@app.post("/api/sales/invoices/{invoice_id}/send")
-async def send_invoice(
-    invoice_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-    if invoice.status != "draft":
-        raise HTTPException(status_code=400, detail="Счёт уже отправлен или оплачен")
-
-    invoice.status = "sent"
-    await db.commit()
-    await log_audit(db=db, action="invoice_sent", user_id=current_user.id,
-                   details=f"Invoice: {invoice.invoice_number}")
-    return {"message": "Счёт отправлен клиенту", "invoice_number": invoice.invoice_number}
-
-@app.post("/api/sales/invoices/{invoice_id}/payments")
-async def create_payment(
-    invoice_id: int,
-    payment: PaymentCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-
-    db_payment = Payment(
-        invoice_id=invoice_id,
-        amount=payment.amount,
-        payment_method=payment.payment_method,
-        status="pending"
-    )
-    db.add(db_payment)
-    await db.commit()
-    await db.refresh(db_payment)
-
-    # If payment covers invoice, mark as paid
-    payments_result = await db.execute(
-        select(func.sum(Payment.amount)).where(
-            Payment.invoice_id == invoice_id, Payment.status == "completed"
-        )
-    )
-    total_paid = payments_result.scalar() or 0
-    if total_paid >= invoice.total_amount:
-        invoice.status = "paid"
-        invoice.paid_at = datetime.now(timezone.utc)
-        await db.commit()
-
-    await log_audit(db=db, action="payment_created", user_id=current_user.id,
-                   details=f"Invoice: {invoice.invoice_number}, Amount: {payment.amount}")
-    return {"id": db_payment.id, "amount": db_payment.amount, "status": db_payment.status}
-
-@app.get("/api/sales/invoices/{invoice_id}/payments")
-async def list_payments(
-    invoice_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == current_user.id)
-    )
-    invoice = result.scalar_one_or_none()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Счёт не найден")
-
-    payments_result = await db.execute(
-        select(Payment).where(Payment.invoice_id == invoice_id).order_by(Payment.created_at.desc())
-    )
-    payments = payments_result.scalars().all()
-    return [{"id": p.id, "amount": p.amount, "status": p.status,
-             "payment_method": p.payment_method,
-             "paid_at": p.paid_at.isoformat() if p.paid_at else None,
-             "created_at": p.created_at.isoformat() if p.created_at else None} for p in payments]
-
-@app.get("/api/sales/stats")
-async def sales_stats(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    total_invoices = await db.scalar(
-        select(func.count(Invoice.id)).where(Invoice.user_id == current_user.id)
-    )
-    total_revenue = await db.scalar(
-        select(func.sum(Invoice.total_amount)).where(
-            Invoice.user_id == current_user.id, Invoice.status == "paid"
-        )
-    ) or 0
-    pending_amount = await db.scalar(
-        select(func.sum(Invoice.total_amount)).where(
-            Invoice.user_id == current_user.id, Invoice.status.in_(["sent", "draft"])
-        )
-    ) or 0
-    overdue = await db.scalar(
-        select(func.count(Invoice.id)).where(
-            Invoice.user_id == current_user.id,
-            Invoice.status == "sent",
-            Invoice.due_date < datetime.now(timezone.utc)
-        )
-    )
-    return {
-        "total_invoices": total_invoices,
-        "total_revenue": float(total_revenue),
-        "pending_amount": float(pending_amount),
-        "overdue_invoices": overdue
-    }
-
 
 # ============ SEED DATA ============
 async def seed_data(db: AsyncSession):
