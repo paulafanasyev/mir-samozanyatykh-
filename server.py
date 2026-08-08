@@ -294,6 +294,62 @@ class UserMFA(Base):
     user = relationship("User", back_populates="mfa")
 
 # ============ FASTAPI SETUP ============
+
+# ============ BLOG MODELS ============
+
+class BlogTag(Base):
+    __tablename__ = 'blog_tags'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False, index=True)
+    slug = Column(String(60), unique=True, nullable=False, index=True)
+    color = Column(String(7), default='#0D47A1')  # hex color
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class BlogPost(Base):
+    __tablename__ = 'blog_posts'
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    slug = Column(String(220), unique=True, nullable=False, index=True)
+    excerpt = Column(Text, nullable=True)  # краткое описание
+    content = Column(Text, nullable=False)
+    cover_image = Column(String(500), nullable=True)
+    author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    status = Column(String(20), default='draft')  # draft, published, archived
+    views = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+    meta_description = Column(String(300), nullable=True)
+    meta_keywords = Column(String(300), nullable=True)
+    published_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    author = relationship("User")
+    comments = relationship("BlogComment", back_populates="post", cascade="all, delete-orphan")
+    tags = relationship("BlogTag", secondary="blog_post_tags", back_populates="posts")
+
+class BlogPostTag(Base):
+    __tablename__ = 'blog_post_tags'
+    post_id = Column(Integer, ForeignKey('blog_posts.id'), primary_key=True)
+    tag_id = Column(Integer, ForeignKey('blog_tags.id'), primary_key=True)
+
+class BlogComment(Base):
+    __tablename__ = 'blog_comments'
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('blog_posts.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # null = anonymous/guest
+    author_name = Column(String(100), nullable=True)  # для гостей
+    author_email = Column(String(200), nullable=True)  # для гостей
+    content = Column(Text, nullable=False)
+    status = Column(String(20), default='pending')  # pending, approved, rejected, spam
+    parent_id = Column(Integer, ForeignKey('blog_comments.id'), nullable=True)  # replies
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    post = relationship("BlogPost", back_populates="comments")
+    author = relationship("User")
+    parent = relationship("BlogComment", remote_side=[id], backref="replies")
+
+
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -1389,6 +1445,443 @@ async def update_user_tier(user_id: int, tier: str = Form(...), expires: Optiona
         raise HTTPException(status_code=500, detail="Ошибка изменения подписки")
 
 # ============ HTML ROUTES ============
+
+# ============ BLOG API ============
+
+from pydantic import BaseModel, Field
+from typing import Optional, List
+
+class BlogTagCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    color: str = Field(default="#0D47A1", max_length=7)
+
+class BlogTagOut(BaseModel):
+    id: int
+    name: str
+    slug: str
+    color: str
+    class Config:
+        from_attributes = True
+
+class BlogPostCreate(BaseModel):
+    title: str = Field(..., min_length=5, max_length=200)
+    excerpt: Optional[str] = Field(None, max_length=500)
+    content: str = Field(..., min_length=50)
+    cover_image: Optional[str] = None
+    tag_ids: List[int] = Field(default_factory=list)
+    meta_description: Optional[str] = Field(None, max_length=300)
+    meta_keywords: Optional[str] = Field(None, max_length=300)
+    status: str = Field(default="draft", pattern="^(draft|published|archived)$")
+
+class BlogPostUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=5, max_length=200)
+    excerpt: Optional[str] = None
+    content: Optional[str] = Field(None, min_length=50)
+    cover_image: Optional[str] = None
+    tag_ids: Optional[List[int]] = None
+    meta_description: Optional[str] = None
+    meta_keywords: Optional[str] = None
+    status: Optional[str] = Field(None, pattern="^(draft|published|archived)$")
+
+class BlogPostOut(BaseModel):
+    id: int
+    title: str
+    slug: str
+    excerpt: Optional[str]
+    content: str
+    cover_image: Optional[str]
+    author_id: int
+    author_name: str
+    status: str
+    views: int
+    likes: int
+    tags: List[BlogTagOut]
+    published_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    class Config:
+        from_attributes = True
+
+class BlogCommentCreate(BaseModel):
+    content: str = Field(..., min_length=2, max_length=2000)
+    author_name: Optional[str] = Field(None, max_length=100)
+    author_email: Optional[str] = Field(None, max_length=200)
+    parent_id: Optional[int] = None
+
+class BlogCommentOut(BaseModel):
+    id: int
+    post_id: int
+    content: str
+    author_name: Optional[str]
+    author_email: Optional[str]
+    status: str
+    parent_id: Optional[int]
+    created_at: datetime
+    replies: List[dict] = Field(default_factory=list)
+    class Config:
+        from_attributes = True
+
+import re
+from slugify import slugify
+
+def generate_slug(title: str, db: Session, model_class, existing_id: int = None) -> str:
+    base_slug = slugify(title, max_length=200)
+    slug = base_slug
+    counter = 1
+    while True:
+        query = db.query(model_class).filter(model_class.slug == slug)
+        if existing_id:
+            query = query.filter(model_class.id != existing_id)
+        if not query.first():
+            break
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    return slug
+
+# --- Blog Tags API ---
+
+@app.post("/api/blog/tags", response_model=BlogTagOut)
+async def create_blog_tag(
+    tag: BlogTagCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator"])
+    slug = slugify(tag.name, max_length=60)
+    db_tag = BlogTag(name=tag.name, slug=slug, color=tag.color)
+    db.add(db_tag)
+    db.commit()
+    db.refresh(db_tag)
+    log_audit(db, current_user.id, "blog_tag_created", f"Tag: {tag.name}", request)
+    return db_tag
+
+@app.get("/api/blog/tags", response_model=List[BlogTagOut])
+async def list_blog_tags(db: Session = Depends(get_db)):
+    return db.query(BlogTag).order_by(BlogTag.name).all()
+
+# --- Blog Posts API ---
+
+@app.post("/api/blog/posts", response_model=BlogPostOut)
+async def create_blog_post(
+    post: BlogPostCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator", "support"])
+    slug = generate_slug(post.title, db, BlogPost)
+    published_at = datetime.utcnow() if post.status == "published" else None
+
+    db_post = BlogPost(
+        title=post.title,
+        slug=slug,
+        excerpt=post.excerpt,
+        content=post.content,
+        cover_image=post.cover_image,
+        author_id=current_user.id,
+        status=post.status,
+        meta_description=post.meta_description,
+        meta_keywords=post.meta_keywords,
+        published_at=published_at
+    )
+    db.add(db_post)
+    db.flush()
+
+    # Attach tags
+    if post.tag_ids:
+        tags = db.query(BlogTag).filter(BlogTag.id.in_(post.tag_ids)).all()
+        db_post.tags = tags
+
+    db.commit()
+    db.refresh(db_post)
+    log_audit(db, current_user.id, "blog_post_created", f"Post: {post.title}", request)
+    return db_post
+
+@app.get("/api/blog/posts")
+async def list_blog_posts(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+    tag: Optional[str] = None,
+    search: Optional[str] = None,
+    status: Optional[str] = "published",
+    db: Session = Depends(get_db)
+):
+    query = db.query(BlogPost)
+
+    if status:
+        query = query.filter(BlogPost.status == status)
+
+    if tag:
+        query = query.join(BlogPost.tags).filter(BlogTag.slug == tag)
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (BlogPost.title.ilike(search_filter)) |
+            (BlogPost.excerpt.ilike(search_filter)) |
+            (BlogPost.content.ilike(search_filter))
+        )
+
+    total = query.count()
+    posts = query.order_by(BlogPost.published_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        "posts": [{
+            "id": p.id,
+            "title": p.title,
+            "slug": p.slug,
+            "excerpt": p.excerpt,
+            "cover_image": p.cover_image,
+            "author_name": p.author.name if p.author else "Аноним",
+            "status": p.status,
+            "views": p.views,
+            "likes": p.likes,
+            "tags": [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in p.tags],
+            "published_at": p.published_at.isoformat() if p.published_at else None,
+            "created_at": p.created_at.isoformat(),
+            "comment_count": len([c for c in p.comments if c.status == "approved"])
+        } for p in posts],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
+
+@app.get("/api/blog/posts/{slug}")
+async def get_blog_post(slug: str, db: Session = Depends(get_db)):
+    post = db.query(BlogPost).filter(BlogPost.slug == slug).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+
+    # Increment views
+    post.views += 1
+    db.commit()
+
+    # Get related posts (same tags)
+    tag_ids = [t.id for t in post.tags]
+    related = []
+    if tag_ids:
+        related = db.query(BlogPost).join(BlogPost.tags).filter(
+            BlogTag.id.in_(tag_ids),
+            BlogPost.id != post.id,
+            BlogPost.status == "published"
+        ).distinct().limit(3).all()
+
+    return {
+        "id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "excerpt": post.excerpt,
+        "content": post.content,
+        "cover_image": post.cover_image,
+        "author_id": post.author_id,
+        "author_name": post.author.name if post.author else "Аноним",
+        "status": post.status,
+        "views": post.views,
+        "likes": post.likes,
+        "tags": [{"id": t.id, "name": t.name, "slug": t.slug, "color": t.color} for t in post.tags],
+        "meta_description": post.meta_description,
+        "meta_keywords": post.meta_keywords,
+        "published_at": post.published_at.isoformat() if post.published_at else None,
+        "created_at": post.created_at.isoformat(),
+        "updated_at": post.updated_at.isoformat(),
+        "related_posts": [{
+            "id": r.id,
+            "title": r.title,
+            "slug": r.slug,
+            "excerpt": r.excerpt,
+            "cover_image": r.cover_image
+        } for r in related]
+    }
+
+@app.put("/api/blog/posts/{post_id}", response_model=BlogPostOut)
+async def update_blog_post(
+    post_id: int,
+    post_update: BlogPostUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator", "support"])
+    db_post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+    if not db_post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+
+    # Only author or admin can edit
+    if db_post.author_id != current_user.id and current_user.role not in ["admin", "moderator"]:
+        raise HTTPException(status_code=403, detail="Нет прав на редактирование")
+
+    update_data = post_update.model_dump(exclude_unset=True)
+
+    if "title" in update_data and update_data["title"] != db_post.title:
+        update_data["slug"] = generate_slug(update_data["title"], db, BlogPost, db_post.id)
+
+    if "status" in update_data:
+        if update_data["status"] == "published" and not db_post.published_at:
+            update_data["published_at"] = datetime.utcnow()
+
+    if "tag_ids" in update_data and update_data["tag_ids"] is not None:
+        tags = db.query(BlogTag).filter(BlogTag.id.in_(update_data["tag_ids"])).all()
+        db_post.tags = tags
+        del update_data["tag_ids"]
+
+    for key, value in update_data.items():
+        setattr(db_post, key, value)
+
+    db.commit()
+    db.refresh(db_post)
+    log_audit(db, current_user.id, "blog_post_updated", f"Post ID: {post_id}", request)
+    return db_post
+
+@app.delete("/api/blog/posts/{post_id}")
+async def delete_blog_post(
+    post_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator"])
+    db_post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+    if not db_post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+
+    db.delete(db_post)
+    db.commit()
+    log_audit(db, current_user.id, "blog_post_deleted", f"Post ID: {post_id}", request)
+    return {"message": "Статья удалена"}
+
+@app.post("/api/blog/posts/{post_id}/like")
+async def like_blog_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+    post.likes += 1
+    db.commit()
+    return {"likes": post.likes}
+
+# --- Blog Comments API ---
+
+@app.post("/api/blog/posts/{post_id}/comments")
+async def create_comment(
+    post_id: int,
+    comment: BlogCommentCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+
+    # Auto-approve for authenticated users, pending for guests
+    status = "approved" if current_user else "pending"
+
+    db_comment = BlogComment(
+        post_id=post_id,
+        user_id=current_user.id if current_user else None,
+        author_name=current_user.name if current_user else (comment.author_name or "Гость"),
+        author_email=current_user.email if current_user else comment.author_email,
+        content=comment.content,
+        status=status,
+        parent_id=comment.parent_id
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+
+    if current_user:
+        log_audit(db, current_user.id, "blog_comment_created", f"Post ID: {post_id}", request)
+
+    return {
+        "id": db_comment.id,
+        "content": db_comment.content,
+        "author_name": db_comment.author_name,
+        "status": db_comment.status,
+        "created_at": db_comment.created_at.isoformat()
+    }
+
+@app.get("/api/blog/posts/{post_id}/comments")
+async def list_comments(
+    post_id: int,
+    status: Optional[str] = "approved",
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Статья не найдена")
+
+    query = db.query(BlogComment).filter(BlogComment.post_id == post_id)
+
+    # Moderators can see all comments
+    if not current_user or current_user.role not in ["admin", "moderator", "support"]:
+        query = query.filter(BlogComment.status == "approved")
+    elif status:
+        query = query.filter(BlogComment.status == status)
+
+    comments = query.order_by(BlogComment.created_at.desc()).all()
+
+    # Build tree structure
+    comment_map = {}
+    root_comments = []
+
+    for c in comments:
+        c_data = {
+            "id": c.id,
+            "content": c.content,
+            "author_name": c.author_name,
+            "status": c.status,
+            "parent_id": c.parent_id,
+            "created_at": c.created_at.isoformat(),
+            "replies": []
+        }
+        comment_map[c.id] = c_data
+        if c.parent_id is None:
+            root_comments.append(c_data)
+        elif c.parent_id in comment_map:
+            comment_map[c.parent_id]["replies"].append(c_data)
+
+    return {"comments": root_comments, "total": len(comments)}
+
+@app.put("/api/blog/comments/{comment_id}/status")
+async def moderate_comment(
+    comment_id: int,
+    status: str = Query(..., pattern="^(approved|rejected|spam)$"),
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator", "support"])
+    comment = db.query(BlogComment).filter(BlogComment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Комментарий не найден")
+
+    comment.status = status
+    db.commit()
+    log_audit(db, current_user.id, "blog_comment_moderated", f"Comment {comment_id} -> {status}", request)
+    return {"message": f"Комментарий {status}"}
+
+@app.delete("/api/blog/comments/{comment_id}")
+async def delete_comment(
+    comment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, ["admin", "moderator", "support"])
+    comment = db.query(BlogComment).filter(BlogComment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Комментарий не найден")
+
+    db.delete(comment)
+    db.commit()
+    log_audit(db, current_user.id, "blog_comment_deleted", f"Comment ID: {comment_id}", request)
+    return {"message": "Комментарий удалён"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "csp_nonce": request.state.csp_nonce, "domain": settings.DOMAIN})
@@ -1436,6 +1929,195 @@ async def achievements_page(request: Request):
 @app.get("/marketplace/{slug}", response_class=HTMLResponse)
 async def marketplace_profile_page(request: Request, slug: str):
     return templates.TemplateResponse("marketplace_profile.html", {"request": request, "csp_nonce": request.state.csp_nonce, "slug": slug})
+
+@app.get("/blog", response_class=HTMLResponse)
+async def blog_list_page(request: Request):
+    return templates.TemplateResponse("blog.html", {"request": request, "csp_nonce": request.state.csp_nonce})
+
+@app.get("/blog/{slug}", response_class=HTMLResponse)
+async def blog_post_page(request: Request, slug: str):
+    return templates.TemplateResponse("blog_post.html", {"request": request, "csp_nonce": request.state.csp_nonce, "slug": slug})
+
+# ============ BLOG SEED DATA ============
+
+@app.get("/api/blog/seed")
+async def seed_blog_data(db: Session = Depends(get_db)):
+    """Seed blog with sample data for demonstration"""
+    if db.query(BlogPost).first():
+        return {"message": "Блог уже заполнен"}
+
+    # Create tags
+    tags_data = [
+        {"name": "НПД", "slug": "npd", "color": "#0D47A1"},
+        {"name": "Налоги", "slug": "nalogi", "color": "#E91E63"},
+        {"name": "Бизнес", "slug": "biznes", "color": "#43A047"},
+        {"name": "CRM", "slug": "crm", "color": "#FF8C00"},
+        {"name": "Гранты", "slug": "granty", "color": "#9C27B0"},
+        {"name": "Советы", "slug": "sovety", "color": "#00BCD4"},
+    ]
+
+    tags = []
+    for t in tags_data:
+        tag = BlogTag(name=t["name"], slug=t["slug"], color=t["color"])
+        db.add(tag)
+        db.flush()
+        tags.append(tag)
+
+    # Sample posts
+    posts_data = [
+        {
+            "title": "Как самозанятому правильно платить налоги в 2026 году",
+            "excerpt": "Полный гид по налогу на профессиональный доход: ставки, вычеты, сроки и типичные ошибки.",
+            "content": """Налог на профессиональный доход (НПД) — специальный налоговый режим для самозанятых граждан. В 2026 году действуют следующие ставки:
+
+**4%** — при доходе от физических лиц
+**6%** — при доходе от юридических лиц и ИП
+
+Важные изменения 2026 года:
+- Налоговый вычет 10 000 ₽ продлён
+- Новые категории деятельности добавлены
+- Упрощённая отчётность через приложение «Мой налог»
+
+Чтобы не ошибиться:
+1. Всегда формируйте чеки через приложение
+2. Следите за лимитом дохода 2,4 млн ₽/год
+3. Используйте налоговый вычет с умом
+4. Проверяйте ИНН плательщика через наш сервис
+5. Сохраняйте все чеки минимум 3 года
+
+Наша платформа «Мир Самозанятых» помогает автоматизировать расчёт налогов и напоминает о сроках уплаты.""",
+            "tags": [0, 1],
+            "views": 1250,
+            "likes": 45
+        },
+        {
+            "title": "5 инструментов CRM для самозанятых: бесплатно и эффективно",
+            "excerpt": "Обзор лучших CRM-систем, которые помогут организовать работу с клиентами без затрат.",
+            "content": """CRM-система — must-have для любого самозанятого, работающего с клиентами. Вот топ-5 бесплатных решений:
+
+1. **Битрикс24** — бесплатно до 12 пользователей, полный функционал
+2. **МойСклад** — идеально для торговли и складского учёта
+3. **YCLIENTS** — специализировано для сферы услуг
+4. **Google Таблицы** — простое начало, бесплатно навсегда
+5. **Наша встроенная CRM** — интегрирована с налоговым калькулятором и договорами
+
+Ключевые функции CRM для самозанятых:
+- База клиентов с историей взаимодействий
+- История сделок и статусы
+- Напоминания о задачах и встречах
+- Автоматические отчёты по продажам
+- Интеграция с мессенджерами
+
+Начните с простого — даже Excel-таблица лучше, чем хаос в голове. Постепенно переходите на специализированные решения.""",
+            "tags": [3, 5],
+            "views": 890,
+            "likes": 32
+        },
+        {
+            "title": "Гранты для самозанятых в 2026: где искать и как получить",
+            "excerpt": "Обзор федеральных и региональных программ поддержки самозанятых граждан.",
+            "content": """В 2026 году самозанятые могут претендовать на несколько типов грантов:
+
+**Федеральные программы:**
+- Грант на развитие бизнеса до 500 000 ₽
+- Социальный контракт для малоимущих
+- Цифровые гранты для IT-проектов
+
+**Региональные программы:**
+- Москва: «Самозанятый Москвы» — до 300 000 ₽
+- Санкт-Петербург: «Свой бизнес» — консультации + финансирование
+- Регионы: через Центры занятости населения
+
+Как подготовить заявку:
+1. Составьте чёткий бизнес-план с цифрами
+2. Подтвердите статус самозанятого (выписка из ФНС)
+3. Убедитесь в отсутствии задолженностей
+4. Напишите мотивационное письмо
+5. Подготовьте портфолио выполненных работ
+
+Используйте наш раздел «Гранты» — там собраны актуальные программы с фильтрацией по региону и сумме.""",
+            "tags": [4, 5],
+            "views": 2100,
+            "likes": 78
+        },
+        {
+            "title": "Как оформить договор ГПД: шаблоны и типичные ошибки",
+            "excerpt": "Пошаговое руководство по составлению договора гражданско-правового характера для самозанятых.",
+            "content": """Договор ГПД — основной документ для самозанятого при работе с клиентами. Разберём ключевые моменты:
+
+**Обязательные пункты договора:**
+1. Предмет договора (что именно выполняется)
+2. Сроки выполнения работ
+3. Стоимость и порядок оплаты
+4. Порядок приёмки результата
+5. Ответственность сторон
+6. Форс-мажорные обстоятельства
+
+**Типичные ошибки:**
+- Отсутствие сроков — ведёт к бесконечным доработкам
+- Неопределённая стоимость — споры при оплате
+- Отсутствие порядка приёмки — клиент не принимает работу
+- Нет ответственности — невозможно взыскать убытки
+
+Наша платформа предоставляет готовые шаблоны ГПД, счетов и актов выполненных работ. Все документы составлены юристами с учётом специфики самозанятых.""",
+            "tags": [2, 5],
+            "views": 1560,
+            "likes": 56
+        },
+        {
+            "title": "Маркетплейс для самозанятых: как найти первых клиентов",
+            "excerpt": "Стратегии привлечения клиентов через маркетплейс и личный бренд.",
+            "content": """Наш маркетплейс «Мир Самозанятых» — это площадка, где заказчики находят исполнителей. Как выделиться:
+
+**Оформление профиля:**
+- Профессиональное фото или логотип
+- Подробное описание услуг с ценами
+- Портфолио выполненных работ
+- Отзывы первых клиентов
+
+**Привлечение клиентов:**
+1. Разместите 3-5 примеров работ
+2. Установите конкурентные цены
+3. Отвечайте на запросы быстро (в течение часа)
+4. Просите довольных клиентов оставить отзыв
+5. Регулярно обновляйте портфолио
+
+**Личный бренд:**
+- Ведите блог на нашей платформе
+- Делитесь экспертизой в соцсетях
+- Участвуйте в обсуждениях и отвечайте на вопросы
+
+Первые клиенты — самые сложные. Не бойтесь начинать с небольших проектов и низких цен. Главное — собрать портфолио и отзывы.""",
+            "tags": [2, 5],
+            "views": 670,
+            "likes": 23
+        },
+    ]
+
+    for p_data in posts_data:
+        post = BlogPost(
+            title=p_data["title"],
+            slug=slugify(p_data["title"], max_length=200),
+            excerpt=p_data["excerpt"],
+            content=p_data["content"],
+            author_id=1,
+            status="published",
+            published_at=datetime.utcnow(),
+            views=p_data.get("views", 0),
+            likes=p_data.get("likes", 0)
+        )
+        db.add(post)
+        db.flush()
+
+        # Attach tags
+        for tag_idx in p_data["tags"]:
+            if tag_idx < len(tags):
+                post.tags.append(tags[tag_idx])
+
+    db.commit()
+    return {"message": f"Создано {len(posts_data)} статей и {len(tags_data)} тегов"}
+
+
 
 
 # ============ WEBSOCKET ENDPOINTS ============

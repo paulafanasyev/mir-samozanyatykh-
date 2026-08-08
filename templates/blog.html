@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Блог — Мир Самозанятых{% endblock %}
+{% block page %}blog{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-16) var(--space-6);">
+  <div style="text-align: center; margin-bottom: var(--space-12);" data-animate>
+    <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; margin-bottom: var(--space-4); line-height: 1.2;">
+      <span class="text-gradient">Блог</span>
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 1.125rem; max-width: 600px; margin: 0 auto; line-height: 1.7;">
+      Полезные статьи для самозанятых: налоги, бизнес, личная эффективность и многое другое
+    </p>
+  </div>
+
+  <!-- Search & Filter -->
+  <div class="card" style="margin-bottom: var(--space-8); padding: var(--space-6);" data-animate>
+    <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center;">
+      <div class="input-icon-wrapper" style="flex: 1; min-width: 250px;">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="form-input" id="blogSearch" placeholder="Поиск по статьям...">
+      </div>
+      <select class="form-select" id="blogTagFilter" style="width: auto; min-width: 180px;">
+        <option value="">Все теги</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Posts Grid -->
+  <div id="blogPosts" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--space-6);">
+    <div class="skeleton skeleton-card" style="height: 320px;"></div>
+    <div class="skeleton skeleton-card" style="height: 320px;"></div>
+    <div class="skeleton skeleton-card" style="height: 320px;"></div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="blogPagination" style="display: flex; justify-content: center; gap: var(--space-2); margin-top: var(--space-12);"></div>
+</div>
+
+<script>
+(function() {
+  let currentPage = 1;
+  let currentTag = '';
+  let currentSearch = '';
+
+  async function loadPosts(page) {
+    const container = document.getElementById('blogPosts');
+    container.innerHTML = '<div class="skeleton skeleton-card" style="height:320px;"></div>'.repeat(3);
+
+    try {
+      const params = new URLSearchParams({ page: String(page), per_page: '9' });
+      if (currentTag) params.append('tag', currentTag);
+      if (currentSearch) params.append('search', currentSearch);
+
+      const data = await MirSamozanyatykh.API.get('/api/blog/posts?' + params.toString());
+
+      if (!data.posts || !data.posts.length) {
+        container.innerHTML = '<div style="text-align:center;padding:var(--space-16);color:var(--text-tertiary);grid-column:1/-1;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin:0 auto var(--space-4);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3 style="font-size:1.25rem;font-weight:600;margin-bottom:var(--space-2);">Статьи не найдены</h3><p>Попробуйте изменить параметры поиска</p></div>';
+        document.getElementById('blogPagination').innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = data.posts.map(post => `
+        <article class="card" style="display:flex;flex-direction:column;height:100%;animation:fadeIn 0.5s ease-out;">
+          ${post.cover_image ? `<div style="height:200px;background:url('${post.cover_image}') center/cover;border-radius:var(--radius-lg) var(--radius-lg) 0 0;margin:calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-4);"></div>` : ''}
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-3);">
+            ${post.tags.map(t => `<span class="badge" style="background:${t.color}20;color:${t.color};font-size:0.6875rem;">${t.name}</span>`).join('')}
+          </div>
+          <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:var(--space-2);line-height:1.4;">
+            <a href="/blog/${post.slug}" style="color:var(--text-primary);text-decoration:none;transition:color var(--transition-fast);" onmouseover="this.style.color='var(--primary-600)'" onmouseout="this.style.color='var(--text-primary)'">${post.title}</a>
+          </h3>
+          <p style="color:var(--text-secondary);font-size:0.9375rem;line-height:1.6;flex:1;margin-bottom:var(--space-4);">${post.excerpt || (post.content ? post.content.substring(0, 160) + '...' : '')}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;color:var(--text-tertiary);font-size:0.8125rem;border-top:1px solid var(--border-color);padding-top:var(--space-3);">
+            <span style="display:flex;align-items:center;gap:var(--space-1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ${post.author_name}
+            </span>
+            <span style="display:flex;align-items:center;gap:var(--space-2);">
+              <span style="display:flex;align-items:center;gap:var(--space-1);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                ${post.views}
+              </span>
+              <span style="display:flex;align-items:center;gap:var(--space-1);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                ${post.comment_count || 0}
+              </span>
+            </span>
+          </div>
+        </article>
+      `).join('');
+
+      // Pagination
+      const pag = document.getElementById('blogPagination');
+      let pagHtml = '';
+      if (data.pagination && data.pagination.total_pages > 1) {
+        for (let i = 1; i <= data.pagination.total_pages; i++) {
+          pagHtml += `<button class="btn ${i === page ? 'btn-primary' : 'btn-secondary btn-sm'}" onclick="window.loadPostsPage(${i})" style="min-width:40px;padding:var(--space-2) var(--space-3);">${i}</button>`;
+        }
+      }
+      pag.innerHTML = pagHtml;
+
+    } catch (err) {
+      container.innerHTML = '<div style="text-align:center;color:var(--danger);padding:var(--space-8);grid-column:1/-1;">Ошибка загрузки статей</div>';
+    }
+  }
+
+  window.loadPostsPage = function(p) { currentPage = p; loadPosts(p); };
+
+  async function loadTags() {
+    try {
+      const tags = await MirSamozanyatykh.API.get('/api/blog/tags');
+      const select = document.getElementById('blogTagFilter');
+      select.innerHTML = '<option value="">Все теги</option>' + tags.map(t => `<option value="${t.slug}">${t.name}</option>`).join('');
+    } catch (e) {}
+  }
+
+  function debounce(fn, ms) {
+    let timeout;
+    return function() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn.apply(this, arguments), ms);
+    };
+  }
+
+  document.getElementById('blogSearch').addEventListener('input', debounce(function(e) {
+    currentSearch = e.target.value;
+    currentPage = 1;
+    loadPosts(1);
+  }, 300));
+
+  document.getElementById('blogTagFilter').addEventListener('change', function(e) {
+    currentTag = e.target.value;
+    currentPage = 1;
+    loadPosts(1);
+  });
+
+  loadTags();
+  loadPosts(1);
+})();
+</script>
+{% endblock %}
