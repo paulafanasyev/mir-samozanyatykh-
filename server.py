@@ -1,5 +1,5 @@
 """
-Мир Самозанятых v5.0 — PostgreSQL Edition
+Мир Самозанятых v6.3 — PostgreSQL Edition
 FastAPI + SQLAlchemy async + PostgreSQL + AI + CRM + Finance + Marketplace + Gamification + Legal + Sales
 """
 
