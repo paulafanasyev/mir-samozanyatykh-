@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Светлана — ИИ-ассистент{% endblock %}
+{% block content %}
+<div class="chat-container">
+    <h2>🤖 Светлана — ваш ИИ-ассистент</h2>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input">
+        <select id="category-select"><option value="">Все категории</option></select>
+        <input type="text" id="question-input" placeholder="Задайте вопрос..." maxlength="500">
+        <button onclick="askSvetlana()" class="btn-primary">Спросить</button>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/svetlana/categories');
+        const data = await res.json();
+        const select = document.getElementById('category-select');
+        data.categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.key;
+            opt.textContent = cat.title;
+            select.appendChild(opt);
+        });
+    } catch (e) {}
+}
+
+function addMessage(text, isUser = false) {
+    const div = document.createElement('div');
+    div.className = isUser ? 'message user' : 'message bot';
+    div.textContent = text;
+    document.getElementById('chat-messages').appendChild(div);
+    div.scrollIntoView();
+}
+
+async function askSvetlana() {
+    const input = document.getElementById('question-input');
+    const category = document.getElementById('category-select').value;
+    const question = input.value.trim();
+    if (!question) return;
+
+    addMessage(question, true);
+    input.value = '';
+
+    try {
+        const form = new FormData();
+        form.append('question', question);
+        if (category) form.append('category', category);
+        const res = await fetch('/api/svetlana/ask', { method: 'POST', body: form });
+        const data = await res.json();
+        addMessage(data.answer);
+    } catch (err) {
+        addMessage('Извините, произошла ошибка. Попробуйте позже.');
+    }
+}
+
+document.getElementById('question-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') askSvetlana();
+});
+
+loadCategories();
+addMessage('Привет! Я Светлана, ваш ИИ-ассистент. Чем могу помочь?');
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Гранты — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>🚀 Гранты и господдержка</h2>
+
+    <section class="dashboard-section">
+        <h3>Доступные гранты</h3>
+        <div id="grants-list">Загрузка...</div>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>Подать заявку (требуется подписка Профи)</h3>
+        <form id="grant-form">
+            <select name="grant_type" id="grant-type-select"></select>
+            <textarea name="data" placeholder="Данные заявки (JSON)" required>{"business_plan": "...", "amount": 100000}</textarea>
+            <button type="submit" class="btn-primary">Подать заявку</button>
+        </form>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadGrants() {
+    try {
+        const res = await fetch('/api/grants/templates');
+        const data = await res.json();
+        let html = '<div class="cards-grid">';
+        const select = document.getElementById('grant-type-select');
+        data.grants.forEach(g => {
+            html += `<div class="card"><h4>${g.title}</h4><p>${g.description}</p><p><strong>${g.amount}</strong></p></div>`;
+            const opt = document.createElement('option');
+            opt.value = g.type;
+            opt.textContent = g.title;
+            select.appendChild(opt);
+        });
+        html += '</div>';
+        document.getElementById('grants-list').innerHTML = html;
+    } catch (e) { document.getElementById('grants-list').textContent = 'Ошибка'; }
+}
+
+document.getElementById('grant-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('access_token');
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/grants/apply', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form });
+        const data = await res.json();
+        if (res.ok) { alert('Заявка подана! AI-оценка: ' + (data.ai_feedback ? 'получена' : 'недоступна')); }
+        else { alert(data.detail); }
+    } catch (err) { alert('Ошибка'); }
+});
+
+loadGrants();
+</script>
+{% endblock %}

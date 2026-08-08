@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация — Мир Самозанятых{% endblock %}
+{% block page %}register{% endblock %}
+
+{% block content %}
+
+<section class="section" style="padding-top: 120px; min-height: calc(100vh - 80px); display: flex; align-items: center;">
+  <div class="container" style="max-width: 500px; width: 100%;">
+    <div class="text-center mb-8">
+      <h1 class="text-gradient">Создать аккаунт</h1>
+      <p style="color: var(--neutral-500);">Присоединяйтесь к сообществу самозанятых</p>
+    </div>
+
+    <div class="glass-card" style="padding: var(--space-8);">
+      <form action="/register" method="POST" id="registerForm">
+        <div class="form-group" data-svetlana-help="Введите ваше полное имя. Оно будет отображаться в профиле и договорах.">
+          <label class="form-label">Имя</label>
+          <input type="text" name="name" class="glass-input" placeholder="Иван Иванов" required>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Укажите действующий email. На него придёт письмо с подтверждением регистрации.">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="glass-input" placeholder="ivan@example.com" required>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Введите номер телефона в формате +7XXXXXXXXXX. Нужен для двухфакторной аутентификации и уведомлений.">
+          <label class="form-label">Телефон</label>
+          <input type="tel" name="phone" class="glass-input" placeholder="+79123456789" required pattern="\+7[0-9]{10}">
+          <div class="form-hint">Формат: +79123456789</div>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Придумайте надёжный пароль: минимум 8 символов, буквы и цифры. Не используйте простые комбинации.">
+          <label class="form-label">Пароль</label>
+          <input type="password" name="password" class="glass-input" placeholder="••••••••" required minlength="8" id="password">
+          <div class="form-hint" id="passwordHint">Минимум 8 символов</div>
+          <div id="passwordStrength" style="margin-top: var(--space-2); height: 4px; border-radius: var(--radius-full); background: var(--neutral-200); overflow: hidden;">
+            <div id="passwordStrengthBar" style="height: 100%; width: 0%; transition: all var(--transition-fast); border-radius: var(--radius-full);"></div>
+          </div>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Повторите пароль для проверки. Оба поля должны совпадать.">
+          <label class="form-label">Подтвердите пароль</label>
+          <input type="password" name="password_confirm" class="glass-input" placeholder="••••••••" required>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Выберите основной вид деятельности. Это поможет нам дать персональные рекомендации.">
+          <label class="form-label">Вид деятельности</label>
+          <select name="activity" class="glass-input" required>
+            <option value="">Выберите...</option>
+            <option value="it">IT и программирование</option>
+            <option value="design">Дизайн и креатив</option>
+            <option value="consulting">Консультирование</option>
+            <option value="education">Образование и репетиторство</option>
+            <option value="writing">Копирайтинг и переводы</option>
+            <option value="photo">Фото и видео</option>
+            <option value="repair">Ремонт и строительство</option>
+            <option value="beauty">Красота и здоровье</option>
+            <option value="delivery">Доставка и курьерство</option>
+            <option value="other">Другое</option>
+          </select>
+        </div>
+
+        <div class="form-group" data-svetlana-help="Прочитайте условия использования. Регистрируясь, вы соглашаетесь с правилами платформы.">
+          <label style="display: flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; font-size: 0.9375rem; color: var(--neutral-600);">
+            <input type="checkbox" name="agree" required style="margin-top: 4px; accent-color: var(--primary-600);">
+            <span>Я согласен с <a href="/terms">условиями использования</a> и <a href="/privacy">политикой конфиденциальности</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: var(--space-4);">
+          <span>✨</span> Создать аккаунт
+        </button>
+      </form>
+
+      <div class="text-center" style="margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--neutral-200);">
+        <p style="color: var(--neutral-500); font-size: 0.9375rem;">
+          Уже есть аккаунт? <a href="/login" style="font-weight: 600;">Войти</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Help Banner -->
+    <div class="glass-card" style="padding: var(--space-6); margin-top: var(--space-6); display: flex; align-items: center; gap: var(--space-4);">
+      <div style="font-size: 2rem;">🤖</div>
+      <div>
+        <div style="font-weight: 600; color: var(--neutral-800);">Нужна помощь с регистрацией?</div>
+        <div style="color: var(--neutral-500); font-size: 0.9375rem;">Светлана ответит на любые вопросы — нажмите на иконку чата</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% block extra_scripts %}
+<script>
+// Password strength indicator
+document.getElementById('password').addEventListener('input', function() {
+  const password = this.value;
+  const bar = document.getElementById('passwordStrengthBar');
+  const hint = document.getElementById('passwordHint');
+
+  let strength = 0;
+  if (password.length >= 8) strength += 25;
+  if (password.match(/[a-z]/)) strength += 15;
+  if (password.match(/[A-Z]/)) strength += 15;
+  if (password.match(/[0-9]/)) strength += 20;
+  if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
+
+  bar.style.width = strength + '%';
+
+  if (strength < 30) {
+    bar.style.background = 'var(--danger)';
+    hint.textContent = 'Слабый пароль';
+    hint.style.color = 'var(--danger)';
+  } else if (strength < 60) {
+    bar.style.background = 'var(--warning)';
+    hint.textContent = 'Средний пароль';
+    hint.style.color = 'var(--warning)';
+  } else {
+    bar.style.background = 'var(--success)';
+    hint.textContent = 'Надёжный пароль';
+    hint.style.color = 'var(--success)';
+  }
+});
+</script>
+{% endblock %}
+
+{% endblock %}
