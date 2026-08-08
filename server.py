@@ -72,6 +72,7 @@ def get_celery_tasks():
     return send_email_task, send_sms_task, create_notification_task
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Float, Text,
@@ -2206,9 +2207,8 @@ async def list_comments(
 @app.put("/api/blog/comments/{comment_id}/status")
 async def moderate_comment(
     comment_id: int,
-    status: str = Query(..., pattern="^(approved|rejected|spam)$"),
     request: Request,
-    db: Session = Depends(get_db),
+    status: str = Query(..., pattern="^(approved|rejected|spam)$"),
     current_user: User = Depends(get_current_user)
 ):
     require_role(current_user, ["admin", "moderator", "support"])
@@ -2838,8 +2838,7 @@ async def generate_contract_pdf(contract_id: int, current_user: User = Depends(g
         story = []
         story.append(Paragraph(contract.title or "Договор", styles['Heading1']))
         story.append(Spacer(1, 20))
-        story.append(Paragraph(contract.content.replace("
-", "<br/>"), normal_style))
+        story.append(Paragraph(contract.content.replace("\n", "<br/>"), normal_style))
 
         doc.build(story)
         buffer.seek(0)
