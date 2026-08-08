@@ -155,7 +155,9 @@ def send_daily_summary():
                     .where(Invoice.user_id == user.id, Invoice.status == "paid", Invoice.paid_at >= today))
                 paid_today = paid_result.scalar() or 0
                 if invoices_count > 0 or paid_today > 0:
-                    msg = f"📊 Сводка за сегодня: Новых счетов: {invoices_count} на {(invoices_sum or 0):.0f} ₽, Получено: {paid_today:.0f} ₽"
+                    msg = f"📊 Сводка за сегодня:
+• Новых счетов: {invoices_count} на {(invoices_sum or 0):.0f} ₽
+• Получено: {paid_today:.0f} ₽"
                     db.add(Notification(user_id=user.id, title="📊 Ежедневная сводка", message=msg, type="info"))
             await db.commit()
             return {"users_notified": len(users)}

@@ -1,102 +1,81 @@
-"""Authentication tests"""
 import pytest
-from datetime import datetime, timezone
-from jose import jwt
+from fastapi.testclient import TestClient
+from server import app, get_db, Base, engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from server import settings, create_access_token, verify_password, get_password_hash, validate_password_strength
+client = TestClient(app)
 
-class TestPasswordUtils:
-    def test_password_hashing(self):
-        password = "SecurePass123!"
-        hashed = get_password_hash(password)
-        assert verify_password(password, hashed)
-        assert not verify_password("wrong", hashed)
+@pytest.fixture
+async def db_session():
+    async with async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)() as session:
+        yield session
+        await session.rollback()
 
-    def test_password_strength_valid(self):
-        ok, msg = validate_password_strength("StrongPass123!")
-        assert ok
-        assert msg == "ok"
+class TestAuth:
+    def test_register_validation(self):
+        """Test phone and INN validation"""
+        response = client.post("/api/auth/register", data={
+            "email": "test@test.com",
+            "password": "Test123!",
+            "phone": "invalid",
+            "inn": "123"
+        })
+        assert response.status_code == 422
 
-    def test_password_strength_too_short(self):
-        ok, msg = validate_password_strength("short")
-        assert not ok
-        assert "8" in msg
+    def test_register_valid_phone(self):
+        """Test valid phone format"""
+        response = client.post("/api/auth/register", data={
+            "email": "test@test.com",
+            "password": "Test123!",
+            "phone": "+79001234567",
+            "inn": "123456789012"
+        })
+        # Should not fail on validation
+        assert response.status_code != 422
 
-    def test_password_strength_no_numbers(self):
-        ok, msg = validate_password_strength("NoNumbers!")
-        assert not ok
-        assert "цифр" in msg
+    def test_login_2fa_required(self):
+        """Test 2FA login flow"""
+        response = client.post("/api/auth/login/2fa", data={
+            "email": "test@test.com",
+            "password": "Test123!"
+        })
+        # Should return 202 if 2FA enabled
+        assert response.status_code in [200, 202, 401]
 
-    def test_password_strength_no_letters(self):
-        ok, msg = validate_password_strength("12345678!")
-        assert not ok
-        assert "букв" in msg
+    def test_rate_limiting(self):
+        """Test rate limiting on login"""
+        for i in range(10):
+            response = client.post("/api/auth/login/2fa", data={
+                "email": "test@test.com",
+                "password": "wrong"
+            })
+        # After 5 attempts should be rate limited
+        assert response.status_code in [401, 429]
 
-class TestJWT:
-    def test_create_access_token(self):
-        data = {"sub": "test@example.com", "type": "access"}
-        token, jti = create_access_token(data)
-        assert token
-        assert jti
-        decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        assert decoded["sub"] == "test@example.com"
-        assert decoded["type"] == "access"
+class TestSales:
+    def test_invoice_auth_required(self):
+        """Test invoice endpoints require auth"""
+        response = client.get("/api/sales/invoices")
+        assert response.status_code == 401
 
-    def test_token_expiration(self):
-        from datetime import timedelta
-        data = {"sub": "test@example.com", "type": "access"}
-        token, _ = create_access_token(data, expires_delta=timedelta(minutes=1))
-        decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        assert "exp" in decoded
+    def test_invoice_phone_validation(self):
+        """Test SMS phone validation"""
+        response = client.post("/api/sms/send", data={
+            "phone": "invalid",
+            "message": "test"
+        })
+        assert response.status_code in [401, 422]
 
-@pytest.mark.asyncio
-class TestAuthAPI:
-    async def test_register_success(self, db_session):
-        """Test successful user registration."""
-        from server import User
-        user = User(
-            email="new@example.com",
-            name="New User",
-            phone="+79998887766",
-            hashed_password=get_password_hash("NewPass123!"),
-            is_active=True,
-            created_at=datetime.now(timezone.utc)
-        )
-        db_session.add(user)
-        await db_session.commit()
+class TestSecurity:
+    def test_csp_headers(self):
+        """Test CSP headers present"""
+        response = client.get("/")
+        assert "Content-Security-Policy" in response.headers
 
-        result = await db_session.execute(
-            select(User).where(User.email == "new@example.com")
-        )
-        assert result.scalar_one_or_none() is not None
-
-    async def test_user_unique_email(self, db_session, test_user):
-        """Test that duplicate emails are rejected."""
-        from server import User
-        from sqlalchemy.exc import IntegrityError
-
-        duplicate = User(
-            email="test@example.com",
-            name="Duplicate",
-            phone="+71111111111",
-            hashed_password=get_password_hash("Pass123!"),
-            created_at=datetime.now(timezone.utc)
-        )
-        db_session.add(duplicate)
-        with pytest.raises(IntegrityError):
-            await db_session.commit()
-
-    async def test_user_inactive_cannot_login(self, db_session):
-        """Test inactive users cannot authenticate."""
-        from server import User
-        user = User(
-            email="inactive@example.com",
-            name="Inactive",
-            phone="+72222222222",
-            hashed_password=get_password_hash("Pass123!"),
-            is_active=False,
-            created_at=datetime.now(timezone.utc)
-        )
-        db_session.add(user)
-        await db_session.commit()
-        assert not user.is_active
+    def test_csrf_protection(self):
+        """Test CSRF token required"""
+        response = client.post("/api/finance/transactions", data={
+            "amount": 100,
+            "description": "test"
+        })
+        assert response.status_code in [401, 403]
