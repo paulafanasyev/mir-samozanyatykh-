@@ -1,153 +1,169 @@
+# Мир Самозанятых v6.0 — Docker Compose
+# АНО ЦПС ИНН 9724016805
+
 version: "3.8"
 
 services:
-  postgres:
+  # ==================== PostgreSQL ====================
+  db:
     image: postgres:16-alpine
-    container_name: mir-samozanyatykh-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: mir_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
-      POSTGRES_DB: mir_samozanyatykh
+      POSTGRES_USER: ${DB_USER:-mir_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: ${DB_NAME:-mir_samozanyatykh}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - web
+      - internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mir_user -d mir_samozanyatykh"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mir_user} -d ${DB_NAME:-mir_samozanyatykh}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
 
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=it-laboratory@bk.ru"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--accesslog=true"
-      - "--accesslog.format=json"
-      - "--log.level=INFO"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt:/letsencrypt
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.мир-самозанятых.рф`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.middlewares=auth@file"
-
-  celery-worker:
-    build: .
-    container_name: mir-samozanyatykh-celery
-    restart: unless-stopped
-    command: celery -A tasks worker --loglevel=info --concurrency=4
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - postgres
-    volumes:
-      - ./data:/app/data
-    networks:
-      - web
-
-  celery-beat:
-    build: .
-    container_name: mir-samozanyatykh-beat
-    restart: unless-stopped
-    command: celery -A tasks beat --loglevel=info
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - postgres
-    volumes:
-      - ./data:/app/data
-    networks:
-      - web
-
-  flower:
-    build: .
-    container_name: mir-samozanyatykh-flower
-    restart: unless-stopped
-    command: celery -A tasks flower --port=5555
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - postgres
-    ports:
-      - "5555:5555"
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.flower.rule=Host(`flower.мир-самозанятых.рф`)"
-      - "traefik.http.routers.flower.entrypoints=websecure"
-      - "traefik.http.routers.flower.tls.certresolver=letsencrypt"
-      - "traefik.http.services.flower.loadbalancer.server.port=5555"
-
-  app:
-    build: .
-    container_name: mir-samozanyatykh
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./data:/app/data
-      - ./letsencrypt:/app/letsencrypt
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`мир-самозанятых.рф`) || Host(`www.мир-самозанятых.рф`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.app.loadbalancer.server.port=8000"
-      - "traefik.http.middlewares.app-headers.headers.customFrameOptionsValue=SAMEORIGIN"
-      - "traefik.http.middlewares.app-headers.headers.contentSecurityPolicy=default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-      - "traefik.http.middlewares.app-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
-      - "traefik.http.middlewares.app-headers.headers.permissionsPolicy=geolocation=(), microphone=(), camera=()"
-      - "traefik.http.routers.app.middlewares=app-headers@docker"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      - traefik
-
-  # Redis для rate limiting и кэша (опционально, можно убрать если не нужен)
+  # ==================== Redis ====================
   redis:
     image: redis:7-alpine
-    container_name: redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
-      - web
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
+  # ==================== Backend API ====================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-mir_user}:${DB_PASSWORD:-change_me_in_production}@db:5432/${DB_NAME:-mir_samozanyatykh}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - app_uploads:/app/data/uploads
+      - app_contracts:/app/data/contracts
+      - app_invoices:/app/data/invoices
+      - app_logs:/app/logs
+    networks:
+      - internal
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.app.tls.options=default"
+      - "traefik.http.services.app.loadbalancer.server.port=8000"
+      - "traefik.http.services.app.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.app.loadbalancer.healthcheck.interval=10s"
+      - "traefik.http.middlewares.app-compress.compress=true"
+      - "traefik.http.middlewares.app-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.app-ratelimit.ratelimit.burst=50"
+      - "traefik.http.routers.app.middlewares=app-compress,app-ratelimit"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ==================== Celery Worker ====================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "celery", "-A", "app.tasks", "worker", "--loglevel=info", "--concurrency=2"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-mir_user}:${DB_PASSWORD:-change_me_in_production}@db:5432/${DB_NAME:-mir_samozanyatykh}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - app_uploads:/app/data/uploads
+      - app_logs:/app/logs
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # ==================== Celery Beat (Scheduler) ====================
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "celery", "-A", "app.tasks", "beat", "--loglevel=info", "--scheduler", "redbeat.RedBeatScheduler"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-mir_user}:${DB_PASSWORD:-change_me_in_production}@db:5432/${DB_NAME:-mir_samozanyatykh}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - app_logs:/app/logs
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+# ==================== Volumes ====================
 volumes:
+  postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  app_uploads:
+    driver: local
+  app_contracts:
+    driver: local
+  app_invoices:
+    driver: local
+  app_logs:
+    driver: local
 
+# ==================== Networks ====================
 networks:
-  web:
+  internal:
     driver: bridge
+    internal: false
+  traefik-public:
+    external: true
