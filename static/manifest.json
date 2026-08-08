@@ -28,22 +28,6 @@
     "finance",
     "productivity"
   ],
-  "screenshots": [
-    {
-      "src": "/static/screenshot-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Главная страница Мир Самозанятых"
-    },
-    {
-      "src": "/static/screenshot-2.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Налоговый калькулятор"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Калькулятор",
@@ -52,7 +36,7 @@
       "url": "/calculator",
       "icons": [
         {
-          "src": "/static/icon-calc.png",
+          "src": "/static/icon-192.png",
           "sizes": "96x96"
         }
       ]
@@ -64,7 +48,31 @@
       "url": "/svetlana",
       "icons": [
         {
-          "src": "/static/icon-svetlana.png",
+          "src": "/static/icon-192.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Финансы",
+      "short_name": "Финансы",
+      "description": "Трекер доходов",
+      "url": "/finance",
+      "icons": [
+        {
+          "src": "/static/icon-192.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "CRM",
+      "short_name": "CRM",
+      "description": "Клиенты и сделки",
+      "url": "/crm",
+      "icons": [
+        {
+          "src": "/static/icon-192.png",
           "sizes": "96x96"
         }
       ]
