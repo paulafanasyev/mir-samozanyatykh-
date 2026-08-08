@@ -1935,6 +1935,12 @@ async def blog_list_page(request: Request):
     return templates.TemplateResponse("blog.html", {"request": request, "csp_nonce": request.state.csp_nonce})
 
 @app.get("/blog/{slug}", response_class=HTMLResponse)
+
+@app.get("/projects", response_class=HTMLResponse)
+async def projects_page(request: Request):
+    return templates.TemplateResponse("projects.html", {"request": request, "csp_nonce": request.state.csp_nonce})
+
+
 async def blog_post_page(request: Request, slug: str):
     return templates.TemplateResponse("blog_post.html", {"request": request, "csp_nonce": request.state.csp_nonce, "slug": slug})
 
