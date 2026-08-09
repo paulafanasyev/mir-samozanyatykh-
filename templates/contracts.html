@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Договоры — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="contracts-page">
+    <h2>📄 Шаблоны договоров</h2>
+    <div id="templates-list">Загрузка...</div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadTemplates() {
+    try {
+        const res = await fetch('/api/contracts/templates');
+        const data = await res.json();
+        document.getElementById('templates-list').innerHTML = data.templates.map(t => `
+            <div class="contract-card">
+                <h4>${t.name}</h4>
+                <span class="badge">${t.category}</span>
+            </div>
+        `).join('');
+    } catch (err) {
+        document.getElementById('templates-list').textContent = 'Ошибка загрузки';
+    }
+}
+loadTemplates();
+</script>
+{% endblock %}

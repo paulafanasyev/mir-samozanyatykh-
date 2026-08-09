@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>Профиль исполнителя</h2>
+    <div id="profile-info">Загрузка...</div>
+
+    <section class="dashboard-section">
+        <h3>Оставить отзыв</h3>
+        <form id="review-form">
+            <input type="text" name="author_name" placeholder="Ваше имя" required maxlength="255">
+            <input type="number" name="rating" placeholder="Оценка (1-5)" min="1" max="5" required>
+            <textarea name="text" placeholder="Ваш отзыв"></textarea>
+            <button type="submit" class="btn-primary">Отправить</button>
+        </form>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+const slug = "{{ slug }}";
+
+async function loadProfile() {
+    try {
+        const res = await fetch('/api/marketplace/profiles?q=' + slug);
+        const data = await res.json();
+        const profile = data.profiles.find(p => p.slug === slug);
+        if (!profile) { document.getElementById('profile-info').textContent = 'Профиль не найден'; return; }
+        document.getElementById('profile-info').innerHTML = `
+            <h3>${profile.name}</h3>
+            <p>${profile.bio || ''}</p>
+            <p>⭐ ${profile.rating} (${profile.reviews_count} отзывов)</p>
+            <p>${profile.hourly_rate ? profile.hourly_rate + ' ₽/час' : ''}</p>
+            <p>Услуги: ${(profile.services || []).join(', ')}</p>
+        `;
+    } catch (e) { document.getElementById('profile-info').textContent = 'Ошибка'; }
+}
+
+document.getElementById('review-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    form.append('profile_slug', slug);
+    try {
+        const res = await fetch('/api/marketplace/reviews', { method: 'POST', body: form });
+        if (res.ok) { alert('Отзыв добавлен!'); e.target.reset(); loadProfile(); }
+        else { const data = await res.json(); alert(data.detail); }
+    } catch (err) { alert('Ошибка'); }
+});
+
+loadProfile();
+</script>
+{% endblock %}

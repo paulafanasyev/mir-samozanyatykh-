@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Маркетплейс — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>🏪 Маркетплейс услуг</h2>
+
+    <section class="dashboard-section">
+        <h3>Создать профиль</h3>
+        <form id="profile-form">
+            <input type="text" name="slug" placeholder="URL (например: ivan-design)" required maxlength="100">
+            <textarea name="bio" placeholder="О себе"></textarea>
+            <input type="text" name="services" placeholder="Услуги (JSON массив)" value='["Дизайн", "Верстка"]'>
+            <input type="number" name="hourly_rate" placeholder="Ставка в час (₽)" step="100">
+            <button type="submit" class="btn-primary">Создать профиль</button>
+        </form>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>Поиск исполнителей</h3>
+        <input type="text" id="search-q" placeholder="Поиск...">
+        <button onclick="searchProfiles()" class="btn-primary">Найти</button>
+        <div id="profiles-list">Введите запрос для поиска</div>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function searchProfiles() {
+    const q = document.getElementById('search-q').value;
+    try {
+        const res = await fetch('/api/marketplace/profiles?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        let html = '<div class="cards-grid">';
+        data.profiles.forEach(p => {
+            html += `<div class="card"><h4>${p.name}</h4><p>${p.bio || ''}</p><p>⭐ ${p.rating} (${p.reviews_count} отзывов)</p><p>${p.hourly_rate ? p.hourly_rate + ' ₽/час' : ''}</p><a href="/marketplace/${p.slug}" class="btn-primary">Профиль</a></div>`;
+        });
+        html += '</div>';
+        document.getElementById('profiles-list').innerHTML = html;
+    } catch (e) { document.getElementById('profiles-list').textContent = 'Ошибка'; }
+}
+
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('access_token');
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/marketplace/profile', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form });
+        const data = await res.json();
+        if (res.ok) { alert('Профиль создан: ' + data.url); }
+        else { alert(data.detail); }
+    } catch (err) { alert('Ошибка'); }
+});
+</script>
+{% endblock %}

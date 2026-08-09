@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Финансы — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>💰 Финансы</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="total-income">0 ₽</div>
+            <div class="stat-label">Доходы</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="total-expense">0 ₽</div>
+            <div class="stat-label">Расходы</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="tax-estimate">0 ₽</div>
+            <div class="stat-label">Налог (4%)</div>
+        </div>
+    </div>
+
+    <section class="dashboard-section">
+        <h3>Добавить транзакцию</h3>
+        <form id="transaction-form">
+            <input type="number" name="amount" placeholder="Сумма" step="0.01" required>
+            <input type="text" name="category" placeholder="Категория" required maxlength="100">
+            <input type="text" name="description" placeholder="Описание" maxlength="500">
+            <button type="submit" class="btn-primary">Добавить</button>
+        </form>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>История транзакций</h3>
+        <div id="transactions-list">Загрузка...</div>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>Статистика по месяцам</h3>
+        <div id="monthly-stats">Загрузка...</div>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadStats() {
+    const token = localStorage.getItem('access_token');
+    try {
+        const res = await fetch('/api/finance/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        document.getElementById('tax-estimate').textContent = Math.round(data.tax_estimate || 0).toLocaleString() + ' ₽';
+
+        let monthlyHtml = '<table class="data-table"><tr><th>Месяц</th><th>Сумма</th></tr>';
+        data.monthly.forEach(m => {
+            monthlyHtml += `<tr><td>${m.month}</td><td>${m.total.toLocaleString()} ₽</td></tr>`;
+        });
+        monthlyHtml += '</table>';
+        document.getElementById('monthly-stats').innerHTML = monthlyHtml;
+    } catch (e) {}
+}
+
+async function loadTransactions() {
+    const token = localStorage.getItem('access_token');
+    try {
+        const res = await fetch('/api/finance/transactions', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        document.getElementById('total-income').textContent = (data.income || 0).toLocaleString() + ' ₽';
+        document.getElementById('total-expense').textContent = (data.expense || 0).toLocaleString() + ' ₽';
+
+        let html = '<table class="data-table"><tr><th>Дата</th><th>Категория</th><th>Сумма</th><th>Описание</th></tr>';
+        data.transactions.forEach(t => {
+            const color = t.amount > 0 ? 'var(--success)' : 'var(--accent)';
+            html += `<tr><td>${t.date?.split('T')[0]}</td><td>${t.category}</td><td style="color:${color}">${t.amount.toLocaleString()} ₽</td><td>${t.description || ''}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('transactions-list').innerHTML = html;
+    } catch (e) {
+        document.getElementById('transactions-list').textContent = 'Ошибка загрузки';
+    }
+}
+
+document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('access_token');
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/finance/transactions', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form });
+        if (res.ok) {
+            e.target.reset();
+            loadTransactions();
+            loadStats();
+        } else {
+            const data = await res.json();
+            alert(data.detail);
+        }
+    } catch (err) { alert('Ошибка'); }
+});
+
+loadTransactions();
+loadStats();
+</script>
+{% endblock %}
