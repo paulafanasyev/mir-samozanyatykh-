@@ -1,5 +1,5 @@
 """
-ORM models SQLAlchemy for Mir Samozanyatykh v7.7
+ORM models SQLAlchemy for Mir Samozanyatykh v7.8
 ANO CPS INN 9724016805
 """
 
@@ -412,3 +412,54 @@ class DocumentTemplate(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User")
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    key_hash = Column(String(255), nullable=False, unique=True, index=True)
+    key_prefix = Column(String(8), nullable=False)
+    scopes = Column(JSON, default=list)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class Webhook(Base):
+    __tablename__ = "webhooks"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    url = Column(String(500), nullable=False)
+    events = Column(JSON, default=list)
+    secret = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    failure_count = Column(Integer, default=0)
+    last_delivered_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class WebhookDelivery(Base):
+    __tablename__ = "webhook_deliveries"
+
+    id = Column(Integer, primary_key=True)
+    webhook_id = Column(Integer, ForeignKey("webhooks.id", ondelete="CASCADE"), nullable=False, index=True)
+    event = Column(String(100), nullable=False)
+    payload = Column(JSON, default=dict)
+    response_status = Column(Integer, nullable=True)
+    response_body = Column(Text, nullable=True)
+    success = Column(Boolean, default=False)
+    duration_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    webhook = relationship("Webhook")
