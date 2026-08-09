@@ -1,7 +1,7 @@
 {
   "name": "mir-samozanyatykh-frontend",
-  "version": "6.9.0",
-  "description": "Frontend Мир Самозанятых v6.9 — React 18 + TypeScript + Vite + Tailwind + shadcn/ui",
+  "version": "7.0.0",
+  "description": "Frontend Мир Самозанятых v7.0 — React 18 + TypeScript + Vite + Tailwind + shadcn/ui",
   "type": "module",
   "scripts": {
     "dev": "vite",
