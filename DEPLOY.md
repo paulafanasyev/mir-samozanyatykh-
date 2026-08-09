@@ -1,4 +1,4 @@
-# DEPLOY.md — Mir Samozanyatykh v6.8
+# DEPLOY.md — Mir Samozanyatykh v6.9
 
 ## ANO CPS INN 9724016805
 
