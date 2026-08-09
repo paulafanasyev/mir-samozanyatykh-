@@ -1,5 +1,5 @@
 """
-ORM models SQLAlchemy for Mir Samozanyatykh v7.5
+ORM models SQLAlchemy for Mir Samozanyatykh v7.6
 ANO CPS INN 9724016805
 """
 
@@ -37,6 +37,12 @@ class User(Base):
     points = Column(Integer, default=0)
     level = Column(String(20), default="beginner")
 
+    # Реферальная система
+    referral_code = Column(String(20), unique=True, nullable=True, index=True)
+    referred_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    referral_count = Column(Integer, default=0)
+    referral_earnings = Column(Numeric(15, 2), default=Decimal("0"))
+
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
     email_verification_token = Column(String(255), nullable=True, index=True)
@@ -58,6 +64,7 @@ class User(Base):
     tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
     events = relationship("CalendarEvent", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    referrals = relationship("Referral", foreign_keys="Referral.referrer_id", back_populates="referrer", cascade="all, delete-orphan")
 
     @property
     def tier(self):
@@ -373,6 +380,22 @@ class Notification(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="notifications")
+
+
+class Referral(Base):
+    __tablename__ = "referrals"
+
+    id = Column(Integer, primary_key=True)
+    referrer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    referred_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    status = Column(String(20), default="registered", nullable=False)  # registered, active, paid
+    reward_amount = Column(Numeric(15, 2), default=Decimal("0"))
+    reward_paid = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    converted_at = Column(DateTime(timezone=True), nullable=True)
+
+    referrer = relationship("User", foreign_keys=[referrer_id], back_populates="referrals")
+    referred = relationship("User", foreign_keys=[referred_id])
 
 
 class DocumentTemplate(Base):

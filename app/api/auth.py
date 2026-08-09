@@ -77,14 +77,58 @@ async def register(
     await db.commit()
     await db.refresh(new_user)
     
+    # Обработка реферального кода
+    referral_code = request.query_params.get("ref")
+    if referral_code:
+        from app.api.referrals import generate_referral_code
+        ref_result = await db.execute(
+            select(User).where(User.referral_code == referral_code.upper().strip())
+        )
+        referrer = ref_result.scalar_one_or_none()
+        if referrer and referrer.id != new_user.id:
+            from app.models import Referral
+            from app.api.referrals import REFERRAL_REWARDS, get_referral_level
+            from decimal import Decimal
+            level = get_referral_level(referrer.referral_count or 0)
+            reward = REFERRAL_REWARDS["registration"]
+            bonus = reward * Decimal(level["bonus_pct"]) / Decimal("100")
+            total_reward = reward + bonus
+
+            referral = Referral(
+                referrer_id=referrer.id,
+                referred_id=new_user.id,
+                status="registered",
+                reward_amount=total_reward,
+            )
+            db.add(referral)
+            new_user.referred_by = referrer.id
+            referrer.referral_count = (referrer.referral_count or 0) + 1
+            referrer.points = (referrer.points or 0) + 50
+
+            # Уведомление рефереру
+            from app.models import Notification
+            db.add(Notification(
+                user_id=referrer.id,
+                title="Новый реферал!",
+                body=f"{new_user.full_name or new_user.email} зарегистрировался по вашей ссылке. +{float(total_reward)} руб.",
+                notification_type="success",
+            ))
+            await db.commit()
+
+    # Генерация реферального кода для нового пользователя
+    if not new_user.referral_code:
+        from app.api.referrals import generate_referral_code
+        new_user.referral_code = generate_referral_code()
+        await db.commit()
+
     # Отправка email
     email_sent = await email_service.send_verification(email, verification_token)
-    
+
     await log_audit(
         action="register",
         user_id=new_user.id,
         ip_address=request.client.host,
-        details=f"Registration, email_sent={email_sent}",
+        details=f"Registration, email_sent={email_sent}, ref={referral_code}",
     )
     
     return {

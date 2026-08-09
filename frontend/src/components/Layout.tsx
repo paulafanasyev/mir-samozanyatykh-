@@ -12,6 +12,8 @@ const getNavItems = (isAdmin: boolean) => {
     { path: '/deals', label: 'Sdelki', icon: Handshake },
     { path: '/contracts', label: 'Dogovory', icon: FileSignature },
     { path: '/svetlana', label: 'Svetlana', icon: Mic },
+    { path: '/referrals', label: 'Referraly', icon: Gift },
+    { path: '/notifications', label: 'Uvedomleniya', icon: Bell },
     { path: '/profile', label: 'Profil', icon: UserCircle },
   ]
   if (isAdmin) {
