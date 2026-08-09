@@ -21,6 +21,7 @@ const DocsPage = lazy(() => import('./pages/DocsPage'))
 const Accounting = lazy(() => import('./pages/Accounting'))
 const TaxReports = lazy(() => import('./pages/TaxReports'))
 const ReceiptCheck = lazy(() => import('./pages/ReceiptCheck'))
+const EmailCampaigns = lazy(() => import('./pages/EmailCampaigns'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -55,6 +56,7 @@ function App() {
           <Route path="accounting" element={<Accounting />} />
           <Route path="tax-reports" element={<TaxReports />} />
           <Route path="receipt-check" element={<ReceiptCheck />} />
+          <Route path="email-campaigns" element={<EmailCampaigns />} />
         </Route>
       </Routes>
     </Suspense>

@@ -77,6 +77,11 @@ class Settings(BaseSettings):
     FNS_API_URL: str = "https://api-fns.ru/api/"
     FNS_API_KEY: str = ""
     
+    # Банки
+    TINKOFF_API_TOKEN: str = ""
+    SBER_API_TOKEN: str = ""
+    VTB_API_TOKEN: str = ""
+    
     # ЮKassa
     YOOKASSA_SHOP_ID: str = ""
     YOOKASSA_SECRET_KEY: str = ""

@@ -22,7 +22,7 @@ from app.core.logging import logger
 from app.core.security import generate_csp_nonce
 
 # Импорт роутеров
-from app.api import auth, users, sales, contracts, crm, svetlana, websocket, subscriptions, flutter, email_campaigns, analytics, import_export, search, calendar, notifications, webrtc, ai_analytics, white_label, mfa, telegram_bot, api_keys, webhooks, whatsapp, reports, backups, health, admin, referrals, tasks, export, import_data, accounting, fns
+from app.api import auth, users, sales, contracts, crm, svetlana, websocket, subscriptions, flutter, email_campaigns, analytics, import_export, search, calendar, notifications, webrtc, ai_analytics, white_label, mfa, telegram_bot, api_keys, webhooks, whatsapp, reports, backups, health, admin, referrals, tasks, export, import_data, accounting, fns, bank
 
 
 # Rate limiter
@@ -218,6 +218,7 @@ app.include_router(export.router)
 app.include_router(import_data.router)
 app.include_router(accounting.router)
 app.include_router(fns.router)
+app.include_router(bank.router)
 
 
 # ============ HEALTH CHECKS ============
