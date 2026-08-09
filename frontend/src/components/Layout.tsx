@@ -1,24 +1,31 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { LayoutDashboard, Package, FileText, Users, Handshake, FileSignature, UserCircle, Mic, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, FileText, Users, Handshake, FileSignature, UserCircle, Mic, LogOut, Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/products', label: 'Produkty', icon: Package },
-  { path: '/invoices', label: 'Scheta', icon: FileText },
-  { path: '/clients', label: 'Klienty', icon: Users },
-  { path: '/deals', label: 'Sdelki', icon: Handshake },
-  { path: '/contracts', label: 'Dogovory', icon: FileSignature },
-  { path: '/svetlana', label: 'Svetlana', icon: Mic },
-  { path: '/profile', label: 'Profil', icon: UserCircle },
-]
+const getNavItems = (isAdmin: boolean) => {
+  const items = [
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/products', label: 'Produkty', icon: Package },
+    { path: '/invoices', label: 'Scheta', icon: FileText },
+    { path: '/clients', label: 'Klienty', icon: Users },
+    { path: '/deals', label: 'Sdelki', icon: Handshake },
+    { path: '/contracts', label: 'Dogovory', icon: FileSignature },
+    { path: '/svetlana', label: 'Svetlana', icon: Mic },
+    { path: '/profile', label: 'Profil', icon: UserCircle },
+  ]
+  if (isAdmin) {
+    items.push({ path: '/admin', label: 'Admin Panel', icon: Shield })
+  }
+  return items
+}
 
 export default function Layout() {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isActive = (path: string) => location.pathname === path
+  const navItems = getNavItems(user?.is_admin || false)
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -34,6 +41,9 @@ export default function Layout() {
             <div className="flex items-center gap-4">
               {user ? (
                 <>
+                  {user.is_admin && (
+                    <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">ADMIN</span>
+                  )}
                   <span className="text-sm text-slate-600 hidden sm:block">{user.email}</span>
                   <button onClick={logout} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700">
                     <LogOut className="w-4 h-4" />

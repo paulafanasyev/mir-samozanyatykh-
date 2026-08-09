@@ -37,6 +37,8 @@ function App() {
           <Route path="contracts" element={<Contracts />} />
           <Route path="profile" element={<Profile />} />
           <Route path="svetlana" element={<Svetlana />} />
+          <Route path="admin" element={<AdminPanel />} />
+          <Route path="admin/audit-logs" element={<AuditLogs />} />
         </Route>
       </Routes>
     </Suspense>

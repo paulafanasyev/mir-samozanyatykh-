@@ -1,5 +1,5 @@
 """
-API маршруты модуля продаж
+API маршруты модуля продаж v7.5
 Полный CRUD: Products, Invoices, Payments + ЮKassa интеграция
 """
 

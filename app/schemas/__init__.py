@@ -1,1 +1,1 @@
-# Pydantic schemas for API validation
+# Pydantic schemas for API validation — v7.5

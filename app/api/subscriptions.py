@@ -1,5 +1,5 @@
 """
-API подписок и тарифов v6.7
+API подписок и тарифов v7.5
 """
 
 from datetime import datetime, timezone, timedelta

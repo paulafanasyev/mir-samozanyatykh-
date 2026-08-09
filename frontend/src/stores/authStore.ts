@@ -7,6 +7,8 @@ interface User {
   full_name: string | null
   role: string
   tier: string
+  is_admin: boolean
+  is_moderator: boolean
 }
 
 interface AuthState {
