@@ -17,6 +17,7 @@ const Svetlana = lazy(() => import('./pages/Svetlana'))
 const Tasks = lazy(() => import('./pages/Tasks'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const Integrations = lazy(() => import('./pages/Integrations'))
+const DocsPage = lazy(() => import('./pages/DocsPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -47,6 +48,7 @@ function App() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="integrations" element={<Integrations />} />
+          <Route path="docs" element={<DocsPage />} />
         </Route>
       </Routes>
     </Suspense>

@@ -1,5 +1,5 @@
 """
-Главный файл FastAPI приложения Мир Самозанятых v7.8
+Главный файл FastAPI приложения Мир Самозанятых v7.9
 АНО ЦПС ИНН 9724016805
 """
 
@@ -214,7 +214,6 @@ app.include_router(backups.router)
 app.include_router(health.router)
 app.include_router(referrals.router)
 app.include_router(tasks.router)
-app.include_router(calendar.router)
 app.include_router(export.router)
 app.include_router(import_data.router)
 

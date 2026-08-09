@@ -1,6 +1,9 @@
-# API Документация — Мир Самозанятых v6.0
+# API Документация — Мир Самозанятых v7.9
+
+АНО ЦПС «Мир Самозанятых» | ИНН 9724016805
 
 ## Базовый URL
+
 ```
 Production: https://mir-samozanyatykh.ru/api
 Local:      http://localhost:8000/api
@@ -65,41 +68,6 @@ refresh_token=<refresh_token>
 
 ---
 
-## Пользователи
-
-### Профиль
-```http
-GET /api/users/me
-Authorization: Bearer <token>
-```
-
-### Обновление профиля
-```http
-PUT /api/users/me
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "full_name": "Новое Имя",
-  "phone": "+79001234567",
-  "inn": "123456789012"
-}
-```
-
-### Смена пароля
-```http
-POST /api/users/me/password
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "current_password": "OldPass123!",
-  "new_password": "NewStrongPass123!"
-}
-```
-
----
-
 ## 2FA (Двухфакторная аутентификация)
 
 ### Настройка
@@ -134,6 +102,41 @@ Authorization: Bearer <token>
 Content-Type: application/x-www-form-urlencoded
 
 password=CurrentPass123!
+```
+
+---
+
+## Пользователи
+
+### Профиль
+```http
+GET /api/users/me
+Authorization: Bearer <token>
+```
+
+### Обновление профиля
+```http
+PUT /api/users/me
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "full_name": "Новое Имя",
+  "phone": "+79001234567",
+  "inn": "123456789012"
+}
+```
+
+### Смена пароля
+```http
+POST /api/users/me/password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "current_password": "OldPass123!",
+  "new_password": "NewStrongPass123!"
+}
 ```
 
 ---
@@ -387,7 +390,6 @@ Authorization: Bearer <token>
 ```
 
 ### Генерация
-
 ```http
 POST /api/contracts/generate
 Authorization: Bearer <token>
@@ -409,14 +411,12 @@ Content-Type: application/json
 ```
 
 ### Подписание
-
 ```http
 POST /api/contracts/{id}/sign
 Authorization: Bearer <token>
 ```
 
 ### Проверка подписи
-
 ```http
 POST /api/contracts/{id}/verify
 Authorization: Bearer <token>
@@ -438,7 +438,6 @@ Authorization: Bearer <token>
 ```
 
 ### Скачивание PDF
-
 ```http
 GET /api/contracts/{id}/pdf
 Authorization: Bearer <token>
@@ -507,7 +506,6 @@ Authorization: Bearer <token>
 ## AI Ассистент Светлана
 
 ### Текстовый чат
-
 ```http
 POST /api/svetlana/chat
 Authorization: Bearer <token>
@@ -524,7 +522,6 @@ message=Какие+налоги+платит+самозанятый?&voice=false
 ```
 
 ### Голосовой ответ
-
 ```http
 POST /api/svetlana/chat
 Authorization: Bearer <token>
@@ -536,7 +533,6 @@ message=Расскажи+про+вычеты&voice=true&emotion=friendly
 **Ответ:** `audio/mpeg` поток
 
 ### Только голос
-
 ```http
 POST /api/svetlana/voice
 Authorization: Bearer <token>
@@ -546,9 +542,447 @@ text=Здравствуйте!+Я+Светлана,+ваш+помощник.&emo
 ```
 
 ### Статус
-
 ```http
 GET /api/svetlana/status
+```
+
+---
+
+## Задачи и Календарь (v7.7+)
+
+### Задачи
+
+#### Список
+```http
+GET /api/tasks?page=1&per_page=20&status=pending&priority=high
+Authorization: Bearer <token>
+```
+
+#### Создание
+```http
+POST /api/tasks
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Подготовить договор",
+  "description": "Составить ГПД для клиента ООО Ромашка",
+  "due_date": "2026-02-20T10:00:00",
+  "priority": "high",
+  "status": "pending",
+  "tags": ["договор", "срочно"]
+}
+```
+
+#### Обновление
+```http
+PUT /api/tasks/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "in_progress",
+  "progress": 50
+}
+```
+
+#### Удаление
+```http
+DELETE /api/tasks/{id}
+Authorization: Bearer <token>
+```
+
+#### Kanban — перемещение
+```http
+POST /api/tasks/{id}/move
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+```
+
+### Календарь
+
+#### Список событий
+```http
+GET /api/calendar/events?start=2026-02-01&end=2026-02-28
+Authorization: Bearer <token>
+```
+
+#### Создание события
+```http
+POST /api/calendar/events
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Встреча с клиентом",
+  "description": "Обсуждение проекта",
+  "start_time": "2026-02-15T14:00:00",
+  "end_time": "2026-02-15T15:30:00",
+  "location": "Офис",
+  "reminder_minutes": 30,
+  "color": "#1976D2"
+}
+```
+
+#### Обновление
+```http
+PUT /api/calendar/events/{id}
+Authorization: Bearer <token>
+```
+
+#### Удаление
+```http
+DELETE /api/calendar/events/{id}
+Authorization: Bearer <token>
+```
+
+---
+
+## Реферальная система (v7.6+)
+
+### Получение реферальной ссылки
+```http
+GET /api/referrals/link
+Authorization: Bearer <token>
+```
+
+**Ответ:**
+```json
+{
+  "referral_code": "ABC123",
+  "referral_link": "https://mir-samozanyatykh.ru/register?ref=ABC123",
+  "total_referrals": 5,
+  "total_earnings": 2500.00,
+  "tier_discount": 10
+}
+```
+
+### Список рефералов
+```http
+GET /api/referrals?status=active
+Authorization: Bearer <token>
+```
+
+---
+
+## Уведомления (v7.6+)
+
+### Список
+```http
+GET /api/notifications?page=1&per_page=20&unread_only=true
+Authorization: Bearer <token>
+```
+
+### Отметить прочитанным
+```http
+POST /api/notifications/{id}/read
+Authorization: Bearer <token>
+```
+
+### Отметить все прочитанными
+```http
+POST /api/notifications/read-all
+Authorization: Bearer <token>
+```
+
+### Настройки
+```http
+GET /api/notifications/settings
+Authorization: Bearer <token>
+```
+
+```http
+PUT /api/notifications/settings
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "email_enabled": true,
+  "push_enabled": true,
+  "invoice_reminders": true,
+  "task_reminders": true
+}
+```
+
+---
+
+## API Ключи (v7.8+)
+
+### Список
+```http
+GET /api/api-keys
+Authorization: Bearer <token>
+```
+
+### Создание
+```http
+POST /api/api-keys
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Интеграция с CRM",
+  "scopes": ["sales:read", "clients:read"],
+  "expires_days": 90
+}
+```
+
+**Ответ:**
+```json
+{
+  "id": 1,
+  "name": "Интеграция с CRM",
+  "key": "msk_abc123...",
+  "scopes": ["sales:read", "clients:read"],
+  "created_at": "2026-01-15T10:00:00",
+  "expires_at": "2026-04-15T10:00:00"
+}
+```
+
+**Важно:** ключ показывается только один раз при создании!
+
+### Отзыв
+```http
+DELETE /api/api-keys/{id}
+Authorization: Bearer <token>
+```
+
+### Использование
+```http
+GET /api/sales/products
+X-API-Key: msk_abc123...
+```
+
+---
+
+## Вебхуки (v7.8+)
+
+### Список подписок
+```http
+GET /api/webhooks
+Authorization: Bearer <token>
+```
+
+### Создание подписки
+```http
+POST /api/webhooks
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "url": "https://my-crm.ru/webhook",
+  "events": ["invoice.paid", "invoice.sent"],
+  "secret": "my_webhook_secret",
+  "active": true
+}
+```
+
+### Обновление
+```http
+PUT /api/webhooks/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "events": ["invoice.paid", "invoice.sent", "contract.signed"],
+  "active": true
+}
+```
+
+### Удаление
+```http
+DELETE /api/webhooks/{id}
+Authorization: Bearer <token>
+```
+
+### Доставка вебхука
+```json
+{
+  "event": "invoice.paid",
+  "timestamp": "2026-01-15T10:30:00+00:00",
+  "data": {
+    "invoice_id": 1,
+    "invoice_number": "СЧ-1-20260115-0001",
+    "amount": 50000.00,
+    "client_id": 1
+  },
+  "signature": "sha256=..."
+}
+```
+
+---
+
+## Экспорт данных (v7.8+)
+
+### Экспорт CSV
+```http
+GET /api/export/{module}/csv?format=csv
+Authorization: Bearer <token>
+```
+
+Модули: `invoices`, `products`, `clients`, `deals`, `contracts`, `tasks`, `payments`
+
+### Экспорт Excel
+```http
+GET /api/export/{module}/excel?format=excel
+Authorization: Bearer <token>
+```
+
+### Экспорт PDF
+```http
+GET /api/export/{module}/pdf?format=pdf
+Authorization: Bearer <token>
+```
+
+---
+
+## Импорт данных (v7.8+)
+
+### Загрузка CSV/Excel
+```http
+POST /api/import/{module}
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file=<CSV или Excel файл>
+```
+
+Модули: `clients`, `products`
+
+**Ответ:**
+```json
+{
+  "imported": 25,
+  "errors": 2,
+  "details": [
+    {"row": 3, "error": "Неверный email"},
+    {"row": 7, "error": "Дубликат ИНН"}
+  ]
+}
+```
+
+---
+
+## Аналитика
+
+### Общая
+```http
+GET /api/analytics/overview
+Authorization: Bearer <token>
+```
+
+### AI-аналитика
+```http
+POST /api/ai/analytics
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "query": "Какие клиенты приносят больше всего дохода?",
+  "period": "last_30_days"
+}
+```
+
+---
+
+## Админ-панель (v7.5+)
+
+### Статистика платформы
+```http
+GET /api/admin/stats
+Authorization: Bearer <token>
+```
+
+### Список пользователей
+```http
+GET /api/admin/users?search=&tier=&status=&page=1
+Authorization: Bearer <token>
+```
+
+### Управление пользователем
+```http
+PUT /api/admin/users/{id}/tier
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "tier": "business",
+  "reason": "Платёж подтверждён"
+}
+```
+
+```http
+POST /api/admin/users/{id}/block
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "reason": "Нарушение правил",
+  "duration_hours": 24
+}
+```
+
+### Audit логи
+```http
+GET /api/admin/audit-logs?action=&user_id=&page=1
+Authorization: Bearer <token>
+```
+
+---
+
+## Подписки
+
+### Тарифы
+```http
+GET /api/subscriptions/tiers
+```
+
+### Текущая подписка
+```http
+GET /api/subscriptions/me
+Authorization: Bearer <token>
+```
+
+### Создание платежа
+```http
+POST /api/subscriptions/create-payment
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "tier": "business",
+  "period": "monthly"
+}
+```
+
+---
+
+## Поиск (v7.4+)
+
+### Глобальный поиск
+```http
+GET /api/search?q=ромашка&limit=20
+Authorization: Bearer <token>
+```
+
+---
+
+## WebRTC (v7.3+)
+
+### Создание комнаты
+```http
+POST /api/webrtc/rooms
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Встреча с клиентом",
+  "max_participants": 4
+}
 ```
 
 ---
@@ -592,6 +1026,10 @@ GET /api/svetlana/status
 | `/api/auth/register` | 3/мин |
 | `/api/sales/*` | 60/мин |
 | `/api/svetlana/chat` | 30/мин (free), 120/мин (pro+) |
+| `/api/api-keys/*` | 30/мин |
+| `/api/webhooks/*` | 60/мин |
+| `/api/export/*` | 10/мин |
+| `/api/import/*` | 10/мин |
 
 ---
 
@@ -608,5 +1046,17 @@ ws.onmessage = (event) => {
 
 ---
 
+## Безопасность
+
+- Все пароли хешируются bcrypt
+- JWT с jti (JSON Token Identifier) для отзыва
+- CSRF защита на всех формах
+- Rate limiting на всех endpoints
+- CSP (Content Security Policy) с nonce
+- HSTS, X-Frame-Options, X-Content-Type-Options
+- 5 попыток входа → блокировка на 30 мин
+
+---
+
 *АНО ЦПС «Мир Самозанятых» | ИНН 9724016805*
-*Версия API: 6.0.0*
+*Версия API: 7.9.0*

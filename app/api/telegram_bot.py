@@ -123,9 +123,7 @@ async def send_message(
     if not current_user.telegram_id:
         raise HTTPException(status_code=400, detail="Telegram не подключен")
 
-    message = f"📢 <b>{current_user.full_name or 'Мир Самозанятых'}</b>
-
-{data.message}"
+    message = f"📢 <b>{current_user.full_name or 'Мир Самозанятых'}</b>\n\n{data.message}"
 
     background_tasks.add_task(
         send_telegram_message,

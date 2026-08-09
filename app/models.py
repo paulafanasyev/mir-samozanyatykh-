@@ -1,5 +1,5 @@
 """
-ORM models SQLAlchemy for Mir Samozanyatykh v7.8
+ORM models SQLAlchemy for Mir Samozanyatykh v7.9
 ANO CPS INN 9724016805
 """
 

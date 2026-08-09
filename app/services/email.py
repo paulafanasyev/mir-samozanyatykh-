@@ -202,3 +202,6 @@ class EmailService:
 
 # Singleton
 email_service = EmailService()
+
+# Alias for backward compatibility
+send_email = email_service.send
