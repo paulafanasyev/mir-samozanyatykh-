@@ -1,5 +1,5 @@
 """
-ORM models SQLAlchemy for Mir Samozanyatykh v7.9
+ORM models SQLAlchemy for Mir Samozanyatykh v8.0
 ANO CPS INN 9724016805
 """
 
@@ -463,3 +463,194 @@ class WebhookDelivery(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     webhook = relationship("Webhook")
+
+
+class Transaction(Base):
+    """Бухгалтерская проводка — доходы и расходы"""
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Связь со счетом (если доход от счета)
+    invoice_id = Column(Integer, ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    transaction_type = Column(String(20), nullable=False, index=True)  # income, expense
+    category = Column(String(100), nullable=False, index=True)  # salary, service, rent, tax, etc.
+    subcategory = Column(String(100), nullable=True)
+
+    amount = Column(Numeric(15, 2), nullable=False)
+    currency = Column(String(3), default="RUB", nullable=False)
+
+    # Описание
+    description = Column(Text, nullable=True)
+    counterparty = Column(String(255), nullable=True)  # С кем операция
+    counterparty_inn = Column(String(20), nullable=True)
+
+    # Даты
+    transaction_date = Column(DateTime(timezone=True), nullable=False, index=True)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Документы
+    document_type = Column(String(50), nullable=True)  # receipt, invoice, act, contract
+    document_number = Column(String(100), nullable=True)
+    document_path = Column(String(500), nullable=True)  # путь к скану/фото чека
+
+    # Налоговые данные
+    tax_amount = Column(Numeric(15, 2), nullable=True)  # НДС или налог НПД
+    tax_rate = Column(Numeric(5, 2), nullable=True)  # Ставка налога
+    tax_deductible = Column(Boolean, default=False)  # Можно ли вычесть из налога
+
+    # Метаданные
+    source = Column(String(50), default="manual")  # manual, bank, fns, yookassa
+    bank_transaction_id = Column(String(255), nullable=True, index=True)
+    fns_receipt_id = Column(String(255), nullable=True, index=True)
+
+    # Статус
+    status = Column(String(20), default="confirmed", nullable=False)  # pending, confirmed, cancelled
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    invoice = relationship("Invoice")
+
+    __table_args__ = (
+        Index("ix_transactions_user_date", "user_id", "transaction_date"),
+        Index("ix_transactions_user_type", "user_id", "transaction_type"),
+    )
+
+
+class TaxReport(Base):
+    """Налоговый отчёт / декларация"""
+    __tablename__ = "tax_reports"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    report_type = Column(String(50), nullable=False, index=True)  # npd_quarterly, ndfl_annual, usn
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+
+    # Финансовые показатели
+    total_income = Column(Numeric(15, 2), default=Decimal("0"))
+    total_expense = Column(Numeric(15, 2), default=Decimal("0"))
+    taxable_amount = Column(Numeric(15, 2), default=Decimal("0"))
+    tax_amount = Column(Numeric(15, 2), default=Decimal("0"))
+    tax_rate_applied = Column(Numeric(5, 2), nullable=True)  # 4%, 6%, 13% и т.д.
+
+    # Вычеты
+    deductions = Column(JSON, default=dict)  # {professional: 10000, social: 5000}
+    deduction_total = Column(Numeric(15, 2), default=Decimal("0"))
+
+    # Статус отчёта
+    status = Column(String(20), default="draft", nullable=False)  # draft, submitted, accepted, rejected
+    submitted_at = Column(DateTime(timezone=True), nullable=True)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Документы
+    declaration_path = Column(String(500), nullable=True)  # PDF декларации
+    fns_response = Column(Text, nullable=True)
+    fns_status = Column(String(50), nullable=True)
+
+    # AI-анализ
+    ai_recommendations = Column(Text, nullable=True)
+    risk_level = Column(String(20), default="low")  # low, medium, high
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class TaxDeduction(Base):
+    """Налоговый вычет"""
+    __tablename__ = "tax_deductions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    deduction_type = Column(String(50), nullable=False, index=True)  # professional, social, property, investment
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    amount = Column(Numeric(15, 2), nullable=False)
+    max_amount = Column(Numeric(15, 2), nullable=True)  # Максимальная сумма по закону
+
+    # Документы
+    document_path = Column(String(500), nullable=True)
+    document_number = Column(String(100), nullable=True)
+
+    # Статус
+    status = Column(String(20), default="active", nullable=False)  # active, used, expired
+    used_in_report_id = Column(Integer, ForeignKey("tax_reports.id", ondelete="SET NULL"), nullable=True)
+
+    year = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class FNSReceipt(Base):
+    """Чек из ФНС (проверка через API ФНС)"""
+    __tablename__ = "fns_receipts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Данные чека
+    fns_id = Column(String(255), nullable=False, index=True)  # ID чека в ФНС
+    fiscal_document_number = Column(String(50), nullable=True)
+    fiscal_sign = Column(String(50), nullable=True)
+    receipt_date = Column(DateTime(timezone=True), nullable=False)
+
+    # Суммы
+    total_amount = Column(Numeric(15, 2), nullable=False)
+    cash_amount = Column(Numeric(15, 2), default=Decimal("0"))
+    ecash_amount = Column(Numeric(15, 2), default=Decimal("0"))
+
+    # Продавец
+    seller_name = Column(String(255), nullable=True)
+    seller_inn = Column(String(20), nullable=True, index=True)
+
+    # Покупатель (если чек выдан самозанятому)
+    buyer_name = Column(String(255), nullable=True)
+    buyer_inn = Column(String(20), nullable=True)
+
+    # Товары/услуги в чеке
+    items = Column(JSON, default=list)  # [{name, price, quantity, sum}]
+
+    # Статус
+    status = Column(String(20), default="verified", nullable=False)  # verified, cancelled, refund
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Связь с транзакцией
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    transaction = relationship("Transaction")
+
+    __table_args__ = (
+        Index("ix_fns_receipts_user_date", "user_id", "receipt_date"),
+    )
+
+
+class BudgetCategory(Base):
+    """Категория бюджета (планирование)"""
+    __tablename__ = "budget_categories"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String(100), nullable=False)
+    category_type = Column(String(20), nullable=False)  # income, expense
+    color = Column(String(7), default="#1976D2", nullable=False)
+    icon = Column(String(50), default="dollar-sign", nullable=True)
+    monthly_limit = Column(Numeric(15, 2), nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
