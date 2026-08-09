@@ -1,5 +1,6 @@
 """
-API CRM v6.6: клиенты, сделки, воронка, звонки, задачи
+API CRM v8.4: клиенты, сделки, воронка, звонки, задачи, автоматизация
+АНО ЦПС ИНН 9724016805
 """
 
 from datetime import datetime, timezone
@@ -7,13 +8,13 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.core.logging import log_audit
-from app.models import User, Client, Deal, PipelineStage, Call, Task
+from app.core.logging import logger, log_audit
+from app.models import User, Client, Deal, PipelineStage, Call, Task, CRMAutomation
 
 router = APIRouter(prefix="/api/crm", tags=["crm"])
 
@@ -116,9 +117,37 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
 
 
+# ============ AUTOMATION ============
+
+class CRMAutomationCreate(BaseModel):
+    name: str = Field(..., max_length=255)
+    trigger_type: str = Field(..., pattern=r"^(deal_stage_changed|deal_created|deal_won|deal_lost|task_overdue|client_added)$")
+    trigger_config: dict = {}
+    action_type: str = Field(..., pattern=r"^(send_notification|create_task|send_email|move_deal|webhook)$")
+    action_config: dict = {}
 
 
-@router.get("/clients", response_model=List[dict])
+class CRMAutomationUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+    trigger_config: Optional[dict] = None
+    action_config: Optional[dict] = None
+
+
+class CRMAutomationOut(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+    trigger_type: str
+    trigger_config: dict
+    action_type: str
+    action_config: dict
+    run_count: int
+    last_run_at: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 async def list_clients(
     search: Optional[str] = None,
     status: Optional[str] = None,
@@ -855,3 +884,262 @@ async def crm_stats(
         "tasks_overdue": tasks_overdue,
         "funnel": funnel,
     }
+
+
+# ============ CRM AUTOMATION API ============
+
+@router.get("/automations", response_model=List[CRMAutomationOut])
+async def list_automations(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Список автоматизаций CRM"""
+    result = await db.execute(
+        select(CRMAutomation)
+        .where(CRMAutomation.user_id == current_user.id)
+        .order_by(desc(CRMAutomation.created_at))
+    )
+    return result.scalars().all()
+
+
+@router.post("/automations", status_code=status.HTTP_201_CREATED, response_model=CRMAutomationOut)
+async def create_automation(
+    auto: CRMAutomationCreate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Создать автоматизацию CRM"""
+    db_auto = CRMAutomation(
+        user_id=current_user.id,
+        **auto.model_dump(),
+    )
+    db.add(db_auto)
+    await db.commit()
+    await db.refresh(db_auto)
+
+    await log_audit(
+        action="crm_automation_created",
+        user_id=current_user.id,
+        ip_address=request.client.host,
+        details=f"Automation: {auto.name}, trigger={auto.trigger_type}, action={auto.action_type}",
+    )
+    return CRMAutomationOut.model_validate(db_auto)
+
+
+@router.get("/automations/{auto_id}", response_model=CRMAutomationOut)
+async def get_automation(
+    auto_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Получить автоматизацию"""
+    result = await db.execute(
+        select(CRMAutomation).where(
+            CRMAutomation.id == auto_id,
+            CRMAutomation.user_id == current_user.id,
+        )
+    )
+    auto = result.scalar_one_or_none()
+    if not auto:
+        raise HTTPException(status_code=404, detail="Автоматизация не найдена")
+    return CRMAutomationOut.model_validate(auto)
+
+
+@router.put("/automations/{auto_id}", response_model=CRMAutomationOut)
+async def update_automation(
+    auto_id: int,
+    update: CRMAutomationUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Обновить автоматизацию"""
+    result = await db.execute(
+        select(CRMAutomation).where(
+            CRMAutomation.id == auto_id,
+            CRMAutomation.user_id == current_user.id,
+        )
+    )
+    auto = result.scalar_one_or_none()
+    if not auto:
+        raise HTTPException(status_code=404, detail="Автоматизация не найдена")
+
+    for key, value in update.model_dump(exclude_unset=True).items():
+        setattr(auto, key, value)
+
+    await db.commit()
+    await db.refresh(auto)
+    return CRMAutomationOut.model_validate(auto)
+
+
+@router.delete("/automations/{auto_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_automation(
+    auto_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Удалить автоматизацию"""
+    result = await db.execute(
+        select(CRMAutomation).where(
+            CRMAutomation.id == auto_id,
+            CRMAutomation.user_id == current_user.id,
+        )
+    )
+    auto = result.scalar_one_or_none()
+    if not auto:
+        raise HTTPException(status_code=404, detail="Автоматизация не найдена")
+    await db.delete(auto)
+    await db.commit()
+
+
+# ============ AUTOMATION ENGINE ============
+
+async def run_automation_trigger(
+    db: AsyncSession,
+    user_id: int,
+    trigger_type: str,
+    trigger_data: dict,
+):
+    """Запустить автоматизации по триггеру"""
+    result = await db.execute(
+        select(CRMAutomation).where(
+            CRMAutomation.user_id == user_id,
+            CRMAutomation.is_active == True,
+            CRMAutomation.trigger_type == trigger_type,
+        )
+    )
+    automations = result.scalars().all()
+
+    for auto in automations:
+        config = auto.trigger_config or {}
+        match = True
+        for key, value in config.items():
+            if trigger_data.get(key) != value:
+                match = False
+                break
+
+        if not match:
+            continue
+
+        action = auto.action_config or {}
+        try:
+            if auto.action_type == "send_notification":
+                from app.api.notifications import notify_user
+                await notify_user(
+                    db, user_id,
+                    title=action.get("title", "CRM Автоматизация"),
+                    body=action.get("body", ""),
+                    notification_type="info",
+                    action_url=action.get("action_url"),
+                )
+            elif auto.action_type == "create_task":
+                task = Task(
+                    user_id=user_id,
+                    title=action.get("title", "Автоматическая задача"),
+                    description=action.get("description", ""),
+                    status="pending",
+                    priority=action.get("priority", "medium"),
+                    client_id=action.get("client_id"),
+                    deal_id=action.get("deal_id"),
+                )
+                db.add(task)
+            elif auto.action_type == "send_email":
+                from app.services.email import email_service
+                user_result = await db.execute(select(User).where(User.id == user_id))
+                user = user_result.scalar_one_or_none()
+                if user and user.email:
+                    email_service.send_notification_email(
+                        to_email=user.email,
+                        subject=action.get("subject", "Уведомление CRM"),
+                        body=action.get("body", ""),
+                    )
+            elif auto.action_type == "move_deal":
+                deal_id = action.get("deal_id")
+                stage_id = action.get("stage_id")
+                if deal_id and stage_id:
+                    deal_result = await db.execute(
+                        select(Deal).where(Deal.id == deal_id, Deal.user_id == user_id)
+                    )
+                    deal = deal_result.scalar_one_or_none()
+                    if deal:
+                        deal.stage_id = stage_id
+
+            auto.run_count += 1
+            auto.last_run_at = datetime.now(timezone.utc)
+            logger.info(f"Automation {auto.id} triggered: {auto.name}")
+        except Exception as e:
+            logger.error(f"Automation {auto.id} failed: {e}")
+
+    await db.commit()
+
+
+# ============ ENHANCED DEAL MOVE WITH AUTOMATION ============
+
+@router.post("/deals/{deal_id}/move")
+async def move_deal_stage(
+    deal_id: int,
+    stage_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Перемещение сделки на другой этап воронки + автоматизация"""
+    result = await db.execute(
+        select(Deal).where(
+            Deal.id == deal_id,
+            Deal.user_id == current_user.id,
+        )
+    )
+    deal = result.scalar_one_or_none()
+    if not deal:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+
+    old_stage_id = deal.stage_id
+
+    stage_result = await db.execute(
+        select(PipelineStage).where(
+            PipelineStage.id == stage_id,
+            PipelineStage.user_id == current_user.id,
+        )
+    )
+    new_stage = stage_result.scalar_one_or_none()
+    if not new_stage:
+        raise HTTPException(status_code=404, detail="Этап не найден")
+
+    deal.stage_id = stage_id
+
+    stage_name_lower = new_stage.name.lower()
+    if "won" in stage_name_lower:
+        deal.status = "won"
+        deal.actual_close_date = datetime.now(timezone.utc)
+        deal.probability = 100
+        await run_automation_trigger(
+            db, current_user.id, "deal_won",
+            {"deal_id": deal.id, "stage_id": stage_id, "old_stage_id": old_stage_id}
+        )
+    elif "lost" in stage_name_lower:
+        deal.status = "lost"
+        deal.actual_close_date = datetime.now(timezone.utc)
+        deal.probability = 0
+        await run_automation_trigger(
+            db, current_user.id, "deal_lost",
+            {"deal_id": deal.id, "stage_id": stage_id, "old_stage_id": old_stage_id}
+        )
+    else:
+        await run_automation_trigger(
+            db, current_user.id, "deal_stage_changed",
+            {"deal_id": deal.id, "stage_id": stage_id, "old_stage_id": old_stage_id}
+        )
+
+    await db.commit()
+    await db.refresh(deal)
+
+    await log_audit(
+        action="deal_moved",
+        user_id=current_user.id,
+        ip_address=request.client.host,
+        details=f"Deal {deal_id}: stage {old_stage_id} -> {stage_id}",
+    )
+    return deal

@@ -654,3 +654,106 @@ class BudgetCategory(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User")
+
+
+class BankConnection(Base):
+    """Подключение банковского счета"""
+    __tablename__ = "bank_connections"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    bank_name = Column(String(50), nullable=False, index=True)
+    account_number = Column(String(50), nullable=True)
+    account_name = Column(String(255), nullable=True)
+
+    api_token_encrypted = Column(Text, nullable=True)
+    refresh_token_encrypted = Column(Text, nullable=True)
+
+    is_active = Column(Boolean, default=True)
+    last_sync_at = Column(DateTime(timezone=True), nullable=True)
+    last_sync_status = Column(String(20), default="pending")
+    last_sync_error = Column(Text, nullable=True)
+    total_synced = Column(Integer, default=0)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class PushSubscription(Base):
+    """Push-уведомления Web Push"""
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    endpoint = Column(String(500), nullable=False)
+    p256dh = Column(String(255), nullable=False)
+    auth = Column(String(255), nullable=False)
+
+    device_info = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User")
+
+
+class NotificationPreference(Base):
+    """Настройки уведомлений пользователя"""
+    __tablename__ = "notification_preferences"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+
+    email_enabled = Column(Boolean, default=True)
+    push_enabled = Column(Boolean, default=True)
+    telegram_enabled = Column(Boolean, default=False)
+    telegram_chat_id = Column(String(100), nullable=True)
+
+    invoice_paid = Column(Boolean, default=True)
+    invoice_overdue = Column(Boolean, default=True)
+    new_client = Column(Boolean, default=True)
+    deal_won = Column(Boolean, default=True)
+    deal_lost = Column(Boolean, default=True)
+    task_reminder = Column(Boolean, default=True)
+    task_overdue = Column(Boolean, default=True)
+    bank_sync = Column(Boolean, default=True)
+    tax_reminder = Column(Boolean, default=True)
+    marketing = Column(Boolean, default=False)
+
+    quiet_hours_start = Column(Integer, nullable=True)
+    quiet_hours_end = Column(Integer, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class CRMAutomation(Base):
+    """Автоматизация CRM — триггеры и действия"""
+    __tablename__ = "crm_automations"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    name = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+    trigger_type = Column(String(50), nullable=False)
+    trigger_config = Column(JSON, default=dict)
+
+    action_type = Column(String(50), nullable=False)
+    action_config = Column(JSON, default=dict)
+
+    run_count = Column(Integer, default=0)
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")

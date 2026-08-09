@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     
     # Основные
     APP_NAME: str = "Мир Самозанятых"
-    APP_VERSION: str = "8.1.0"
+    APP_VERSION: str = "8.4.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     

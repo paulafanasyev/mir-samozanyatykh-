@@ -1,6 +1,6 @@
 """
-API уведомлений v7.6
-In-app уведомления + email + WebSocket push + массовая рассылка
+API уведомлений v8.4
+In-app + email + WebSocket push + Web Push + Telegram + настройки
 АНО ЦПС ИНН 9724016805
 """
 
@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.logging import logger, log_audit
-from app.models import User, Notification
+from app.models import User, Notification, PushSubscription, NotificationPreference
 from app.api.admin import require_admin
 from app.services.email import email_service
 
@@ -61,13 +61,63 @@ class BulkNotificationResponse(BaseModel):
     failed: int
 
 
-class NotificationPreferences(BaseModel):
-    email_enabled: bool = True
-    push_enabled: bool = True
-    marketing_enabled: bool = True
-    invoice_notifications: bool = True
-    deal_notifications: bool = True
-    task_reminders: bool = True
+class PushSubscriptionCreate(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+    device_info: Optional[str] = None
+
+
+class PushSubscriptionOut(BaseModel):
+    id: int
+    endpoint: str
+    device_info: Optional[str]
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    email_enabled: Optional[bool] = None
+    push_enabled: Optional[bool] = None
+    telegram_enabled: Optional[bool] = None
+    telegram_chat_id: Optional[str] = None
+    invoice_paid: Optional[bool] = None
+    invoice_overdue: Optional[bool] = None
+    new_client: Optional[bool] = None
+    deal_won: Optional[bool] = None
+    deal_lost: Optional[bool] = None
+    task_reminder: Optional[bool] = None
+    task_overdue: Optional[bool] = None
+    bank_sync: Optional[bool] = None
+    tax_reminder: Optional[bool] = None
+    marketing: Optional[bool] = None
+    quiet_hours_start: Optional[int] = Field(None, ge=0, le=23)
+    quiet_hours_end: Optional[int] = Field(None, ge=0, le=23)
+
+
+class NotificationPreferencesOut(BaseModel):
+    email_enabled: bool
+    push_enabled: bool
+    telegram_enabled: bool
+    telegram_chat_id: Optional[str]
+    invoice_paid: bool
+    invoice_overdue: bool
+    new_client: bool
+    deal_won: bool
+    deal_lost: bool
+    task_reminder: bool
+    task_overdue: bool
+    bank_sync: bool
+    tax_reminder: bool
+    marketing: bool
+    quiet_hours_start: Optional[int]
+    quiet_hours_end: Optional[int]
+
+    class Config:
+        from_attributes = True
 
 
 # ============ USER NOTIFICATIONS ============
@@ -98,9 +148,7 @@ async def list_notifications(
         .limit(per_page)
     )
     notifications = result.scalars().all()
-    return [
-        NotificationOut.model_validate(n) for n in notifications
-    ]
+    return [NotificationOut.model_validate(n) for n in notifications]
 
 
 @router.get("/unread-count")
@@ -124,7 +172,7 @@ async def create_notification(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Создание уведомления (для тестирования)"""
+    """Создание уведомления"""
     db_notification = Notification(
         user_id=current_user.id,
         **notification.model_dump(exclude_unset=True),
@@ -192,7 +240,6 @@ async def delete_notification(
     notification = result.scalar_one_or_none()
     if not notification:
         raise HTTPException(status_code=404, detail="Уведомление не найдено")
-
     await db.delete(notification)
     await db.commit()
 
@@ -213,6 +260,121 @@ async def delete_all_read(
     for n in notifications:
         await db.delete(n)
     await db.commit()
+
+
+# ============ PUSH SUBSCRIPTIONS ============
+
+@router.post("/push/subscribe", response_model=PushSubscriptionOut)
+async def subscribe_push(
+    sub: PushSubscriptionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Подписка на push-уведомления (Web Push API)"""
+    # Проверяем, нет ли уже такой подписки
+    existing = await db.execute(
+        select(PushSubscription).where(
+            PushSubscription.user_id == current_user.id,
+            PushSubscription.endpoint == sub.endpoint,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Подписка уже существует")
+
+    subscription = PushSubscription(
+        user_id=current_user.id,
+        endpoint=sub.endpoint,
+        p256dh=sub.p256dh,
+        auth=sub.auth,
+        device_info=sub.device_info,
+    )
+    db.add(subscription)
+    await db.commit()
+    await db.refresh(subscription)
+    logger.info(f"Push subscription created for user {current_user.id}")
+    return PushSubscriptionOut.model_validate(subscription)
+
+
+@router.get("/push/subscriptions", response_model=List[PushSubscriptionOut])
+async def list_push_subscriptions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Список push-подписок пользователя"""
+    result = await db.execute(
+        select(PushSubscription)
+        .where(PushSubscription.user_id == current_user.id)
+        .order_by(desc(PushSubscription.created_at))
+    )
+    return result.scalars().all()
+
+
+@router.delete("/push/subscriptions/{sub_id}", status_code=204)
+async def unsubscribe_push(
+    sub_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Отписка от push-уведомлений"""
+    result = await db.execute(
+        select(PushSubscription).where(
+            PushSubscription.id == sub_id,
+            PushSubscription.user_id == current_user.id,
+        )
+    )
+    sub = result.scalar_one_or_none()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Подписка не найдена")
+    await db.delete(sub)
+    await db.commit()
+
+
+# ============ NOTIFICATION PREFERENCES ============
+
+@router.get("/preferences", response_model=NotificationPreferencesOut)
+async def get_preferences(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Получить настройки уведомлений"""
+    result = await db.execute(
+        select(NotificationPreference).where(
+            NotificationPreference.user_id == current_user.id
+        )
+    )
+    pref = result.scalar_one_or_none()
+    if not pref:
+        # Создаем дефолтные настройки
+        pref = NotificationPreference(user_id=current_user.id)
+        db.add(pref)
+        await db.commit()
+        await db.refresh(pref)
+    return NotificationPreferencesOut.model_validate(pref)
+
+
+@router.put("/preferences", response_model=NotificationPreferencesOut)
+async def update_preferences(
+    update: NotificationPreferencesUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Обновить настройки уведомлений"""
+    result = await db.execute(
+        select(NotificationPreference).where(
+            NotificationPreference.user_id == current_user.id
+        )
+    )
+    pref = result.scalar_one_or_none()
+    if not pref:
+        pref = NotificationPreference(user_id=current_user.id)
+        db.add(pref)
+
+    for key, value in update.model_dump(exclude_unset=True).items():
+        setattr(pref, key, value)
+
+    await db.commit()
+    await db.refresh(pref)
+    return NotificationPreferencesOut.model_validate(pref)
 
 
 # ============ ADMIN BULK NOTIFICATIONS ============
@@ -255,7 +417,6 @@ async def send_bulk_notification(
                     body=bulk.body,
                 )
                 email_sent += 1
-
         except Exception as e:
             logger.error(f"Failed to send notification to user {user.id}: {e}")
             failed += 1
@@ -287,7 +448,7 @@ async def notify_user(
     action_url: Optional[str] = None,
     data: Optional[dict] = None,
 ) -> Notification:
-    """Создать уведомление для пользователя (сервисная функция)"""
+    """Создать уведомление для пользователя"""
     notification = Notification(
         user_id=user_id,
         title=title,
@@ -313,7 +474,7 @@ async def notify_invoice_paid(
         title="Счёт оплачен!",
         body=f"Счёт {invoice_number} на сумму {amount} руб. успешно оплачен.",
         notification_type="success",
-        action_url=f"/invoices",
+        action_url="/invoices",
     )
 
 
@@ -339,7 +500,7 @@ async def notify_deal_won(
     amount: Optional[float] = None,
 ):
     """Уведомление о выигранной сделке"""
-    body = f"Сделка \"{deal_title}\" перешла в статус \"Выиграна\""
+    body = f'Сделка "{deal_title}" перешла в статус "Выиграна"'
     if amount:
         body += f" на сумму {amount} руб."
     return await notify_user(
@@ -347,6 +508,21 @@ async def notify_deal_won(
         title="Сделка выиграна!",
         body=body,
         notification_type="success",
+        action_url="/deals",
+    )
+
+
+async def notify_deal_lost(
+    db: AsyncSession,
+    user_id: int,
+    deal_title: str,
+):
+    """Уведомление о проигранной сделке"""
+    return await notify_user(
+        db, user_id,
+        title="Сделка проиграна",
+        body=f'Сделка "{deal_title}" перешла в статус "Проиграна"',
+        notification_type="warning",
         action_url="/deals",
     )
 
@@ -361,7 +537,23 @@ async def notify_task_due(
     return await notify_user(
         db, user_id,
         title="Напоминание о задаче",
-        body=f"Задача \"{task_title}\" должна быть выполнена {due_date.strftime('%d.%m.%Y %H:%M')}",
+        body=f'Задача "{task_title}" должна быть выполнена {due_date.strftime("%d.%m.%Y %H:%M")}',
         notification_type="warning",
         action_url="/dashboard",
+    )
+
+
+async def notify_bank_sync(
+    db: AsyncSession,
+    user_id: int,
+    bank_name: str,
+    imported: int,
+):
+    """Уведомление о синхронизации банка"""
+    return await notify_user(
+        db, user_id,
+        title="Синхронизация завершена",
+        body=f"Импортировано {imported} операций из {bank_name}.",
+        notification_type="success",
+        action_url="/accounting",
     )

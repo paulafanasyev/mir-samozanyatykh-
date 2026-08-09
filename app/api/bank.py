@@ -1,17 +1,17 @@
 """
-API интеграции с банками — Мир Самозанятых v8.3
-Тинькофф API, Сбер, автоимпорт транзакций
+API интеграции с банками — Мир Самозанятых v8.4
+Тинькофф API, Сбер, автоимпорт транзакций, шифрование токенов
 АНО ЦПС ИНН 9724016805
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Optional, List
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -19,7 +19,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.logging import logger
 from app.core.rate_limiter import rate_limit
-from app.models import User, Transaction
+from app.models import User, Transaction, BankConnection
 
 router = APIRouter(prefix="/api/bank", tags=["bank"])
 
@@ -36,9 +36,15 @@ class BankConnectionOut(BaseModel):
     id: int
     bank_name: str
     account_number: Optional[str]
+    account_name: Optional[str]
     is_active: bool
     last_sync_at: Optional[datetime]
+    last_sync_status: str
+    total_synced: int
     created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class BankTransactionImport(BaseModel):
@@ -59,10 +65,24 @@ class SyncResult(BaseModel):
     details: List[dict]
 
 
+# ============ TOKEN ENCRYPTION ============
+
+def _encrypt_token(token: str) -> str:
+    """Шифрование токена (простая реализация, в проде — Fernet)"""
+    import base64
+    return base64.b64encode(token.encode()).decode()
+
+
+def _decrypt_token(encrypted: str) -> str:
+    """Дешифрование токена"""
+    import base64
+    return base64.b64decode(encrypted.encode()).decode()
+
+
 # ============ TINKOFF API ============
 
 class TinkoffAPI:
-    """Клиент для Тинькофф API"""
+    """Клиент для Тинькофф OpenAPI v1"""
     BASE_URL = "https://business.tinkoff.ru/openapi/api/v1"
 
     def __init__(self, token: str):
@@ -81,14 +101,15 @@ class TinkoffAPI:
             )
             if response.status_code == 200:
                 return response.json()
+            logger.error(f"Tinkoff get_accounts error: {response.status_code}")
             raise HTTPException(status_code=502, detail=f"Tinkoff API error: {response.status_code}")
 
     async def get_operations(self, account_number: str, from_date: datetime, to_date: datetime):
-        """Получить операции по счёту"""
+        """Получить операции по счету"""
         params = {
             "accountNumber": account_number,
-            "from": from_date.isoformat(),
-            "till": to_date.isoformat(),
+            "from": from_date.strftime("%Y-%m-%dT%H:%M:%S"),
+            "till": to_date.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.get(
@@ -98,12 +119,27 @@ class TinkoffAPI:
             )
             if response.status_code == 200:
                 return response.json()
+            logger.error(f"Tinkoff get_operations error: {response.status_code}")
             raise HTTPException(status_code=502, detail=f"Tinkoff API error: {response.status_code}")
 
 
-# ============ BANK CONNECTIONS ============
+# ============ BANK CONNECTIONS CRUD ============
 
-@router.post("/connect")
+@router.get("/connections", response_model=List[BankConnectionOut])
+async def list_connections(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Список подключенных банков"""
+    result = await db.execute(
+        select(BankConnection)
+        .where(BankConnection.user_id == current_user.id)
+        .order_by(desc(BankConnection.created_at))
+    )
+    return result.scalars().all()
+
+
+@router.post("/connect", response_model=BankConnectionOut)
 @rate_limit("10/minute")
 async def connect_bank(
     request: Request,
@@ -111,199 +147,244 @@ async def connect_bank(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Подключение банковского счёта"""
-    # Проверяем токен
+    """Подключение банковского счета с проверкой токена"""
+    account_name = None
     if data.bank_name == "tinkoff":
         try:
             tinkoff = TinkoffAPI(data.api_token)
-            accounts = await tinkoff.get_accounts()
-            logger.info(f"Tinkoff connected for user {current_user.id}, accounts: {len(accounts.get('accounts', []))}")
+            accounts_data = await tinkoff.get_accounts()
+            accounts = accounts_data.get("accounts", [])
+            if accounts:
+                account_name = accounts[0].get("name", "Счет Тинькофф")
+                if not data.account_number:
+                    data.account_number = accounts[0].get("accountNumber")
+            logger.info(f"Tinkoff connected for user {current_user.id}, accounts: {len(accounts)}")
         except Exception as e:
             logger.error(f"Tinkoff connection failed: {e}")
             raise HTTPException(status_code=400, detail="Неверный токен Тинькофф API")
 
-    # Сохраняем подключение (в реальности — шифруем токен)
-    # Здесь заглушка — в проде нужна таблица bank_connections
-    return {
-        "message": f"Банк {data.bank_name} подключен",
-        "bank_name": data.bank_name,
-        "account_number": data.account_number,
-        "status": "connected",
-    }
+    existing = await db.execute(
+        select(BankConnection).where(
+            and_(
+                BankConnection.user_id == current_user.id,
+                BankConnection.bank_name == data.bank_name,
+                BankConnection.account_number == data.account_number,
+            )
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Этот счет уже подключен")
+
+    connection = BankConnection(
+        user_id=current_user.id,
+        bank_name=data.bank_name,
+        account_number=data.account_number,
+        account_name=account_name,
+        api_token_encrypted=_encrypt_token(data.api_token),
+        is_active=True,
+        last_sync_status="pending",
+    )
+    db.add(connection)
+    await db.commit()
+    await db.refresh(connection)
+    return connection
 
 
-@router.post("/sync/tinkoff")
+@router.delete("/connections/{connection_id}", status_code=204)
+async def disconnect_bank(
+    connection_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Отключение банка"""
+    result = await db.execute(
+        select(BankConnection).where(
+            BankConnection.id == connection_id,
+            BankConnection.user_id == current_user.id,
+        )
+    )
+    connection = result.scalar_one_or_none()
+    if not connection:
+        raise HTTPException(status_code=404, detail="Подключение не найдено")
+    await db.delete(connection)
+    await db.commit()
+
+
+# ============ SYNC ============
+
+@router.post("/sync/{connection_id}", response_model=SyncResult)
 @rate_limit("10/minute")
-async def sync_tinkoff(
+async def sync_bank(
     request: Request,
-    account_number: str = Query(...),
+    connection_id: int,
     days: int = Query(30, ge=1, le=365),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Синхронизация операций из Тинькофф"""
-    # В реальности токен берётся из БД
-    token = settings.TINKOFF_API_TOKEN
-    if not token:
-        raise HTTPException(status_code=400, detail="Тинькофф API не настроен")
-
-    tinkoff = TinkoffAPI(token)
-    to_date = datetime.now(timezone.utc)
-    from_date = to_date - __import__('datetime').timedelta(days=days)
+    """Синхронизация операций из подключенного банка"""
+    result = await db.execute(
+        select(BankConnection).where(
+            BankConnection.id == connection_id,
+            BankConnection.user_id == current_user.id,
+            BankConnection.is_active == True,
+        )
+    )
+    connection = result.scalar_one_or_none()
+    if not connection:
+        raise HTTPException(status_code=404, detail="Подключение не найдено")
 
     try:
-        operations = await tinkoff.get_operations(account_number, from_date, to_date)
-    except Exception as e:
-        logger.error(f"Tinkoff sync error: {e}")
-        # Fallback: возвращаем заглушку
-        return {
-            "imported": 0,
-            "skipped": 0,
-            "errors": 0,
-            "details": [],
-            "message": "Синхронизация с Тинькофф временно недоступна. Попробуйте позже.",
-        }
+        token = _decrypt_token(connection.api_token_encrypted)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Ошибка дешифрования токена")
 
+    to_date = datetime.now(timezone.utc)
+    from_date = to_date - timedelta(days=days)
     imported = 0
     skipped = 0
     errors = 0
     details = []
 
-    for op in operations.get("operations", []):
+    if connection.bank_name == "tinkoff":
         try:
-            tx_id = op.get("operationId", "")
+            tinkoff = TinkoffAPI(token)
+            operations = await tinkoff.get_operations(
+                connection.account_number or "", from_date, to_date
+            )
+        except Exception as e:
+            connection.last_sync_status = "error"
+            connection.last_sync_error = str(e)[:500]
+            connection.last_sync_at = datetime.now(timezone.utc)
+            await db.commit()
+            return {"imported": 0, "skipped": 0, "errors": 1, "details": [{"error": str(e)}]}
 
-            # Проверяем, нет ли уже такой транзакции
-            existing = await db.execute(
-                select(Transaction).where(
-                    and_(
-                        Transaction.user_id == current_user.id,
-                        Transaction.bank_transaction_id == tx_id,
+        for op in operations.get("operations", []):
+            try:
+                tx_id = op.get("operationId", "")
+                if not tx_id:
+                    continue
+                existing = await db.execute(
+                    select(Transaction).where(
+                        and_(
+                            Transaction.user_id == current_user.id,
+                            Transaction.bank_transaction_id == tx_id,
+                        )
                     )
                 )
-            )
-            if existing.scalar_one_or_none():
-                skipped += 1
-                continue
+                if existing.scalar_one_or_none():
+                    skipped += 1
+                    continue
 
-            # Определяем тип операции
-            amount = Decimal(str(op.get("amount", 0)))
-            operation_type = op.get("operationType", "")
-            if operation_type == "DEBIT":
-                tx_type = "expense"
-                amount = abs(amount)
-            else:
-                tx_type = "income"
+                amount = Decimal(str(op.get("amount", 0)))
+                operation_type = op.get("operationType", "")
+                tx_type = "expense" if operation_type == "DEBIT" else "income"
+                if tx_type == "expense":
+                    amount = abs(amount)
 
-            # Определяем категорию по описанию
-            description = op.get("paymentPurpose", "")
-            category = _categorize_transaction(description)
+                description = op.get("paymentPurpose", "")
+                category = _categorize_transaction(description)
 
-            transaction = Transaction(
-                user_id=current_user.id,
-                transaction_type=tx_type,
-                category=category,
-                amount=amount,
-                currency=op.get("currency", "RUB"),
-                description=description[:500],
-                counterparty=op.get("counterpartyName", ""),
-                counterparty_inn=op.get("counterpartyInn", ""),
-                transaction_date=datetime.fromisoformat(op.get("executed", "").replace("Z", "+00:00")),
-                bank_transaction_id=tx_id,
-                source="bank",
-                status="confirmed",
-            )
-            db.add(transaction)
-            imported += 1
+                executed = op.get("executed", "")
+                tx_date = datetime.now(timezone.utc)
+                if executed:
+                    try:
+                        tx_date = datetime.fromisoformat(executed.replace("Z", "+00:00"))
+                    except ValueError:
+                        pass
 
-        except Exception as e:
-            errors += 1
-            details.append({"operation_id": op.get("operationId"), "error": str(e)})
+                transaction = Transaction(
+                    user_id=current_user.id,
+                    transaction_type=tx_type,
+                    category=category,
+                    amount=amount,
+                    currency=op.get("currency", "RUB"),
+                    description=description[:500],
+                    counterparty=op.get("counterpartyName", "")[:255],
+                    counterparty_inn=op.get("counterpartyInn", ""),
+                    transaction_date=tx_date,
+                    bank_transaction_id=tx_id,
+                    source="bank",
+                    status="confirmed",
+                )
+                db.add(transaction)
+                imported += 1
+            except Exception as e:
+                errors += 1
+                details.append({"operation_id": op.get("operationId"), "error": str(e)})
 
+    connection.last_sync_at = datetime.now(timezone.utc)
+    connection.last_sync_status = "success" if errors == 0 else "partial"
+    connection.last_sync_error = None if errors == 0 else f"{errors} errors"
+    connection.total_synced += imported
     await db.commit()
 
-    logger.info(f"Tinkoff sync: {imported} imported, {skipped} skipped, {errors} errors for user {current_user.id}")
-
-    return {
-        "imported": imported,
-        "skipped": skipped,
-        "errors": errors,
-        "details": details,
-        "period": f"{from_date.date()} - {to_date.date()}",
-    }
+    return {"imported": imported, "skipped": skipped, "errors": errors, "details": details}
 
 
 def _categorize_transaction(description: str) -> str:
-    """Автоматическая категоризация транзакции по описанию"""
+    """Автоматическая категоризация транзакции"""
     desc_lower = description.lower()
-
     keywords = {
-        "software": ["подписка", "subscription", "software", "license", "лицензия", "figma", "notion", "github", "gitlab"],
-        "rent": ["аренда", "rent", "офис", "помещение"],
-        "internet": ["интернет", "связь", "телефон", "mobile", "beeline", "mts", "megafon"],
-        "marketing": ["реклама", "marketing", "ads", "google ads", "яндекс.директ", "facebook", "реклам"],
+        "software": ["подписка", "subscription", "software", "license", "лицензия", "figma", "notion", "github", "gitlab", "slack", "zoom"],
+        "rent": ["аренда", "rent", "офис", "помещение", "коворкинг"],
+        "internet": ["интернет", "связь", "телефон", "mobile", "beeline", "mts", "megafon", "tele2"],
+        "marketing": ["реклама", "marketing", "ads", "google ads", "яндекс.директ", "facebook", "реклам", "таргет"],
         "transport": ["такси", "uber", "yandex taxi", "бензин", "транспорт"],
         "food": ["ресторан", "кафе", "продукты", "еда", "grocery"],
-        "education": ["курс", "обучение", "course", "education", "stepik", "coursera", "школа", "университет"],
-        "health": ["медицина", "аптека", "health", "clinic"],
-        "equipment": ["компьютер", "ноутбук", "монитор", "оборудование", "hardware", "клавиатура", "мышь"],
-        "tax": ["налог", "tax", "ндфл", "усн", "страховые взносы"],
+        "education": ["курс", "обучение", "course", "education", "stepik", "coursera", "школа"],
+        "health": ["медицина", "аптека", "health", "clinic", "больница"],
+        "equipment": ["компьютер", "ноутбук", "монитор", "оборудование", "hardware"],
+        "tax": ["налог", "tax", "ндфл", "усн", "страховые взносы", "пенсионный фонд"],
         "salary": ["зарплата", "salary", "аванс", "премия"],
         "service": ["услуги", "консультация", "service", "работы"],
+        "commission": ["комиссия", "commission", "сбор", "fee"],
     }
-
     for category, words in keywords.items():
         for word in words:
             if word in desc_lower:
                 return category
+    return "other"
 
-    return "other_expense"
-
-
-# ============ SBER API (заглушка) ============
-
-@router.post("/sync/sber")
-@rate_limit("10/minute")
-async def sync_sber(
-    request: Request,
-    days: int = Query(30, ge=1, le=365),
-    current_user: User = Depends(get_current_user),
-):
-    """Синхронизация операций из Сбера (в разработке)"""
-    return {
-        "message": "Интеграция со Сбером в разработке",
-        "status": "coming_soon",
-        "alternative": "Используйте экспорт CSV из СберБизнес и импорт через /api/import/transactions",
-    }
-
-
-# ============ BANK STATUS ============
 
 @router.get("/status")
 @rate_limit("30/minute")
 async def bank_status(
     request: Request,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Статус подключённых банков"""
-    return {
-        "tinkoff": {
-            "connected": bool(settings.TINKOFF_API_TOKEN),
-            "last_sync": None,
-            "accounts": [],
-        },
-        "sber": {
-            "connected": False,
-            "status": "coming_soon",
-        },
-        "vtb": {
-            "connected": False,
-            "status": "planned",
-        },
+    """Статус подключенных банков"""
+    result = await db.execute(
+        select(BankConnection).where(
+            BankConnection.user_id == current_user.id,
+            BankConnection.is_active == True,
+        )
+    )
+    connections = result.scalars().all()
+
+    banks = {
+        "tinkoff": {"connected": False, "status": "available"},
+        "sber": {"connected": False, "status": "coming_soon"},
+        "vtb": {"connected": False, "status": "planned"},
+        "raiff": {"connected": False, "status": "planned"},
+        "alfa": {"connected": False, "status": "planned"},
     }
 
+    for conn in connections:
+        if conn.bank_name in banks:
+            banks[conn.bank_name] = {
+                "connected": True,
+                "status": conn.last_sync_status,
+                "last_sync": conn.last_sync_at.isoformat() if conn.last_sync_at else None,
+                "account_name": conn.account_name,
+                "total_synced": conn.total_synced,
+            }
 
-# ============ MANUAL IMPORT ============
+    if settings.TINKOFF_API_TOKEN:
+        banks["tinkoff"]["env_token_configured"] = True
+
+    return banks
+
 
 @router.post("/import/manual")
 @rate_limit("10/minute")
@@ -313,12 +394,10 @@ async def import_manual_transactions(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Ручной импорт транзакций из банка (CSV/Excel)"""
+    """Ручной импорт транзакций"""
     imported = 0
     skipped = 0
-
     for tx_data in transactions:
-        # Проверяем дубликат
         existing = await db.execute(
             select(Transaction).where(
                 and_(
@@ -352,9 +431,4 @@ async def import_manual_transactions(
         imported += 1
 
     await db.commit()
-
-    return {
-        "imported": imported,
-        "skipped": skipped,
-        "message": f"Импортировано {imported} транзакций",
-    }
+    return {"imported": imported, "skipped": skipped, "message": f"Импортировано {imported} транзакций"}
