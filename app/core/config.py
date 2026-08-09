@@ -1,5 +1,5 @@
 """
-Конфигурация приложения Мир Самозанятых v7.0
+Конфигурация приложения Мир Самозанятых v7.1
 АНО ЦПС ИНН 9724016805
 """
 
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     
     # Основные
     APP_NAME: str = "Мир Самозанятых"
-    APP_VERSION: str = "7.0.0"
+    APP_VERSION: str = "7.1.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     
