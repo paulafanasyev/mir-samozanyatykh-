@@ -1,4 +1,4 @@
-# Mir Samozanyatykh v7.1
+# Mir Samozanyatykh v7.2
 
 ## ANO CPS INN 9724016805
 
