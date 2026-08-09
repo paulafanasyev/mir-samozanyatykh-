@@ -1,5 +1,5 @@
 """
-Главный файл FastAPI приложения Мир Самозанятых v7.3
+Главный файл FastAPI приложения Мир Самозанятых v7.4
 АНО ЦПС ИНН 9724016805
 """
 
@@ -22,7 +22,7 @@ from app.core.logging import logger
 from app.core.security import generate_csp_nonce
 
 # Импорт роутеров
-from app.api import auth, users, sales, contracts, crm, svetlana, websocket, subscriptions, flutter, email_campaigns, analytics, import_export, search, calendar, notifications, webrtc, ai_analytics, white_label, mfa, telegram_bot, api_keys, webhooks, whatsapp, reports, backups
+from app.api import auth, users, sales, contracts, crm, svetlana, websocket, subscriptions, flutter, email_campaigns, analytics, import_export, search, calendar, notifications, webrtc, ai_analytics, white_label, mfa, telegram_bot, api_keys, webhooks, whatsapp, reports, backups, health
 
 
 # Rate limiter
@@ -208,6 +208,10 @@ app.include_router(mfa.router)
 app.include_router(telegram_bot.router)
 app.include_router(api_keys.router)
 app.include_router(webhooks.router)
+app.include_router(whatsapp.router)
+app.include_router(reports.router)
+app.include_router(backups.router)
+app.include_router(health.router)
 
 
 # ============ HEALTH CHECKS ============
