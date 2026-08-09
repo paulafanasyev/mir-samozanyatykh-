@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { LayoutDashboard, Package, FileText, Users, Handshake, FileSignature, UserCircle, Mic, LogOut, Menu, X, Shield } from 'lucide-react'
+import { LayoutDashboard, Package, FileText, Users, Handshake, FileSignature, UserCircle, Mic, LogOut, Menu, X, Shield, Gift, Bell, CheckSquare, Calendar } from 'lucide-react'
 import { useState } from 'react'
 
 const getNavItems = (isAdmin: boolean) => {
@@ -12,6 +12,8 @@ const getNavItems = (isAdmin: boolean) => {
     { path: '/deals', label: 'Sdelki', icon: Handshake },
     { path: '/contracts', label: 'Dogovory', icon: FileSignature },
     { path: '/svetlana', label: 'Svetlana', icon: Mic },
+    { path: '/tasks', label: 'Zadachi', icon: CheckSquare },
+    { path: '/calendar', label: 'Kalendar', icon: Calendar },
     { path: '/referrals', label: 'Referraly', icon: Gift },
     { path: '/notifications', label: 'Uvedomleniya', icon: Bell },
     { path: '/profile', label: 'Profil', icon: UserCircle },
