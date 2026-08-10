@@ -1,0 +1,42 @@
+# Environment
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/mir_samozanyatykh.db
+data/uploads/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic (keep versions)
+alembic/versions/*.py
+!alembic/versions/__init__.py
+
+# Docker
+letsencrypt/
+
+# Tests
+.coverage
+htmlcov/
+.pytest_cache/

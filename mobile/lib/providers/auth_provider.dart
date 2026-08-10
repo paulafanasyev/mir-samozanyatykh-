@@ -1,0 +1,1 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart'    final authProvider = StateProvider<bool>((ref) => false)  final userProvider = StateProvider<Map<String, dynamic>?>((ref) => null)  final unreadCountProvider = StateProvider<int>((ref) => 0)

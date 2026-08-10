@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://мир-самозанятых.рф/sitemap.xml
