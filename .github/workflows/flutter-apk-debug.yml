@@ -1,0 +1,76 @@
+# Debug APK сборка «Мир Самозанятых» на GitHub Actions
+# Положите в репозиторий: .github/workflows/flutter-apk-debug.yml
+# Запуск: Actions → "Build debug APK" → Run workflow
+# Результат: артефакт app-debug.apk (build/app/outputs/flutter-apk/)
+# Причина: локальная машина 3.9 ГБ RAM не тянет сборку (root = tmpfs = RAM, см. flutter-apk-report.md Попытка 3).
+# ubuntu-latest = 7 ГБ RAM, 14 ГБ диска — достаточно.
+
+name: Build debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+          cache: true
+
+      - name: Prepare project (workarounds для этого репо)
+        working-directory: mobile
+        run: |
+          # 1) android/-scaffold отсутствует в репо — генерируем
+          flutter create --org com.mirsamozanyatykh --project-name mir_samozanyatykh_mobile --platforms=android .
+          # 2) pubspec не резолвится: intl ^0.19.0 конфликтует с flutter_form_builder ^9.2.0/
+          #    form_builder_validators ^9.1.0 (тянут intl ^0.18.1). Фиксируем совместимые версии.
+          #    ВНИМАНИЕ: это обходной фикс в копии — владельцу нужно решение по pubspec.
+          sed -i 's/flutter_form_builder: .*/flutter_form_builder: 9.5.0/' pubspec.yaml
+          sed -i 's/form_builder_validators: .*/form_builder_validators: 10.0.0/' pubspec.yaml
+          # 3) assets/ декларированы в pubspec, но отсутствуют в репо
+          mkdir -p assets/images assets/icons
+          touch assets/images/.gitkeep assets/icons/.gitkeep
+          # 4) google-services.json НЕ нужен: google-services плагина в build.gradle нет
+          flutter pub get
+
+      - name: Build debug APK (arm64)
+        working-directory: mobile
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mir_app-debug-apk
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+      - name: Verify APK
+        working-directory: mobile
+        run: |
+          file build/app/outputs/flutter-apk/app-debug.apk
+          unzip -t build/app/outputs/flutter-apk/app-debug.apk | tail -3
+          stat -c 'SIZE: %s' build/app/outputs/flutter-apk/app-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-debug.apk
+
+# Примечания:
+# - arm64-only: fat-APK (4 ABI, webrtc/MLKit) > 80 МБ — вне DoD. Для всех ABI уберите
+#   --target-platform (проверьте размер и лимиты Play Store).
+# - Это debug-сборка: подпись debug-ключом, Firebase в рантайме работать не будет
+#   (нет google-services.json / Firebase-проекта владельца).
+# - Для release-сборки нужен keystore владельца (секреты: KEYSTORE_BASE64, KEYSTORE_PASSWORD,
+#   KEY_ALIAS, KEY_PASSWORD) + android/key.properties + настройка signingConfig.
