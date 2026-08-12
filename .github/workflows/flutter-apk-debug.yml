@@ -32,12 +32,6 @@ jobs:
           flutter-version: '3.24.5'
           cache: true
 
-      - name: Generate android scaffold
-        working-directory: mobile
-        run: |
-          # android/ отсутствует в репо — генерируем
-          flutter create --org com.mirsamozanyatykh --project-name mir_samozanyatykh_mobile --platforms=android .
-
       - name: Rewrite pubspec.yaml (в репо он на одной строке — сломан)
         working-directory: mobile
         run: |
@@ -121,6 +115,12 @@ jobs:
           PUBSPEC_EOF
           echo "---WRITTEN---"
           head -10 pubspec.yaml
+
+      - name: Generate android scaffold
+        working-directory: mobile
+        run: |
+          # android/ отсутствует в репо — генерируем (теперь pubspec уже корректный)
+          flutter create --org com.mirsamozanyatykh --project-name mir_samozanyatykh_mobile --platforms=android .
 
       - name: Create assets directories
         working-directory: mobile
