@@ -1,0 +1,27 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated_plugin_registrant.dart"
+  errors:
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    avoid_print: false
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    unnecessary_this: true
+    unnecessary_new: true
+    unnecessary_null_in_if_null_operators: true
+    avoid_unnecessary_containers: true
+    avoid_redundant_argument_values: true
+    sized_box_for_whitespace: true
+    use_key_in_widget_constructors: true
+    use_full_hex_values_for_flutter_colors: true
+    prefer_relative_imports: true
