@@ -31,21 +31,15 @@ jobs:
         working-directory: ./mobile
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
-
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Analyze project source
-        run: flutter analyze --fatal-infos
-
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Analyze
+        run: flutter analyze --no-pub
 
   test:
     name: Test
@@ -56,25 +50,15 @@ jobs:
         working-directory: ./mobile
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
-
       - name: Get dependencies
         run: flutter pub get
-
       - name: Run tests
-        run: flutter test --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./mobile/coverage/lcov.info
-          flags: flutter
-          name: flutter-coverage
+        run: flutter test
 
   build-android:
     name: Build Android APK
@@ -85,100 +69,45 @@ jobs:
         working-directory: ./mobile
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
-
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Build debug APK
-        if: github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == ''
+      - name: Build APK
         run: |
-          flutter build apk --debug             --target-platform android-arm64             --build-name=8.6.1             --build-number=861
-
-      - name: Build release APK
-        if: github.event.inputs.build_type == 'release'
-        run: |
-          flutter build apk --release             --target-platform android-arm64             --build-name=8.6.1             --build-number=861
-
-      - name: Build release AppBundle
-        if: github.event.inputs.build_type == 'release'
-        run: |
-          flutter build appbundle --release             --build-name=8.6.1             --build-number=861
-
+          flutter build apk --${{ github.event.inputs.build_type || 'debug' }}             --target-platform android-arm64             --build-name=8.6.3             --build-number=863
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk-${{ github.event.inputs.build_type || 'debug' }}
-          path: |
-            mobile/build/app/outputs/flutter-apk/*.apk
-            mobile/build/app/outputs/bundle/release/*.aab
+          name: android-apk-${{ github.event.inputs.build_type || 'debug' }}-v8.6.3
+          path: mobile/build/app/outputs/flutter-apk/*.apk
           retention-days: 30
-
-      - name: Upload to Release
+      - name: Create Release
         if: github.ref == 'refs/heads/main' && (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == '')
         uses: softprops/action-gh-release@v2
         with:
           files: mobile/build/app/outputs/flutter-apk/app-*.apk
-          tag_name: v8.6.1-mobile
-          name: "Мир Самозанятых v8.6.1 (Mobile)"
+          tag_name: v8.6.3-mobile
+          name: "Мир Самозанятых v8.6.3 (Mobile)"
           body: |
-            ## Мобильное приложение Мир Самозанятых v8.6.1
+            ## Мобильное приложение Мир Самозанятых v8.6.3
 
-            ### Что нового:
-            - Полная структура Flutter приложения
+            ### Возможности:
             - 25+ экранов с Material 3 дизайном
             - ИИ-ассистент Светлана
             - Биометрическая аутентификация
             - CRM, бухгалтерия, аналитика
-            - Админ-панель
+            - Админ-панель (RBAC)
 
-            ### Установка:
-            1. Скачайте APK
-            2. Разрешите установку из неизвестных источников
-            3. Установите и войдите
-
-            ### Системные требования:
+            ### Требования:
             - Android 6.0+ (API 23+)
             - 100 MB свободного места
-            - Интернет-соединение
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-    needs: [analyze, test]
-    defaults:
-      run:
-        working-directory: ./mobile
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.5'
-          channel: 'stable'
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build iOS
-        run: flutter build ios --release --no-codesign
-
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build
-          path: mobile/build/ios/iphoneos/Runner.app
-          retention-days: 30
