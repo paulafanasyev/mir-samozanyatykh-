@@ -36,15 +36,6 @@ services:
     ipAllowList: []
     maxmemoryPolicy: allkeys-lru
 
-  - type: cron
-    name: mir-samozanyatykh-ping
-    runtime: bash
-    plan: free
-    region: frankfurt
-    schedule: "*/10 * * * *"
-    buildCommand: ""
-    startCommand: "curl -s -o /dev/null -w \"%{http_code}\" https://mir-samozanyatykh-api.onrender.com/health && echo \"[OK] Service is alive\" || echo \"[WARN] Service may be sleeping\""
-
 databases:
   - name: mir-samozanyatykh-db
     plan: free
