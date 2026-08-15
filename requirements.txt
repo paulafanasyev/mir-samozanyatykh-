@@ -18,7 +18,7 @@ pydantic==2.8.2
 pydantic-settings==2.3.4
 
 # SECURITY: JWT - Replaced python-jose with PyJWT
-# python-jose==3.3.0  # REMOVED - has CVE-2024-33664, CVE-2024-33663
+ - has CVE-2024-33664, CVE-2024-33663
 pyjwt[crypto]==2.8.0
 
 # Password hashing
