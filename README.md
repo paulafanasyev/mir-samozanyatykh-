@@ -1,3 +1,23 @@
+<div align="center">
+
+# Мир Самозанятых
+
+[![Version](https://img.shields.io/badge/version-8.6.3-blue.svg)](https://github.com/paulafanasyev/mir-samozanyatykh-)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-green.svg)](https://fastapi.tiangolo.com)
+[![Flutter](https://img.shields.io/badge/Flutter-3.24+-blue.svg)](https://flutter.dev)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-124%2F125-brightgreen.svg)](tests/)
+
+**Платформа для самозанятых, фрилансеров и малого бизнеса**
+
+[🌐 Сайт](https://mir-samozanyatykh.ru) • [📱 Мобильное приложение](https://github.com/paulafanasyev/mir-samozanyatykh-/releases) • [📖 Документация](API.md) • [🚀 Развёртывание](DEPLOY.md)
+
+</div>
+
+---
+
+
 # Мир Самозанятых v8.1
 
 **АНО ЦПС «Мир Самозанятых» | ИНН 9724016805**
