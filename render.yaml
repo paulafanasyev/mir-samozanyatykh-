@@ -1,35 +1,78 @@
+# Мир Самозанятых — Render Blueprint v8.6.5
+# https://render.com/docs/blueprint-spec
+# 
+# Как использовать:
+# 1. Зайдите на https://dashboard.render.com/blueprints
+# 2. Нажмите "New Blueprint Instance"
+# 3. Выберите репозиторий: paulafanasyev/mir-samozanyatykh-
+# 4. Render автоматически создаст все сервисы из этого файла
+# 5. Заполните Environment Variables (см. ниже)
+# 6. Нажмите "Apply"
+
 services:
+  # === Web Service (Backend API) ===
   - type: web
     name: mir-samozanyatykh-api
     runtime: python
     plan: free
+    region: frankfurt
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: "./startup.sh"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: ENVIRONMENT
         value: production
+      - key: DEBUG
+        value: "false"
+      # Генерируется автоматически — замените на свой 64-char hex ключ
       - key: SECRET_KEY
         generateValue: true
+      # PostgreSQL — автоматически из базы данных ниже
       - key: DATABASE_URL
         fromDatabase:
           name: mir-samozanyatykh-db
           property: connectionString
+      # Redis — автоматически из сервиса Redis ниже
       - key: REDIS_URL
         fromService:
           type: redis
           name: mir-samozanyatykh-redis
           property: connectionString
-    healthCheckPath: /api/health
+      # === ОБЯЗАТЕЛЬНО заполните вручную в Dashboard ===
+      # OPENROUTER_API_KEY
+      # SMTP_PASSWORD
+      # YOOKASSA_SHOP_ID + YOOKASSA_SECRET_KEY
+      # TELEGRAM_BOT_TOKEN
+      # FNS_API_KEY
+    healthCheckPath: /health
     autoDeploy: true
+    numInstances: 1
 
+  # === Redis (Cache + Celery broker) ===
   - type: redis
     name: mir-samozanyatykh-redis
     plan: free
+    region: frankfurt
     ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
 
+  # === Cron Job (Keep-alive ping) ===
+  - type: cron
+    name: mir-samozanyatykh-ping
+    runtime: bash
+    plan: free
+    region: frankfurt
+    schedule: "*/10 * * * *"
+    buildCommand: ""
+    startCommand: |
+      curl -s -o /dev/null -w "%{http_code}"         https://mir-samozanyatykh-api.onrender.com/health         && echo " [OK] Service is alive"         || echo " [WARN] Service may be sleeping"
+
+# === PostgreSQL Database ===
 databases:
   - name: mir-samozanyatykh-db
     plan: free
+    region: frankfurt
     postgresMajorVersion: 16
+    databaseName: mir_samozanyatykh
+    user: mir_samozanyatykh_user
