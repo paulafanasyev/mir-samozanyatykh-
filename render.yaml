@@ -1,45 +1,114 @@
-# Мир Самозанятых — Render Blueprint v8.6.5
+# render.yaml — Blueprint for Render.com
+# Мир Самозанятых v8.4 — АНО ЦПС ИНН 9724016805
+# Blueprint ID: exs-da08tgtbedkc73a743pg
+
 services:
+  # === PostgreSQL Database ===
+  - type: psql
+    name: mirsamozanyatykh-db
+    plan: starter
+    ipAllowList: []
+
+  # === Redis Cache ===
+  - type: redis
+    name: mirsamozanyatykh-redis
+    plan: starter
+    ipAllowList: []
+
+  # === Backend API (FastAPI) ===
   - type: web
-    name: mir-samozanyatykh-api
-    runtime: python
-    plan: free
-    region: frankfurt
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "./startup.sh"
+    name: mirsamozanyatykh-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.0
+      # Database (auto from Render PostgreSQL)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mirsamozanyatykh-db
+          property: connectionString
+      # Redis (auto from Render Redis)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mirsamozanyatykh-redis
+          property: connectionString
+      # Security
+      - key: SECRET_KEY
+        generateValue: true
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
         value: "false"
-      - key: SECRET_KEY
-        generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: mir-samozanyatykh-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: mir-samozanyatykh-redis
-          property: connectionString
-    healthCheckPath: /health
+      # Domain
+      - key: DOMAIN
+        value: mirsamozanyatykh-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://mirsamozanyatykh.onrender.com
+      # Rate Limiting
+      - key: RATE_LIMIT_REQUESTS
+        value: "100"
+      - key: LOGIN_MAX_ATTEMPTS
+        value: "5"
+      # Email (configure after deploy)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: "Мир Самозанятых"
+      # AI / OpenRouter
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL_DEFAULT
+        value: "anthropic/claude-3.5-sonnet"
+      # YooKassa
+      - key: YOOKASSA_SHOP_ID
+        sync: false
+      - key: YOOKASSA_SECRET_KEY
+        sync: false
+      - key: YOOKASSA_RETURN_URL
+        value: "https://mirsamozanyatykh.onrender.com/payment/success"
+      - key: YOOKASSA_CANCEL_URL
+        value: "https://mirsamozanyatykh.onrender.com/payment/cancel"
+      # FNS
+      - key: FNS_API_KEY
+        sync: false
+      # Telegram
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # SMS.ru
+      - key: SMS_RU_API_KEY
+        sync: false
+      # Logging
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FILE
+        value: /app/logs/app.log
+      # Uploads
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+      - key: UPLOAD_DIR
+        value: /app/uploads
+    healthCheckPath: /api/health
     autoDeploy: true
-    numInstances: 1
 
-  - type: redis
-    name: mir-samozanyatykh-redis
-    plan: free
-    region: frankfurt
-    ipAllowList: []
-    maxmemoryPolicy: allkeys-lru
-
-databases:
-  - name: mir-samozanyatykh-db
-    plan: free
-    region: frankfurt
-    postgresMajorVersion: 16
-    databaseName: mir_samozanyatykh
-    user: mir_samozanyatykh_user
+  # === Frontend (Vite + React SPA) ===
+  - type: web
+    name: mirsamozanyatykh
+    runtime: static
+    plan: starter
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://mirsamozanyatykh-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
