@@ -79,6 +79,15 @@ class User(Base):
         return "user"
 
 
+    # Password reset fields (SECURITY: hashed + TTL)
+    password_reset_token_hash = Column(String(255))
+    password_reset_expires_at = Column(DateTime(timezone=True))
+    password_reset_created_at = Column(DateTime(timezone=True))
+
+    # Email verification fields (SECURITY: hashed + TTL)
+    email_verification_token_hash = Column(String(255))
+    email_verification_expires_at = Column(DateTime(timezone=True))
+
 class UserSession(Base):
     __tablename__ = "user_sessions"
 

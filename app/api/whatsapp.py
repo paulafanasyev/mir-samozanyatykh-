@@ -264,7 +264,10 @@ async def verify_webhook(
     hub_challenge: str = None,
 ):
     """Верификация webhook от Meta"""
-    verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "mir-samozanyatykh")
+    verify_token = os.getenv('WHATSAPP_VERIFY_TOKEN')
+    if not verify_token:
+        raise ValueError('WHATSAPP_VERIFY_TOKEN must be set')
+    verify_token = verify_token("WHATSAPP_VERIFY_TOKEN") or (raise ValueError("WHATSAPP_VERIFY_TOKEN must be set"))
 
     if hub_mode == "subscribe" and hub_verify_token == verify_token:
         return int(hub_challenge)

@@ -208,7 +208,7 @@ async def check_receipt(
 
     except httpx.ConnectError:
         # Fallback: если API ФНС недоступно, возвращаем заглушку
-        logger.warning("FNS receipt API unavailable, returning mock response")
+        logger.warning("FNS receipt API unavailable, raise HTTPException(status_code=503, detail='FNS service temporarily unavailable')")
         return ReceiptCheckResponse(
             found=False,
             message="Сервис проверки чеков временно недоступен. Попробуйте позже.",

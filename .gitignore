@@ -30,7 +30,7 @@ logs/
 Thumbs.db
 
 # Alembic (keep versions)
-alembic/versions/*.py
+# alembic/versions/*.py  # DO NOT IGNORE - migrations must be in git!
 !alembic/versions/__init__.py
 
 # Docker

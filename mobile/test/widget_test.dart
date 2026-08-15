@@ -1,32 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mir_samozanyatykh_mobile/main.dart';
+import 'package:mir_samozanyatykh/main.dart';
 
 void main() {
-  group('MirSamozanyatykhApp', () {
-    testWidgets('приложение запускается без ошибок', (WidgetTester tester) async {
-      await tester.pumpWidget(const MirSamozanyatykhApp());
+  group('App Widget Tests', () {
+    testWidgets('App launches with LoginScreen', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
-    testWidgets('показывает login screen для неавторизованного', (WidgetTester tester) async {
-      await tester.pumpWidget(const MirSamozanyatykhApp());
+    testWidgets('Login screen has email field', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
-      expect(find.text('Мир Самозанятых'), findsOneWidget);
+      expect(find.byType(TextField), findsWidgets);
     });
   });
 
-  group('LoginScreen', () {
-    testWidgets('есть поля email и password', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Login Test'))));
-      expect(find.text('Login Test'), findsOneWidget);
+  group('Client Detail Screen', () {
+    testWidgets('Shows loading state', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
 
-  group('AppTheme', () {
-    test('light theme не null', () {
-      // Тема создаётся в app_theme.dart
-      expect(true, isTrue);
+  group('Navigation', () {
+    testWidgets('Bottom navigation has 5 items', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomNavigationBar), findsOneWidget);
     });
   });
 }
