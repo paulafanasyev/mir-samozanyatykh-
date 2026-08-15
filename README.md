@@ -195,3 +195,30 @@ TELEGRAM_BOT_TOKEN=      # Telegram бот
 ---
 
 *Версия: 7.9.0 | Последнее обновление: 2026-08-09*
+
+
+## 🚀 Deploy to Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/paulafanasyev/mir-samozanyatykh-)
+
+**Blueprint ID:** `exs-da08tgtbedkc73a743pg`
+
+### Quick Deploy
+1. Click the button above
+2. Connect your GitHub account
+3. Review the services and click "Apply"
+4. Add environment variables (SMTP, OpenRouter, etc.)
+5. Run migrations: `alembic upgrade head`
+
+### Manual Deploy
+```bash
+# Install Render CLI
+curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh | sh
+
+# Login
+render login
+
+# Deploy
+./deploy-to-render.sh
+```
+
