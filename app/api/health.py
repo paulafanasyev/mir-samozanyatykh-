@@ -1,122 +1,52 @@
-"""
-Health Checks & Monitoring API v7.4
-Мониторинг состояния системы
-"""
-
-import time
-from datetime import datetime, timezone
-from typing import Dict
-
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+import platform
 
 from app.core.database import get_db
-from app.core.config import settings
-from app.core.cache import cache
 
-router = APIRouter(prefix="/api/health", tags=["health"])
+router = APIRouter(prefix="/api/health", tags=["Health"])
 
-
-# Время запуска приложения
-_start_time = time.time()
-
-
-@router.get("/")
+@router.get("", summary="Healthcheck")
 async def health_check():
-    """Базовая проверка здоровья"""
+    """Проверка работоспособности API"""
     return {
         "status": "healthy",
-        "version": settings.APP_VERSION,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "uptime_seconds": int(time.time() - _start_time),
+        "version": "8.6.1",
+        "timestamp": datetime.utcnow().isoformat(),
+        "environment": "production",
     }
 
-
-@router.get("/detailed")
-async def detailed_health(
-    db: AsyncSession = Depends(get_db),
-):
-    """Детальная проверка всех компонентов"""
-
-    checks = {}
-
-    # Database check
+@router.get("/ready", summary="Readiness probe")
+async def readiness_check(db: AsyncSession = Depends(get_db)):
+    """Проверка готовности к трафику (проверяет БД)"""
     try:
-        await db.execute(text("SELECT 1"))
-        checks["database"] = {"status": "ok", "latency_ms": 0}
+        await db.execute("SELECT 1")
+        return {"status": "ready", "database": "connected"}
     except Exception as e:
-        checks["database"] = {"status": "error", "error": str(e)}
+        return {"status": "not_ready", "database": str(e)}
 
-    # Redis check (если настроен)
-    try:
-        cache_stats = cache.get_stats()
-        checks["cache"] = {"status": "ok", "stats": cache_stats}
-    except Exception as e:
-        checks["cache"] = {"status": "error", "error": str(e)}
+@router.get("/live", summary="Liveness probe")
+async def liveness_check():
+    """Проверка что сервис жив"""
+    return {"status": "alive"}
 
-    # API keys check
-    checks["openrouter"] = {
-        "status": "ok" if settings.OPENROUTER_API_KEY else "not_configured",
-        "configured": bool(settings.OPENROUTER_API_KEY),
-    }
-
-    checks["cosyvoice"] = {
-        "status": "ok" if settings.COSYVOICE_API_KEY else "not_configured",
-        "configured": bool(settings.COSYVOICE_API_KEY),
-    }
-
-    # Email check
-    checks["email"] = {
-        "status": "ok" if settings.SMTP_HOST else "not_configured",
-        "configured": bool(settings.SMTP_HOST),
-    }
-
-    # Overall status
-    all_ok = all(c["status"] in ("ok", "not_configured") for c in checks.values())
-
+@router.get("/metrics", summary="System metrics")
+async def system_metrics():
+    """Системные метрики для мониторинга"""
+    import psutil
     return {
-        "status": "healthy" if all_ok else "degraded",
-        "version": settings.APP_VERSION,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "uptime_seconds": int(time.time() - _start_time),
-        "checks": checks,
-    }
-
-
-@router.get("/metrics")
-async def system_metrics(
-    db: AsyncSession = Depends(get_db),
-):
-    """Метрики системы"""
-
-    from app.models import User, Client, Deal, Invoice, Task
-
-    # Подсчёт сущностей
-    users_count = await db.scalar(select(User.id))
-    clients_count = await db.scalar(select(Client.id))
-    deals_count = await db.scalar(select(Deal.id))
-    invoices_count = await db.scalar(select(Invoice.id))
-    tasks_count = await db.scalar(select(Task.id))
-
-    return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "entities": {
-            "users": users_count,
-            "clients": clients_count,
-            "deals": deals_count,
-            "invoices": invoices_count,
-            "tasks": tasks_count,
-        },
-        "cache": cache.get_stats(),
+        "cpu_percent": psutil.cpu_percent(interval=1),
         "memory": {
-            "uptime_seconds": int(time.time() - _start_time),
+            "total": psutil.virtual_memory().total,
+            "available": psutil.virtual_memory().available,
+            "percent": psutil.virtual_memory().percent,
         },
+        "disk": {
+            "total": psutil.disk_usage("/").total,
+            "free": psutil.disk_usage("/").free,
+            "percent": psutil.disk_usage("/").percent,
+        },
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
     }
-
-
-@router.post("/cache/clear")
-async def clear_cache():
-    """Очистка кэша (admin only)"""
-    cache.clear()
-    return {"message": "Cache cleared", "timestamp": datetime.now(timezone.utc).isoformat()}

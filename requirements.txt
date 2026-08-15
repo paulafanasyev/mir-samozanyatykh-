@@ -34,3 +34,5 @@ python-slugify==8.0.4
 websockets==13.0
 pywebpush==2.0.0
 python-dotenv==1.0.1
+
+psutil>=5.9.0
