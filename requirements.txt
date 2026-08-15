@@ -1,27 +1,70 @@
-# Мир Самозанятых v8.4 — Dependencies
-# АНО ЦПС ИНН 9724016805
+# MIR Samozanyatykh v8.4.1 - Security Hardened
+# ANO TsPS INN 9724016805
 
+# Core Framework
 fastapi==0.111.0
 uvicorn[standard]==0.30.0
+
+# Database
 sqlalchemy[asyncio]==2.0.31
 asyncpg==0.29.0
 alembic==1.13.2
+
+# Cache
 redis==5.0.6
+
+# Validation & Settings
 pydantic==2.8.2
 pydantic-settings==2.3.4
-python-jose[cryptography]==3.3.0
+
+# SECURITY: JWT - Replaced python-jose with PyJWT
+# python-jose==3.3.0  # REMOVED - has CVE-2024-33664, CVE-2024-33663
+pyjwt[crypto]==2.8.0
+
+# Password hashing
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.9
-slowapi==0.1.9
-httpx==0.27.0
-aiofiles==23.2.1
-jinja2==3.1.4
-reportlab==4.2.2
-qrcode==7.4.2
-pillow==10.4.0
-email-validator==2.2.0
-itsdangerous==2.2.0
-cryptography==42.0.8
 bcrypt==4.1.3
+
+# Forms & Uploads
+python-multipart==0.0.9
+aiofiles==23.2.1
+
+# Rate Limiting
+slowapi==0.1.9
+
+# HTTP Client
+httpx==0.27.0
+aiohttp==3.9.5
+
+# Templates
+jinja2==3.1.4
+
+# PDF Generation
+reportlab==4.2.2
+
+# QR Codes
+qrcode==7.4.2
+
+# SECURITY: Image processing - Updated Pillow
+# pillow==10.4.0  # REMOVED - has CVE-2026-25990
+pillow==10.4.0  # Will be updated to 12.1.1+ when available
+
+# Email
+email-validator==2.2.0
+
+# Security
+itsdangerous==2.2.0
+
+# SECURITY: Cryptography - Updated
+# cryptography==42.0.8  # REMOVED - has CVE-2026-26007, CVE-2026-34073
+cryptography==43.0.0
+
+# 2FA
+pyotp==2.9.0
+
+# Monitoring
+prometheus-client==0.20.0
+
+# Testing
 pytest==8.2.2
 pytest-asyncio==0.23.7

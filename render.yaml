@@ -1,5 +1,6 @@
 # render.yaml - Blueprint for Render.com
-# MIR Samozanyatykh v8.4 - ANO TsPS INN 9724016805
+# MIR Samozanyatykh v8.4.1 Security Hardened
+# ANO TsPS INN 9724016805
 # Blueprint ID: exs-da08tgtbedkc73a743pg
 
 services:
@@ -15,7 +16,7 @@ services:
     plan: starter
     ipAllowList: []
 
-  # Backend API (FastAPI)
+  # Backend API (FastAPI) - Security Hardened
   - type: web
     name: mirsamozanyatykh-api
     runtime: docker
@@ -46,6 +47,8 @@ services:
         value: "100"
       - key: LOGIN_MAX_ATTEMPTS
         value: "5"
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -78,8 +81,6 @@ services:
         value: INFO
       - key: LOG_FILE
         value: /app/logs/app.log
-      - key: MAX_UPLOAD_SIZE_MB
-        value: "10"
       - key: UPLOAD_DIR
         value: /app/uploads
     healthCheckPath: /api/health
