@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мир Самозанятых v8.6.1 — Скриншоты</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; padding: 40px 20px; }
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { text-align: center; color: #1a1a2e; margin-bottom: 8px; font-size: 32px; }
+.subtitle { text-align: center; color: #666; margin-bottom: 40px; font-size: 16px; }
+.phone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+.phone-frame {
+  background: #1a1a2e;
+  border-radius: 40px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 320px;
+  margin: 0 auto;
+}
+.phone-screen {
+  background: #F8F9FA;
+  border-radius: 32px;
+  overflow: hidden;
+  height: 680px;
+  position: relative;
+}
+.phone-notch {
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 28px;
+  background: #1a1a2e;
+  border-radius: 0 0 20px 20px;
+  z-index: 100;
+}
+.screen-label {
+  text-align: center;
+  color: #fff;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Home Screen */
+.home-screen { background: #F8F9FA; }
+.home-header {
+  background: #fff;
+  padding: 50px 20px 20px;
+  border-bottom: 1px solid #E8EAED;
+}
+.home-header h2 { font-size: 14px; color: #5F6368; font-weight: 400; }
+.home-header h1 { font-size: 24px; color: #202124; margin: 4px 0 8px; text-align: left; }
+.badge {
+  display: inline-block;
+  background: #E3F2FD;
+  color: #1565C0;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+}
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #E8EAED;
+}
+.stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.stat-value { font-size: 22px; font-weight: 700; color: #202124; }
+.stat-title { font-size: 12px; color: #5F6368; margin-top: 2px; }
+.stat-subtitle { font-size: 11px; margin-top: 4px; font-weight: 600; }
+
+.quick-actions { padding: 0 16px 16px; }
+.quick-actions h3 { font-size: 16px; color: #202124; margin-bottom: 12px; }
+.action-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: #fff;
+  border: 1px solid #DADCE0;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #202124;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.recent-activity { padding: 0 16px 16px; }
+.recent-activity h3 { font-size: 16px; color: #202124; margin-bottom: 12px; }
+.activity-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #E8EAED;
+}
+.activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.activity-text { flex: 1; }
+.activity-title { font-size: 14px; color: #202124; }
+.activity-time { font-size: 12px; color: #5F6368; }
+
+.svetlana-widget {
+  margin: 0 16px 16px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #E8EAED;
+  display: flex; align-items: center; gap: 16px;
+}
+.svetlana-avatar { width: 48px; height: 48px; background: #E3F2FD; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.svetlana-info { flex: 1; }
+.svetlana-info h4 { font-size: 15px; color: #202124; }
+.svetlana-info p { font-size: 12px; color: #5F6368; }
+
+/* Login Screen */
+.login-screen { background: #fff; display: flex; flex-direction: column; align-items: center; padding: 60px 24px 24px; }
+.login-logo { width: 80px; height: 80px; background: #E3F2FD; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px; }
+.login-screen h1 { font-size: 24px; color: #202124; margin-bottom: 4px; }
+.login-screen p { color: #5F6368; margin-bottom: 32px; }
+.login-input {
+  width: 100%; padding: 14px 16px;
+  background: #F1F3F4;
+  border: none; border-radius: 12px;
+  font-size: 15px; margin-bottom: 12px;
+}
+.login-btn {
+  width: 100%; padding: 14px;
+  background: #1E88E5; color: #fff;
+  border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 600;
+  margin-top: 12px;
+}
+.social-btn {
+  width: 100%; padding: 12px;
+  background: #fff; color: #202124;
+  border: 1px solid #DADCE0; border-radius: 12px;
+  font-size: 14px; margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* Svetlana Screen */
+.svetlana-screen { background: #F8F9FA; display: flex; flex-direction: column; }
+.svetlana-header {
+  background: #fff;
+  padding: 50px 16px 12px;
+  border-bottom: 1px solid #E8EAED;
+  display: flex; align-items: center; gap: 12px;
+}
+.svetlana-header-avatar { width: 36px; height: 36px; background: #E3F2FD; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.svetlana-header-info h4 { font-size: 15px; color: #202124; }
+.svetlana-header-info p { font-size: 12px; color: #5F6368; }
+
+.quick-questions {
+  display: flex; gap: 8px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  background: #fff;
+  border-bottom: 1px solid #E8EAED;
+}
+.question-chip {
+  background: #F1F3F4;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: #202124;
+}
+
+.chat-area { flex: 1; padding: 16px; overflow-y: auto; }
+.message {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.message.assistant {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-bottom-left-radius: 4px;
+  color: #202124;
+}
+.message.user {
+  background: #1E88E5;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+.message-time { font-size: 11px; margin-top: 4px; opacity: 0.7; }
+
+.chat-input {
+  background: #fff;
+  padding: 12px;
+  border-top: 1px solid #E8EAED;
+  display: flex; align-items: center; gap: 8px;
+}
+.chat-input-field {
+  flex: 1;
+  background: #F1F3F4;
+  border: none; border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+/* Profile Screen */
+.profile-screen { background: #F8F9FA; }
+.profile-header {
+  background: #fff;
+  padding: 40px 16px 24px;
+  text-align: center;
+}
+.profile-avatar { width: 100px; height: 100px; background: #E3F2FD; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #1E88E5; }
+.profile-header h2 { font-size: 20px; color: #202124; }
+.profile-header p { color: #5F6368; margin-top: 4px; }
+.profile-tier {
+  display: inline-block;
+  background: #FFF3E0;
+  color: #E65100;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px;
+  background: #fff;
+  margin: 16px;
+  border-radius: 16px;
+}
+.profile-stat { text-align: center; }
+.profile-stat-value { font-size: 18px; font-weight: 700; color: #202124; }
+.profile-stat-label { font-size: 12px; color: #5F6368; margin-top: 2px; }
+
+.menu-section { margin: 16px; }
+.menu-section-title {
+  font-size: 12px;
+  color: #1E88E5;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px 8px;
+}
+.menu-card { background: #fff; border-radius: 16px; overflow: hidden; }
+.menu-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #F1F3F4;
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-item-icon { width: 36px; text-align: center; font-size: 20px; }
+.menu-item-text { flex: 1; }
+.menu-item-title { font-size: 15px; color: #202124; }
+.menu-item-subtitle { font-size: 12px; color: #5F6368; margin-top: 2px; }
+.menu-item-arrow { color: #5F6368; font-size: 18px; }
+
+/* Admin Screen */
+.admin-screen { background: #F8F9FA; }
+.admin-header { padding: 50px 16px 16px; }
+.admin-header h1 { font-size: 22px; color: #202124; text-align: left; }
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 16px;
+}
+.admin-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+}
+.admin-card-icon { font-size: 28px; margin-bottom: 8px; }
+.admin-card-value { font-size: 20px; font-weight: 700; color: #202124; }
+.admin-card-label { font-size: 12px; color: #5F6368; margin-top: 4px; }
+
+/* Bottom Nav */
+.bottom-nav {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #fff;
+  border-top: 1px solid #E8EAED;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0 20px;
+}
+.nav-item { text-align: center; flex: 1; }
+.nav-item-icon { font-size: 22px; margin-bottom: 2px; }
+.nav-item-label { font-size: 10px; }
+.nav-item.active .nav-item-icon { color: #1E88E5; }
+.nav-item.active .nav-item-label { color: #1E88E5; font-weight: 600; }
+.nav-item:not(.active) { color: #5F6368; }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body { background: #121212; }
+  h1 { color: #E8EAED; }
+  .subtitle { color: #9AA0A6; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Мир Самозанятых v8.6.1</h1>
+  <p class="subtitle">Flutter Mobile App — 25+ экранов, Material 3, Riverpod, GoRouter</p>
+
+  <div class="phone-grid">
+    <!-- Home Screen -->
+    <div>
+      <div class="phone-frame">
+        <div class="phone-screen home-screen">
+          <div class="phone-notch"></div>
+          <div class="home-header">
+            <h2>Добро пожаловать,</h2>
+            <h1>Александр</h1>
+            <span class="badge">PRO</span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#E3F2FD;">📄</div>
+              <div class="stat-value">12</div>
+              <div class="stat-title">Счета</div>
+              <div class="stat-subtitle" style="color:#1E88E5;">3 на оплате</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#FFF3E0;">📈</div>
+              <div class="stat-value">8</div>
+              <div class="stat-title">Сделки</div>
+              <div class="stat-subtitle" style="color:#FF8C00;">2 в работе</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#E8F5E9;">👥</div>
+              <div class="stat-value">24</div>
+              <div class="stat-title">Клиенты</div>
+              <div class="stat-subtitle" style="color:#43A047;">+3 за месяц</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#FFEBEE;">✅</div>
+              <div class="stat-value">5</div>
+              <div class="stat-title">Задачи</div>
+              <div class="stat-subtitle" style="color:#E53935;">1 просрочена</div>
+            </div>
+          </div>
+          <div class="quick-actions">
+            <h3>Быстрые действия</h3>
+            <div class="action-chips">
+              <div class="chip">➕ Новый счет</div>
+              <div class="chip">👤 Клиент</div>
+              <div class="chip">✅ Задача</div>
+              <div class="chip">📷 Чек ФНС</div>
+              <div class="chip">🤖 Светлана</div>
+            </div>
+          </div>
+          <div class="recent-activity">
+            <h3>Последняя активность</h3>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:#E3F2FD;">📄</div>
+              <div class="activity-text">
+                <div class="activity-title">Счет #1245 создан</div>
+                <div class="activity-time">2 мин назад</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:#E8F5E9;">👤</div>
+              <div class="activity-text">
+                <div class="activity-title">Клиент "ООО Ромашка" добавлен</div>
+                <div class="activity-time">15 мин назад</div>
+              </div>
+            </div>
+          </div>
+          <div class="svetlana-widget">
+            <div class="svetlana-avatar">🤖</div>
+            <div class="svetlana-info">
+              <h4>Светлана</h4>
+              <p>Ваш ИИ-ассистент по налогам и бизнесу</p>
+            </div>
+            <span style="color:#5F6368;">›</span>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <div class="nav-item-icon">🏠</div>
+              <div class="nav-item-label">Главная</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">👥</div>
+              <div class="nav-item-label">Клиенты</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📈</div>
+              <div class="nav-item-label">Сделки</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📄</div>
+              <div class="nav-item-label">Счета</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">👤</div>
+              <div class="nav-item-label">Профиль</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Главный экран (Home)</div>
+    </div>
+
+    <!-- Login Screen -->
+    <div>
+      <div class="phone-frame">
+        <div class="phone-screen login-screen">
+          <div class="phone-notch"></div>
+          <div class="login-logo">💼</div>
+          <h1>Мир Самозанятых</h1>
+          <p>Вход в личный кабинет</p>
+          <input class="login-input" placeholder="Email" value="user@example.com">
+          <input class="login-input" placeholder="Пароль" type="password" value="••••••••">
+          <div style="width:100%;display:flex;align-items:center;gap:8px;margin:8px 0;">
+            <input type="checkbox" checked> <span style="font-size:13px;color:#5F6368;">Запомнить меня</span>
+            <span style="flex:1"></span>
+            <a style="font-size:13px;color:#1E88E5;text-decoration:none;">Забыли пароль?</a>
+          </div>
+          <button class="login-btn">Войти</button>
+          <div style="width:100%;display:flex;align-items:center;gap:12px;margin:20px 0;">
+            <div style="flex:1;height:1px;background:#E8EAED;"></div>
+            <span style="font-size:13px;color:#5F6368;">или</span>
+            <div style="flex:1;height:1px;background:#E8EAED;"></div>
+          </div>
+          <button class="social-btn">🔍 Войти через Google</button>
+          <button class="social-btn">✈️ Войти через Telegram</button>
+          <div style="margin-top:auto;padding-bottom:20px;text-align:center;">
+            <span style="font-size:14px;color:#5F6368;">Нет аккаунта? </span>
+            <a style="color:#1E88E5;text-decoration:none;font-weight:600;">Зарегистрироваться</a>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Авторизация (Login)</div>
+    </div>
+
+    <!-- Svetlana Screen -->
+    <div>
+      <div class="phone-frame">
+        <div class="phone-screen svetlana-screen">
+          <div class="phone-notch"></div>
+          <div class="svetlana-header">
+            <div class="svetlana-header-avatar">🤖</div>
+            <div class="svetlana-header-info">
+              <h4>Светлана</h4>
+              <p>ИИ-ассистент</p>
+            </div>
+            <span style="margin-left:auto;color:#5F6368;">⋮</span>
+          </div>
+          <div class="quick-questions">
+            <div class="question-chip">💰 Какие налоги?</div>
+            <div class="question-chip">🧾 Как оформить чек?</div>
+            <div class="question-chip">📉 Налоговый вычет</div>
+            <div class="question-chip">🏢 Переход в ИП</div>
+            <div class="question-chip">🎁 Гранты</div>
+          </div>
+          <div class="chat-area">
+            <div class="message assistant">
+              Здравствуйте! Я Светлана, ваш ИИ-ассистент по вопросам самозанятости и бизнеса.<br><br>
+              Я могу помочь с:<br>
+              • Налогами и отчётностью<br>
+              • Оформлением документов<br>
+              • Проверкой контрагентов<br>
+              • Грантами и поддержкой<br>
+              • Юридическими вопросами<br><br>
+              Чем могу помочь?
+              <div class="message-time">22:55</div>
+            </div>
+            <div class="message user">
+              Какие налоги платит самозанятый?
+              <div class="message-time">22:56</div>
+            </div>
+            <div class="message assistant">
+              В 2026 году ставки НПД:<br><br>
+              • <b>4%</b> — при доходе от физических лиц<br>
+              • <b>6%</b> — при доходе от юридических лиц и ИП<br><br>
+              Налоговый вычет 10 000 ₽:<br>
+              • 1% — от физлиц (итого 3%)<br>
+              • 2% — от юрлиц (итого 4%)<br><br>
+              ⚠️ Это общая информация. Для персональной консультации обратитесь в ФНС.
+              <div class="message-time">22:56</div>
+            </div>
+          </div>
+          <div class="chat-input">
+            <span style="font-size:20px;">🎤</span>
+            <input class="chat-input-field" placeholder="Спросите Светлану...">
+            <span style="font-size:20px;color:#1E88E5;">➤</span>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">ИИ-ассистент Светлана</div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div>
+      <div class="phone-frame">
+        <div class="phone-screen profile-screen">
+          <div class="phone-notch"></div>
+          <div class="profile-header">
+            <div class="profile-avatar">А</div>
+            <h2>Александр Петров</h2>
+            <p>alex@example.com</p>
+            <div class="profile-tier">PRO — 300 ₽/мес</div>
+          </div>
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <div class="profile-stat-value">12</div>
+              <div class="profile-stat-label">Счета</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value">8</div>
+              <div class="profile-stat-label">Сделки</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value">24</div>
+              <div class="profile-stat-label">Клиенты</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value">5</div>
+              <div class="profile-stat-label">Рефералы</div>
+            </div>
+          </div>
+          <div class="menu-section">
+            <div class="menu-section-title">Аккаунт</div>
+            <div class="menu-card">
+              <div class="menu-item">
+                <div class="menu-item-icon">👤</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Редактировать профиль</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon">✅</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Верификация</div>
+                  <div class="menu-item-subtitle">Верифицирован</div>
+                </div>
+                <div style="color:#43A047;">✓</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon">🔒</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Безопасность</div>
+                  <div class="menu-item-subtitle">2FA, биометрия, пароль</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+            </div>
+          </div>
+          <div class="menu-section">
+            <div class="menu-section-title">Финансы</div>
+            <div class="menu-card">
+              <div class="menu-item">
+                <div class="menu-item-icon">💰</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Бухгалтерия</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon">🏦</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Банковские подключения</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-item-icon">🏠</div>
+              <div class="nav-item-label">Главная</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">👥</div>
+              <div class="nav-item-label">Клиенты</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📈</div>
+              <div class="nav-item-label">Сделки</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📄</div>
+              <div class="nav-item-label">Счета</div>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-item-icon">👤</div>
+              <div class="nav-item-label">Профиль</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Профиль пользователя</div>
+    </div>
+
+    <!-- Admin Screen -->
+    <div>
+      <div class="phone-frame">
+        <div class="phone-screen admin-screen">
+          <div class="phone-notch"></div>
+          <div class="admin-header">
+            <h1>Панель администратора</h1>
+          </div>
+          <div class="admin-grid">
+            <div class="admin-card">
+              <div class="admin-card-icon" style="color:#1E88E5;">👥</div>
+              <div class="admin-card-value">1,234</div>
+              <div class="admin-card-label">Пользователи</div>
+            </div>
+            <div class="admin-card">
+              <div class="admin-card-icon" style="color:#43A047;">✅</div>
+              <div class="admin-card-value">892</div>
+              <div class="admin-card-label">Активные</div>
+            </div>
+            <div class="admin-card">
+              <div class="admin-card-icon" style="color:#FF8C00;">💰</div>
+              <div class="admin-card-value">2.4M ₽</div>
+              <div class="admin-card-label">Выручка</div>
+            </div>
+            <div class="admin-card">
+              <div class="admin-card-icon" style="color:#7B1FA2;">📄</div>
+              <div class="admin-card-value">5,678</div>
+              <div class="admin-card-label">Счета</div>
+            </div>
+          </div>
+          <div class="menu-section" style="margin-top:24px;">
+            <div class="menu-card" style="margin:0 16px;">
+              <div class="menu-item">
+                <div class="menu-item-icon">👥</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Управление пользователями</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon">📋</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Аудит-логи</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon">📊</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-title">Аналитика</div>
+                </div>
+                <div class="menu-item-arrow">›</div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-item-icon">🏠</div>
+              <div class="nav-item-label">Главная</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">👥</div>
+              <div class="nav-item-label">Клиенты</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📈</div>
+              <div class="nav-item-label">Сделки</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📄</div>
+              <div class="nav-item-label">Счета</div>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-item-icon">⚙️</div>
+              <div class="nav-item-label">Админ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Админ-панель (RBAC)</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
