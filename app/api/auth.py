@@ -30,6 +30,7 @@ from app.schemas.user import (
 from app.services.email import email_service
 
 import pyotp
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -160,6 +161,7 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
 # ============ LOGIN / LOGOUT ============
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit('5/minute')
 async def login(
     request: Request,
     email: str = Form(...),
@@ -260,6 +262,7 @@ async def login(
 
 
 @router.post("/login/2fa")
+@limiter.limit('3/minute')
 async def login_2fa(
     request: Request,
     temp_token: str = Form(...),
@@ -346,6 +349,7 @@ async def logout(
 
 
 @router.post("/refresh")
+@limiter.limit('10/minute')
 async def refresh_token(
     request: Request,
     refresh_token: str = Form(...),

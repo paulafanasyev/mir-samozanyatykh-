@@ -1,0 +1,32 @@
+# requirements.lock - MIR Samozanyatykh v8.4.1
+# Generated: 2026-08-16
+# ANO TsPS INN 9724016805
+# DO NOT EDIT MANUALLY
+
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+sqlalchemy[asyncio]==2.0.31
+asyncpg==0.29.0
+alembic==1.13.2
+redis==5.0.6
+pydantic==2.8.2
+pydantic-settings==2.3.4
+pyjwt[crypto]==2.8.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.3
+python-multipart==0.0.9
+slowapi==0.1.9
+httpx==0.27.0
+aiohttp==3.9.5
+aiofiles==23.2.1
+jinja2==3.1.4
+reportlab==4.2.2
+qrcode==7.4.2
+pillow==10.4.0
+email-validator==2.2.0
+itsdangerous==2.2.0
+cryptography==43.0.0
+pyotp==2.9.0
+prometheus-client==0.20.0
+pytest==8.2.2
+pytest-asyncio==0.23.7

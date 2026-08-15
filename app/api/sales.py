@@ -704,10 +704,18 @@ async def yookassa_webhook(
 ):
     """Обработка webhook от ЮKassa"""
     # Проверка подписи (в production)
-    # signature = request.headers.get("X-YooKassa-Signature")
-    # body = await request.body()
-    # if not yookassa_service.verify_webhook(body, signature):
-    #     raise HTTPException(status_code=401, detail="Invalid signature")
+    # SECURITY: Verify webhook signature
+    signature = request.headers.get("X-YooKassa-Signature")
+    body = await request.body()
+
+    if not yookassa_service.verify_webhook(signature, body):
+        logger.warning(f"Invalid YooKassa webhook signature from {request.client.host}")
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    # SECURITY: Verify webhook IP
+    if not yookassa_service.verify_webhook_ip(request.client.host):
+        logger.warning(f"YooKassa webhook from unauthorized IP: {request.client.host}")
+        raise HTTPException(status_code=403, detail="Unauthorized IP")
     
     payment_obj = webhook.object
     payment_id = payment_obj.get("id")

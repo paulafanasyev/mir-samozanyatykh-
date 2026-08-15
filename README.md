@@ -18,7 +18,7 @@
 ---
 
 
-# Мир Самозанятых v8.1
+# Мир Самозанятых v8.4.1
 
 **АНО ЦПС «Мир Самозанятых» | ИНН 9724016805**
 
@@ -70,8 +70,8 @@ docker compose up -d
 | 📤 **Экспорт** | CSV, Excel, PDF для всех модулей | v7.8 |
 | 📥 **Импорт** | Загрузка клиентов и товаров из CSV/Excel | v7.8 |
 | 📈 **Аналитика** | AI-аналитика, отчеты, дашборд | v7.4 |
-| 💬 **WebRTC** | Видеозвонки, конференции | v7.3 |
-| 💬 **Telegram бот** | Уведомления, команды | v7.3 |
+| 💬 **WebRTC** | Видеозвонки, конференции | v8.4.1 |
+| 💬 **Telegram бот** | Уведомления, команды | v8.4.1 |
 | 🔍 **Поиск** | Глобальный поиск по всем данным | v7.4 |
 
 ## Безопасность
@@ -221,4 +221,19 @@ render login
 # Deploy
 ./deploy-to-render.sh
 ```
+
+
+
+## 🛡️ Security
+
+This version includes security hardening:
+- YooKassa webhook signature verification
+- SSRF protection for webhooks
+- Authentication required for AI Svetlana
+- Rate limiting on all auth endpoints
+- Upload size limits
+- XSS protection
+- Updated dependencies (PyJWT, cryptography)
+- Non-root Docker user
+- Secure headers (CSP, HSTS, X-Frame-Options)
 

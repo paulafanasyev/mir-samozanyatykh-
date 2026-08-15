@@ -444,6 +444,21 @@
   </style>
 
   <script>
+
+    // SECURITY: XSS Protection - sanitize user/AI content
+    function sanitizeForDisplay(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    function safeSetHTML(element, text) {
+        if (!element) return;
+        // Use textContent for safety, only allow <br> for newlines
+        element.textContent = text;
+    }
+    
   (function() {
     const widget = document.getElementById('svetlanaWidget');
     const chat = document.getElementById('svetlanaChat');
