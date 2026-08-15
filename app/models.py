@@ -757,3 +757,179 @@ class CRMAutomation(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User")
+
+
+# ============================================================
+# ADDITIONAL MODELS FOR RENDER DEPLOYMENT
+# ANO TsPS INN 9724016805
+# ============================================================
+
+class SubscriptionTier(Base):
+    """Subscription pricing tiers"""
+    __tablename__ = "subscription_tiers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False)
+    slug = Column(String(50), unique=True, nullable=False, index=True)
+    price = Column(Integer, default=0)
+    description = Column(Text)
+    features = Column(Text)  # JSON string
+    max_contracts = Column(Integer, default=5)
+    max_clients = Column(Integer, default=10)
+    ai_requests_per_day = Column(Integer, default=10)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Achievement(Base):
+    """Gamification achievements"""
+    __tablename__ = "achievements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False, index=True)
+    description = Column(Text)
+    icon = Column(String(50), default="star")
+    points = Column(Integer, default=10)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserAchievement(Base):
+    """User achievements mapping"""
+    __tablename__ = "user_achievements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
+    earned_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint('user_id', 'achievement_id', name='uq_user_achievement'),)
+
+
+class FAQ(Base):
+    """Frequently Asked Questions"""
+    __tablename__ = "faqs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    category = Column(String(50), default="General")
+    order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    views = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class BlogPost(Base):
+    """Blog articles"""
+    __tablename__ = "blog_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    excerpt = Column(Text)
+    author = Column(String(100), default="ANO TsPS")
+    category = Column(String(50), default="General")
+    tags = Column(Text)  # JSON string
+    featured_image = Column(String(255))
+    is_published = Column(Boolean, default=False)
+    is_featured = Column(Boolean, default=False)
+    views = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+    published_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class BlogComment(Base):
+    """Blog post comments"""
+    __tablename__ = "blog_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("blog_posts.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    author_name = Column(String(100))
+    author_email = Column(String(100))
+    content = Column(Text, nullable=False)
+    is_approved = Column(Boolean, default=False)
+    parent_id = Column(Integer, ForeignKey("blog_comments.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SvetlanaKnowledge(Base):
+    """AI Svetlana knowledge base"""
+    __tablename__ = "svetlana_knowledge"
+
+    id = Column(Integer, primary_key=True, index=True)
+    topic = Column(String(100), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    category = Column(String(50), default="General")
+    keywords = Column(Text)  # JSON string
+    usage_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class MarketplaceItem(Base):
+    """Marketplace products/services"""
+    __tablename__ = "marketplace_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    description = Column(Text)
+    price = Column(Numeric(12, 2), nullable=False)
+    category = Column(String(50))
+    tags = Column(Text)  # JSON string
+    images = Column(Text)  # JSON string
+    is_active = Column(Boolean, default=True)
+    is_featured = Column(Boolean, default=False)
+    views = Column(Integer, default=0)
+    sales_count = Column(Integer, default=0)
+    rating = Column(Numeric(2, 1), default=5.0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Grant(Base):
+    """Available grants"""
+    __tablename__ = "grants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    description = Column(Text)
+    organization = Column(String(200))
+    amount_min = Column(Numeric(12, 2))
+    amount_max = Column(Numeric(12, 2))
+    deadline = Column(DateTime(timezone=True))
+    requirements = Column(Text)
+    category = Column(String(50))
+    region = Column(String(100))
+    is_active = Column(Boolean, default=True)
+    ai_score = Column(Numeric(3, 2))  # AI relevance score
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class UserGrantApplication(Base):
+    """User grant applications"""
+    __tablename__ = "user_grant_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    grant_id = Column(Integer, ForeignKey("grants.id"), nullable=False)
+    status = Column(String(20), default="draft")  # draft, submitted, review, approved, rejected
+    application_data = Column(Text)  # JSON string
+    ai_recommendation = Column(Text)
+    submitted_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint('user_id', 'grant_id', name='uq_user_grant'),)

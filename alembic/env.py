@@ -1,6 +1,6 @@
 """
 Alembic environment configuration
-Мир Самозанятых v6.0
+MIR Samozanyatykh v8.4
 """
 
 import asyncio
@@ -12,22 +12,23 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+# Import app models and config
 from app.core.config import settings
 from app.core.database import Base
-from app.models import *  # noqa: F401, F403 — импорт всех моделей
+from app.models import *  # noqa: F401, F403
 
 # this is the Alembic Config object
 config = context.config
+
+# Set database URL from settings
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# target metadata
+# add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata
-
-# override sqlalchemy.url
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
 def run_migrations_offline() -> None:

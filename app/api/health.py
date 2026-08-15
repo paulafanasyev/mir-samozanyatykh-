@@ -1,52 +1,67 @@
+"""
+Health check endpoint for Render.com
+MIR Samozanyatykh v8.4 - ANO TsPS INN 9724016805
+"""
+
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
-import platform
 
 from app.core.database import get_db
+from app.core.config import settings
 
-router = APIRouter(prefix="/api/health", tags=["Health"])
+router = APIRouter(prefix="/api/health", tags=["health"])
 
-@router.get("", summary="Healthcheck")
-async def health_check():
-    """Проверка работоспособности API"""
-    return {
+
+@router.get("")
+async def health_check(db: AsyncSession = Depends(get_db)):
+    """Full system health check"""
+    checks = {
         "status": "healthy",
-        "version": "8.6.1",
-        "timestamp": datetime.utcnow().isoformat(),
-        "environment": "production",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": settings.APP_VERSION,
+        "app_name": settings.APP_NAME,
+        "environment": settings.ENVIRONMENT,
     }
 
-@router.get("/ready", summary="Readiness probe")
-async def readiness_check(db: AsyncSession = Depends(get_db)):
-    """Проверка готовности к трафику (проверяет БД)"""
+    # DB check
     try:
-        await db.execute("SELECT 1")
-        return {"status": "ready", "database": "connected"}
+        result = await db.execute(text("SELECT 1"))
+        checks["database"] = "connected"
     except Exception as e:
-        return {"status": "not_ready", "database": str(e)}
+        checks["database"] = f"error: {str(e)}"
+        checks["status"] = "degraded"
 
-@router.get("/live", summary="Liveness probe")
-async def liveness_check():
-    """Проверка что сервис жив"""
-    return {"status": "alive"}
+    # Redis check
+    try:
+        import redis.asyncio as redis
+        r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        await r.ping()
+        checks["redis"] = "connected"
+        await r.close()
+    except Exception as e:
+        checks["redis"] = f"error: {str(e)}"
 
-@router.get("/metrics", summary="System metrics")
-async def system_metrics():
-    """Системные метрики для мониторинга"""
-    import psutil
+    status_code = 200 if checks["status"] == "healthy" else 503
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=checks, status_code=status_code)
+
+
+@router.get("/ready")
+async def readiness_check():
+    """Readiness probe for Render/K8s"""
     return {
-        "cpu_percent": psutil.cpu_percent(interval=1),
-        "memory": {
-            "total": psutil.virtual_memory().total,
-            "available": psutil.virtual_memory().available,
-            "percent": psutil.virtual_memory().percent,
-        },
-        "disk": {
-            "total": psutil.disk_usage("/").total,
-            "free": psutil.disk_usage("/").free,
-            "percent": psutil.disk_usage("/").percent,
-        },
-        "platform": platform.platform(),
-        "python_version": platform.python_version(),
+        "ready": True,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/live")
+async def liveness_check():
+    """Liveness probe (fast, no DB)"""
+    return {
+        "alive": True,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

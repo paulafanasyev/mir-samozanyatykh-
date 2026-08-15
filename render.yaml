@@ -1,21 +1,21 @@
-# render.yaml — Blueprint for Render.com
-# Мир Самозанятых v8.4 — АНО ЦПС ИНН 9724016805
+# render.yaml - Blueprint for Render.com
+# MIR Samozanyatykh v8.4 - ANO TsPS INN 9724016805
 # Blueprint ID: exs-da08tgtbedkc73a743pg
 
 services:
-  # === PostgreSQL Database ===
+  # PostgreSQL Database
   - type: psql
     name: mirsamozanyatykh-db
     plan: starter
     ipAllowList: []
 
-  # === Redis Cache ===
+  # Redis Cache
   - type: redis
     name: mirsamozanyatykh-redis
     plan: starter
     ipAllowList: []
 
-  # === Backend API (FastAPI) ===
+  # Backend API (FastAPI)
   - type: web
     name: mirsamozanyatykh-api
     runtime: docker
@@ -23,35 +23,29 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:
-      # Database (auto from Render PostgreSQL)
       - key: DATABASE_URL
         fromDatabase:
           name: mirsamozanyatykh-db
           property: connectionString
-      # Redis (auto from Render Redis)
       - key: REDIS_URL
         fromService:
           type: redis
           name: mirsamozanyatykh-redis
           property: connectionString
-      # Security
       - key: SECRET_KEY
         generateValue: true
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
         value: "false"
-      # Domain
       - key: DOMAIN
         value: mirsamozanyatykh-api.onrender.com
       - key: FRONTEND_URL
         value: https://mirsamozanyatykh.onrender.com
-      # Rate Limiting
       - key: RATE_LIMIT_REQUESTS
         value: "100"
       - key: LOGIN_MAX_ATTEMPTS
         value: "5"
-      # Email (configure after deploy)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -61,13 +55,11 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: SMTP_FROM_NAME
-        value: "Мир Самозанятых"
-      # AI / OpenRouter
+        value: "MIR Samozanyatykh"
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL_DEFAULT
         value: "anthropic/claude-3.5-sonnet"
-      # YooKassa
       - key: YOOKASSA_SHOP_ID
         sync: false
       - key: YOOKASSA_SECRET_KEY
@@ -76,21 +68,16 @@ services:
         value: "https://mirsamozanyatykh.onrender.com/payment/success"
       - key: YOOKASSA_CANCEL_URL
         value: "https://mirsamozanyatykh.onrender.com/payment/cancel"
-      # FNS
       - key: FNS_API_KEY
         sync: false
-      # Telegram
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      # SMS.ru
       - key: SMS_RU_API_KEY
         sync: false
-      # Logging
       - key: LOG_LEVEL
         value: INFO
       - key: LOG_FILE
         value: /app/logs/app.log
-      # Uploads
       - key: MAX_UPLOAD_SIZE_MB
         value: "10"
       - key: UPLOAD_DIR
@@ -98,7 +85,7 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
 
-  # === Frontend (Vite + React SPA) ===
+  # Frontend (Vite + React SPA)
   - type: web
     name: mirsamozanyatykh
     runtime: static
