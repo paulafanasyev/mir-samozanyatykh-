@@ -1,152 +1,121 @@
 """
-SSRF (Server-Side Request Forgery) protection
-MIR Samozanyatykh v8.4.1 - Security Hardened
-ANO TsPS INN 9724016805
+SSRF protection for Mir Samozanyatykh v8.2
+Blocks private IPs, metadata endpoints, validates redirects
 """
 
-import re
 import ipaddress
+import socket
 from urllib.parse import urlparse
-from typing import Optional, Set
+import requests
 
-from app.core.logging import logger
+BLOCKED_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("169.254.0.0/16"),
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("::1/128"),
+    ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("fe80::/10"),
+    ipaddress.ip_network("::ffff:127.0.0.0/104"),
+]
 
-
-class SSRFProtector:
-    """SSRF protection with URL validation and IP filtering"""
-
-    # Blocked IP ranges (private, loopback, link-local, metadata)
-    BLOCKED_NETWORKS = [
-        ipaddress.ip_network("127.0.0.0/8"),      # Loopback
-        ipaddress.ip_network("10.0.0.0/8"),        # Private
-        ipaddress.ip_network("172.16.0.0/12"),     # Private
-        ipaddress.ip_network("192.168.0.0/16"),    # Private
-        ipaddress.ip_network("169.254.0.0/16"),    # Link-local
-        ipaddress.ip_network("::1/128"),           # IPv6 loopback
-        ipaddress.ip_network("fc00::/7"),          # IPv6 private
-        ipaddress.ip_network("fe80::/10"),         # IPv6 link-local
-        ipaddress.ip_network("0.0.0.0/8"),         # Current network
-        ipaddress.ip_network("::/128"),            # Unspecified
-    ]
-
-    # Blocked host patterns
-    BLOCKED_HOSTS = {
-        "localhost",
-        "localhost.localdomain",
-        "ip6-localhost",
-        "ip6-loopback",
-        "metadata.google.internal",
-        "metadata",
-        "169.254.169.254",  # AWS/Azure/GCP metadata
-        "100.100.100.200",  # Alibaba metadata
-    }
-
-    # Blocked schemes
-    ALLOWED_SCHEMES = {"http", "https"}
-
-    # Blocked ports
-    BLOCKED_PORTS = {22, 23, 25, 53, 110, 143, 3306, 3389, 5432, 6379, 27017}
-
-    @classmethod
-    def validate_url(cls, url: str, allow_internal: bool = False) -> tuple[bool, Optional[str]]:
-        """
-        Validate URL against SSRF protection rules
-
-        Returns:
-            (is_valid, error_message)
-        """
-        if not url:
-            return False, "URL is required"
-
-        # Parse URL
-        try:
-            parsed = urlparse(url)
-        except Exception:
-            return False, "Invalid URL format"
-
-        # Check scheme
-        scheme = parsed.scheme.lower()
-        if scheme not in cls.ALLOWED_SCHEMES:
-            return False, f"Scheme '{scheme}' not allowed. Use http or https"
-
-        # Check port
-        port = parsed.port
-        if port and port in cls.BLOCKED_PORTS:
-            return False, f"Port {port} is blocked"
-
-        # Get hostname
-        hostname = parsed.hostname
-        if not hostname:
-            return False, "Invalid hostname"
-
-        hostname_lower = hostname.lower()
-
-        # Check blocked hosts
-        if hostname_lower in cls.BLOCKED_HOSTS:
-            return False, f"Host '{hostname}' is blocked"
-
-        # Check for metadata IP patterns
-        if re.match(r"^169\.254\.\d+\.\d+$", hostname) or            re.match(r"^100\.\d+\.\d+\.\d+$", hostname):
-            return False, "Metadata IP range is blocked"
-
-        # Resolve and check IP
-        if not allow_internal:
-            try:
-                import socket
-                # Try to resolve hostname
-                try:
-                    addr_info = socket.getaddrinfo(hostname, None)
-                    for _, _, _, _, sockaddr in addr_info:
-                        ip_str = sockaddr[0]
-                        try:
-                            ip = ipaddress.ip_address(ip_str)
-                            for network in cls.BLOCKED_NETWORKS:
-                                if ip in network:
-                                    return False, f"IP {ip_str} is in blocked range"
-                        except ValueError:
-                            continue
-                except socket.gaierror:
-                    # Cannot resolve - might be invalid or internal DNS
-                    # Allow if it looks like a valid public domain
-                    if not re.match(r"^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?)*$", hostname_lower):
-                        return False, "Invalid hostname format"
-            except Exception as e:
-                logger.warning(f"SSRF validation error for {url}: {e}")
-                return False, "URL validation failed"
-
-        # Check for URL tricks
-        if "@" in parsed.path or "@" in (parsed.query or ""):
-            return False, "URL contains credentials"
-
-        if ".." in parsed.path:
-            return False, "Path traversal detected"
-
-        # Check URL length
-        if len(url) > 2048:
-            return False, "URL too long"
-
-        return True, None
-
-    @classmethod
-    def validate_webhook_url(cls, url: str) -> tuple[bool, Optional[str]]:
-        """Validate webhook URL with stricter rules"""
-        is_valid, error = cls.validate_url(url, allow_internal=False)
-        if not is_valid:
-            return False, error
-
-        # Additional webhook-specific checks
-        parsed = urlparse(url)
-
-        # Require HTTPS for webhooks
-        if parsed.scheme != "https":
-            return False, "Webhooks must use HTTPS"
-
-        # Check for common SSRF bypasses
-        hostname = parsed.hostname.lower()
-        if hostname.startswith("0x") or hostname.startswith("0o"):
-            return False, "Numeric IP encoding not allowed"
-
-        return True, None
+METADATA_ENDPOINTS = [
+    "169.254.169.254",
+    "metadata.google.internal",
+    "metadata.azure.internal",
+    "metadata.aws.internal",
+    "100.100.100.200",
+]
 
 
-ssrf_protector = SSRFProtector()
+def is_private_ip(ip_str: str) -> bool:
+    """Check if IP is private/blocked"""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        if ip.ipv4_mapped:
+            ip = ip.ipv4_mapped
+        for network in BLOCKED_NETWORKS:
+            if ip in network:
+                return True
+        return False
+    except ValueError:
+        return True
+
+
+def validate_url(url: str, allow_redirects: bool = False) -> bool:
+    """Validate URL for SSRF"""
+    parsed = urlparse(url)
+
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+
+    if hostname in METADATA_ENDPOINTS:
+        return False
+
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+        for info in infos:
+            ip_str = info[4][0]
+            if is_private_ip(ip_str):
+                return False
+    except socket.gaierror:
+        return False
+
+    return True
+
+
+def safe_request(
+    url: str,
+    method: str = "GET",
+    max_redirects: int = 3,
+    timeout: int = 10,
+    max_size: int = 10 * 1024 * 1024,
+    **kwargs
+) -> requests.Response:
+    """Make safe HTTP request with SSRF protection"""
+
+    if not validate_url(url):
+        raise ValueError(f"SSRF: URL blocked: {url}")
+
+    response = requests.request(
+        method,
+        url,
+        allow_redirects=False,
+        timeout=timeout,
+        stream=True,
+        **kwargs
+    )
+
+    redirect_count = 0
+    while response.is_redirect and redirect_count < max_redirects:
+        redirect_url = response.headers.get("Location")
+        if not redirect_url:
+            break
+
+        if not validate_url(redirect_url):
+            raise ValueError(f"SSRF: Redirect blocked: {redirect_url}")
+
+        response = requests.request(
+            method,
+            redirect_url,
+            allow_redirects=False,
+            timeout=timeout,
+            stream=True,
+            **kwargs
+        )
+        redirect_count += 1
+
+    content = b""
+    for chunk in response.iter_content(chunk_size=8192):
+        content += chunk
+        if len(content) > max_size:
+            raise ValueError(f"Response too large (max {max_size} bytes)")
+
+    response._content = content
+    return response

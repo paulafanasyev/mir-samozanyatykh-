@@ -1,231 +1,72 @@
 """
-API импорта данных v7.9
-CSV, Excel загрузка с валидацией и отчётом об ошибках
-АНО ЦПС ИНН 9724016805
+Import data API with CSV protection
 """
 
 import csv
 import io
-from datetime import datetime, timezone
-from typing import List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from pydantic import BaseModel, Field
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+import magic
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user
-from app.core.logging import log_audit
-from app.models import User, Product, Client
 
-router = APIRouter(prefix="/api/import", tags=["import"])
+router = APIRouter(prefix="/import", tags=["import"])
 
-
-# ============ SCHEMAS ============
-
-class ImportResult(BaseModel):
-    total_rows: int
-    imported: int
-    errors: List[dict]
-    warnings: List[str]
+MAX_CSV_SIZE = 5 * 1024 * 1024
+MAX_CSV_ROWS = 10000
+MAX_CELL_SIZE = 10000
+MAX_ROW_SIZE = 100000
 
 
-class ImportPreview(BaseModel):
-    headers: List[str]
-    rows: List[dict]
-    total_rows: int
+def sanitize_csv_cell(cell: str) -> str:
+    """Prevent CSV formula injection"""
+    if cell and cell[0] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + cell
+    return cell
 
-
-# ============ HELPERS ============
-
-def parse_csv_file(content: bytes) -> tuple[List[str], List[dict]]:
-    """Парсинг CSV файла"""
-    text = content.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(text))
-    headers = reader.fieldnames or []
-    rows = list(reader)
-    return headers, rows
-
-
-# ============ PRODUCTS IMPORT ============
-
-@router.post("/products", response_model=ImportResult)
-async def import_products(
-    file: UploadFile = File(...),
-    request: Request = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Импорт продуктов из CSV"""
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Только CSV файлы")
-
-    content = await file.read()
-    headers, rows = parse_csv_file(content)
-
-    errors = []
-    imported = 0
-    warnings = []
-
-    # Ожидаемые колонки
-    expected = ["name", "description", "price", "unit", "sku"]
-    missing = [h for h in expected if h not in headers]
-    if missing:
-        warnings.append(f"Отсутствуют колонки (будут пропущены): {', '.join(missing)}")
-
-    for i, row in enumerate(rows, 1):
-        try:
-            name = row.get("name", "").strip()
-            if not name:
-                errors.append({"row": i, "error": "Пустое название"})
-                continue
-
-            price_str = row.get("price", "0").strip().replace(",", ".")
-            try:
-                price = float(price_str) if price_str else 0
-            except ValueError:
-                price = 0
-                warnings.append(f"Строка {i}: неверная цена, установлено 0")
-
-            # Проверка дубликата по SKU
-            sku = row.get("sku", "").strip()
-            if sku:
-                existing = await db.scalar(
-                    select(Product).where(
-                        Product.user_id == current_user.id,
-                        Product.sku == sku,
-                    )
-                )
-                if existing:
-                    errors.append({"row": i, "error": f"SKU {sku} уже существует"})
-                    continue
-
-            product = Product(
-                user_id=current_user.id,
-                name=name,
-                description=row.get("description", "").strip() or None,
-                price=price,
-                unit=row.get("unit", "").strip() or None,
-                sku=sku or None,
-                is_active=True,
-            )
-            db.add(product)
-            imported += 1
-
-        except Exception as e:
-            errors.append({"row": i, "error": str(e)})
-
-    await db.commit()
-
-    await log_audit(
-        action="import_products",
-        user_id=current_user.id,
-        ip_address=request.client.host if request else None,
-        details=f"Imported {imported}/{len(rows)} products, errors={len(errors)}",
-    )
-
-    return ImportResult(
-        total_rows=len(rows),
-        imported=imported,
-        errors=errors,
-        warnings=warnings,
-    )
-
-
-# ============ CLIENTS IMPORT ============
-
-@router.post("/clients", response_model=ImportResult)
-async def import_clients(
-    file: UploadFile = File(...),
-    request: Request = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Импорт клиентов из CSV"""
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Только CSV файлы")
-
-    content = await file.read()
-    headers, rows = parse_csv_file(content)
-
-    errors = []
-    imported = 0
-    warnings = []
-
-    expected = ["name", "email", "phone", "company", "inn"]
-    missing = [h for h in expected if h not in headers]
-    if missing:
-        warnings.append(f"Отсутствуют колонки: {', '.join(missing)}")
-
-    for i, row in enumerate(rows, 1):
-        try:
-            name = row.get("name", "").strip()
-            if not name:
-                errors.append({"row": i, "error": "Пустое имя"})
-                continue
-
-            email = row.get("email", "").strip()
-            if email:
-                existing = await db.scalar(
-                    select(Client).where(
-                        Client.user_id == current_user.id,
-                        Client.email == email,
-                    )
-                )
-                if existing:
-                    errors.append({"row": i, "error": f"Email {email} уже существует"})
-                    continue
-
-            client = Client(
-                user_id=current_user.id,
-                name=name,
-                email=email or None,
-                phone=row.get("phone", "").strip() or None,
-                company=row.get("company", "").strip() or None,
-                inn=row.get("inn", "").strip() or None,
-                total_revenue=0,
-                invoices_count=0,
-            )
-            db.add(client)
-            imported += 1
-
-        except Exception as e:
-            errors.append({"row": i, "error": str(e)})
-
-    await db.commit()
-
-    await log_audit(
-        action="import_clients",
-        user_id=current_user.id,
-        ip_address=request.client.host if request else None,
-        details=f"Imported {imported}/{len(rows)} clients, errors={len(errors)}",
-    )
-
-    return ImportResult(
-        total_rows=len(rows),
-        imported=imported,
-        errors=errors,
-        warnings=warnings,
-    )
-
-
-# ============ PREVIEW ============
 
 @router.post("/preview")
-async def preview_import(
+async def import_preview(
     file: UploadFile = File(...),
-    max_rows: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Предпросмотр CSV перед импортом"""
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Только CSV файлы")
+    """Preview CSV with security checks"""
+    content = await file.read(MAX_CSV_SIZE + 1)
+    if len(content) > MAX_CSV_SIZE:
+        raise HTTPException(413, f"File too large (max {MAX_CSV_SIZE} bytes)")
 
-    content = await file.read()
-    headers, rows = parse_csv_file(content)
+    mime = magic.from_buffer(content, mime=True)
+    if mime not in ('text/csv', 'text/plain', 'application/csv'):
+        raise HTTPException(400, f"Invalid file type: {mime}")
 
-    return ImportPreview(
-        headers=headers,
-        rows=rows[:max_rows],
-        total_rows=len(rows),
-    )
+    if not file.filename.lower().endswith('.csv'):
+        raise HTTPException(400, "File must have .csv extension")
+
+    text = content.decode('utf-8', errors='replace')
+    reader = csv.reader(io.StringIO(text))
+
+    rows = []
+    row_count = 0
+    for row in reader:
+        row_count += 1
+        if row_count > MAX_CSV_ROWS:
+            raise HTTPException(413, f"Too many rows (max {MAX_CSV_ROWS})")
+
+        row_text = ','.join(row)
+        if len(row_text) > MAX_ROW_SIZE:
+            raise HTTPException(413, "Row too large")
+
+        cleaned = []
+        for cell in row:
+            if len(cell) > MAX_CELL_SIZE:
+                raise HTTPException(413, "Cell too large")
+            cleaned.append(sanitize_csv_cell(cell))
+
+        rows.append(cleaned)
+
+    return {
+        "rows": rows[:100],
+        "total_rows": row_count,
+        "columns": rows[0] if rows else []
+    }

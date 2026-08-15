@@ -1,56 +1,70 @@
-import time
-import logging
-from fastapi import Request
+"""
+Security middleware for Mir Samozanyatykh v8.2
+CSRF protection, security headers, request validation
+"""
+
+import secrets
+from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-logger = logging.getLogger("app.requests")
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Middleware для логирования всех HTTP запросов"""
+class CSRFMiddleware(BaseHTTPMiddleware):
+    """CSRF protection for state-changing requests"""
+
+    EXEMPT_PATHS = [
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/auth/refresh",
+        "/api/auth/logout",
+        "/api/health",
+        "/api/metrics",
+    ]
 
     async def dispatch(self, request: Request, call_next):
-        start_time = time.time()
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return await call_next(request)
 
-        # Логируем входящий запрос
-        logger.info(
-            f"→ {request.method} {request.url.path} "
-            f"[client={request.client.host if request.client else 'unknown'}]"
-        )
+        path = request.url.path
+        for exempt in self.EXEMPT_PATHS:
+            if path.startswith(exempt):
+                return await call_next(request)
 
-        try:
-            response = await call_next(request)
-            duration = time.time() - start_time
+        csrf_header = request.headers.get("X-CSRF-Token")
+        csrf_cookie = request.cookies.get("csrf_token")
 
-            # Логируем ответ
-            logger.info(
-                f"← {request.method} {request.url.path} "
-                f"[{response.status_code}] {duration:.3f}s"
-            )
+        if not csrf_header or not csrf_cookie:
+            raise HTTPException(403, "CSRF token missing")
 
-            # Добавляем заголовки
-            response.headers["X-Request-ID"] = str(time.time())
-            response.headers["X-Response-Time"] = f"{duration:.3f}s"
+        if not secrets.compare_digest(csrf_header, csrf_cookie):
+            raise HTTPException(403, "CSRF token invalid")
 
-            return response
+        return await call_next(request)
 
-        except Exception as e:
-            duration = time.time() - start_time
-            logger.error(
-                f"✗ {request.method} {request.url.path} "
-                f"[ERROR] {duration:.3f}s: {str(e)}"
-            )
-            raise
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Middleware для security headers"""
+    """Add security headers to all responses"""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
 
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+        response.headers["Content-Security-Policy"] = (
+            f"default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
+            f"style-src 'self' 'nonce-{nonce}'; "
+            f"img-src 'self' data: https:; "
+            f"font-src 'self'; "
+            f"connect-src 'self' wss: https://api.openrouter.ai; "
+            f"frame-ancestors 'none'; "
+            f"base-uri 'self'; "
+            f"form-action 'self';"
+        )
 
         return response

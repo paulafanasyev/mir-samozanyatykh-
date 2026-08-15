@@ -1,107 +1,192 @@
 """
-Webhooks API - Security Hardened v8.4.2
-ANO TsPS INN 9724016805
+Webhooks API for Mir Samozanyatykh v8.2
+Real creation, signature verification, replay protection
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import List
+import hmac
+import hashlib
+import secrets
+import time
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.config import settings
-from app.core.security import get_current_user
-from app.core.logging import logger
-from app.services.ssrf import SSRFProtector
-from app.services.encryption import token_encryption
-from app.models import User, Webhook
+from app.models import User, Webhook, WebhookDelivery
+from app.services.ssrf import validate_url, safe_request
 
-router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
-@router.post("/")
+def generate_webhook_secret() -> str:
+    """Cryptographically secure random secret"""
+    return secrets.token_urlsafe(32)
+
+
+def verify_webhook_signature(payload: bytes, signature: str, secret: str, timestamp: str) -> bool:
+    """Verify webhook signature with 5-minute window"""
+    try:
+        ts = int(timestamp)
+        now = int(time.time())
+        if abs(now - ts) > 300:
+            return False
+    except ValueError:
+        return False
+
+    expected = hmac.new(
+        secret.encode(),
+        f"{timestamp}.{payload.decode()}".encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(signature, expected)
+
+
+@router.post("")
 async def create_webhook(
     url: str,
-    event_type: str,
-    secret: str = None,
+    events: list,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    """Create webhook with SSRF protection and encrypted secret"""
+    """Create real webhook with secure secret"""
+    if not validate_url(url):
+        raise HTTPException(400, "Invalid URL")
 
-    # SSRF validation
-    is_valid, error = SSRFProtector.validate_webhook_url(url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=f"Invalid URL: {error}")
-
-    # Encrypt secret if provided
-    encrypted_secret = token_encryption.encrypt(secret) if secret else None
+    secret = generate_webhook_secret()
+    secret_hash = hashlib.sha256(secret.encode()).hexdigest()
 
     webhook = Webhook(
         user_id=current_user.id,
         url=url,
-        event_type=event_type,
-        secret=encrypted_secret,
+        events=events,
+        secret=secret,
+        secret_hash=secret_hash,
+        is_active=True
     )
     db.add(webhook)
-    await db.commit()
+    db.commit()
+    db.refresh(webhook)
 
-    return {"status": "created", "id": webhook.id}
+    return {
+        "id": webhook.id,
+        "url": webhook.url,
+        "events": webhook.events,
+        "secret": secret,
+        "created_at": webhook.created_at
+    }
 
 
-@router.get("/")
+@router.get("")
 async def list_webhooks(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    """List only current user's webhooks"""
-    result = await db.execute(
-        select(Webhook).where(Webhook.user_id == current_user.id)
-    )
-    webhooks = result.scalars().all()
-    return {"webhooks": [{"id": w.id, "url": w.url, "event": w.event_type} for w in webhooks]}
+    """List user's webhooks (without secrets)"""
+    webhooks = db.query(Webhook).filter(Webhook.user_id == current_user.id).all()
 
-
-@router.post("/{webhook_id}/test")
-async def test_webhook(
-    webhook_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Test webhook - ownership verified"""
-    result = await db.execute(
-        select(Webhook).where(
-            Webhook.id == webhook_id,
-            Webhook.user_id == current_user.id
-        )
-    )
-    webhook = result.scalar_one_or_none()
-
-    if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook not found")
-
-    return {"status": "test_sent", "webhook_id": webhook_id}
+    return [{
+        "id": w.id,
+        "url": w.url,
+        "events": w.events,
+        "is_active": w.is_active,
+        "created_at": w.created_at
+    } for w in webhooks]
 
 
 @router.delete("/{webhook_id}")
 async def delete_webhook(
     webhook_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    """Delete webhook - ownership verified"""
-    result = await db.execute(
-        select(Webhook).where(
-            Webhook.id == webhook_id,
-            Webhook.user_id == current_user.id
-        )
-    )
-    webhook = result.scalar_one_or_none()
+    """Delete webhook with ownership check"""
+    webhook = db.query(Webhook).filter(
+        Webhook.id == webhook_id,
+        Webhook.user_id == current_user.id
+    ).first()
 
     if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook not found")
+        raise HTTPException(404, "Webhook not found")
 
-    await db.delete(webhook)
-    await db.commit()
+    db.delete(webhook)
+    db.commit()
+    return {"message": "Deleted"}
 
-    return {"status": "deleted", "webhook_id": webhook_id}
+
+@router.post("/{webhook_id}/test")
+async def test_webhook(
+    webhook_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Test webhook with ownership check BEFORE network request"""
+    webhook = db.query(Webhook).filter(
+        Webhook.id == webhook_id,
+        Webhook.user_id == current_user.id
+    ).first()
+
+    if not webhook:
+        raise HTTPException(404, "Webhook not found")
+
+    try:
+        payload = b'{"test": true}'
+        response = safe_request(
+            webhook.url,
+            method="POST",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        return {
+            "success": response.status_code < 400,
+            "status_code": response.status_code
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/incoming/{webhook_id}")
+async def receive_webhook(
+    webhook_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Receive incoming webhook with signature verification"""
+    webhook = db.query(Webhook).filter(
+        Webhook.id == webhook_id,
+        Webhook.is_active == True
+    ).first()
+
+    if not webhook:
+        raise HTTPException(404, "Webhook not found")
+
+    signature = request.headers.get("X-Webhook-Signature")
+    timestamp = request.headers.get("X-Webhook-Timestamp")
+
+    if not signature or not timestamp:
+        raise HTTPException(401, "Missing signature")
+
+    body = await request.body()
+    if not verify_webhook_signature(body, signature, webhook.secret, timestamp):
+        raise HTTPException(401, "Invalid signature")
+
+    event_id = request.headers.get("X-Event-ID")
+    if event_id:
+        existing = db.query(WebhookDelivery).filter(
+            WebhookDelivery.webhook_id == webhook_id,
+            WebhookDelivery.event == event_id
+        ).first()
+        if existing:
+            raise HTTPException(409, "Duplicate event")
+
+    delivery = WebhookDelivery(
+        webhook_id=webhook_id,
+        event=event_id or "unknown",
+        payload=body.decode(),
+        success=True
+    )
+    db.add(delivery)
+    db.commit()
+
+    return {"status": "processed"}
