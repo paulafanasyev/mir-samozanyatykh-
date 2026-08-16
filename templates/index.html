@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Мир Самозанятых — Главная{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Ваш личный помощник<br>для самозанятости</h1>
+    <p>Договоры, налоги, ИИ-ассистент Светлана — всё в одном месте</p>
+    <div class="hero-buttons">
+        <a href="/register" class="btn btn-primary">Начать бесплатно</a>
+        <a href="/login" class="btn btn-outline">Войти</a>
+    </div>
+</div>
+
+<section class="features">
+    <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>ИИ Светлана</h3>
+        <p>Ваш личный консультант по налогам, договорам и бизнесу. Отвечает 24/7.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>Договоры и документы</h3>
+        <p>Генерация ГПД, счетов, актов. Электронная подпись и QR-коды.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>Финансовый трекер</h3>
+        <p>Учёт доходов и расходов, автоматический расчёт налога НПД.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h3>Геймификация</h3>
+        <p>Достижения, уровни, рейтинг. Развивайте бизнес с удовольствием!</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🛒</div>
+        <h3>Маркетплейс</h3>
+        <p>Продавайте услуги и товары другим самозанятым.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎁</div>
+        <h3>Гранты</h3>
+        <p>Актуальные программы поддержки с AI-оценкой совместимости.</p>
+    </div>
+</section>
+
+<section class="pricing">
+    <h2>Тарифы</h2>
+    <div class="pricing-grid">
+        <div class="pricing-card">
+            <h3>START</h3>
+            <div class="price">Бесплатно</div>
+            <ul>
+                <li>3 договора/мес</li>
+                <li>Базовый ИИ-чат</li>
+                <li>Финансовый трекер</li>
+            </ul>
+            <a href="/register" class="btn">Выбрать</a>
+        </div>
+        <div class="pricing-card featured">
+            <h3>PRO</h3>
+            <div class="price">300 ₽/мес</div>
+            <ul>
+                <li>Безлимитные договоры</li>
+                <li>Продвинутый ИИ-чат</li>
+                <li>CRM система</li>
+                <li>PDF экспорт</li>
+            </ul>
+            <a href="/register" class="btn btn-primary">Выбрать</a>
+        </div>
+        <div class="pricing-card">
+            <h3>BUSINESS</h3>
+            <div class="price">990 ₽/мес</div>
+            <ul>
+                <li>Всё из PRO</li>
+                <li>Маркетплейс</li>
+                <li>API доступ</li>
+                <li>Приоритетная поддержка</li>
+            </ul>
+            <a href="/register" class="btn">Выбрать</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h1>👋 Привет, {{ user.full_name }}!</h1>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ contracts_count }}</div>
+            <div class="stat-label">Договоров</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_income }}</div>
+            <div class="stat-label">Доходов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ notifications_count }}</div>
+            <div class="stat-label">Уведомлений</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ user.subscription.value }}</div>
+            <div class="stat-label">Тариф</div>
+        </div>
+    </div>
+    <div class="dashboard-actions">
+        <a href="/contracts" class="btn">📄 Договоры</a>
+        <a href="/finance" class="btn">💰 Финансы</a>
+        <a href="/crm" class="btn">👥 CRM</a>
+        <a href="/marketplace" class="btn">🛒 Маркетплейс</a>
+    </div>
+</div>
+{% endblock %}

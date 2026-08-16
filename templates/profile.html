@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="profile">
+    <div class="profile-header">
+        <div class="avatar">{{ user.full_name[0] }}</div>
+        <h1>{{ user.full_name }}</h1>
+        <p>{{ user.email }}</p>
+        <span class="badge badge-subscription">{{ user.subscription.value }}</span>
+    </div>
+    <div class="profile-info">
+        <p>📱 {{ user.phone or "Не указан" }}</p>
+        <p>🏛️ ИНН: {{ user.inn or "Не указан" }}</p>
+        <p>✅ Верификация: {{ "Да" if user.is_verified else "Нет" }}</p>
+    </div>
+    <div class="achievements">
+        <h2>🏆 Достижения</h2>
+        {% for ach in achievements %}
+        <div class="achievement">
+            <span class="achievement-icon">{{ ach.achievement.icon }}</span>
+            <span>{{ ach.achievement.name }}</span>
+        </div>
+        {% else %}
+        <p>Пока нет достижений</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

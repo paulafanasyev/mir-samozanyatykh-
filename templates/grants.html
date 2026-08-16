@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Гранты — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🎁 Гранты и поддержка</h1>
+</div>
+<div class="grants-list">
+    {% for grant in grants %}
+    <div class="grant-card">
+        <h3>{{ grant.title }}</h3>
+        <p>{{ grant.organization or "" }}</p>
+        <p>Сумма: {{ "{:,.0f}".format(grant.amount_min or 0) }} — {{ "{:,.0f}".format(grant.amount_max or 0) }} ₽</p>
+        <p>Категория: {{ grant.category or "Все" }} | Регион: {{ grant.region or "Все" }}</p>
+        {% if grant.deadline %}
+        <p>Дедлайн: {{ grant.deadline.strftime("%d.%m.%Y") }}</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="empty-state">Пока нет активных грантов</p>
+    {% endfor %}
+</div>
+{% endblock %}

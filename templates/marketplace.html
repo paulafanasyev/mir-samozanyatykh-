@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Маркетплейс — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🛒 Маркетплейс</h1>
+</div>
+<div class="items-grid">
+    {% for item in items %}
+    <div class="item-card">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description or "" }}</p>
+        <div class="item-footer">
+            <span class="price">{{ "{:,.0f}".format(item.price) }} ₽</span>
+            <span class="seller">{{ item.seller.full_name if item.seller else "" }}</span>
+        </div>
+    </div>
+    {% else %}
+    <p class="empty-state">Пока нет товаров</p>
+    {% endfor %}
+</div>
+{% endblock %}

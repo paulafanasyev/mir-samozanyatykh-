@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Вход — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Вход</h2>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form id="login-form">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" required placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Войти</button>
+        </form>
+        <p class="auth-link">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        })
+    });
+    const data = await res.json();
+    if (data.success) {
+        window.location.href = '/dashboard';
+    } else {
+        alert(data.detail || 'Ошибка входа');
+    }
+});
+</script>
+{% endblock %}

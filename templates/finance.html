@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Финансы — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>💰 Финансы</h1>
+    <div class="summary-cards">
+        <div class="summary-card income">Доход: {{ "{:,.0f}".format(total_income) }} ₽</div>
+        <div class="summary-card expense">Расход: {{ "{:,.0f}".format(total_expense) }} ₽</div>
+        <div class="summary-card tax">Налог: {{ "{:,.0f}".format(total_tax) }} ₽</div>
+    </div>
+</div>
+<div class="finance-list">
+    {% for record in records %}
+    <div class="finance-record {{ record.type }}">
+        <span class="type">{{ "📥" if record.type == "income" else "📤" }}</span>
+        <span class="amount">{{ "{:,.0f}".format(record.amount) }} ₽</span>
+        <span class="category">{{ record.category or "Без категории" }}</span>
+        <span class="date">{{ record.date.strftime("%d.%m.%Y") }}</span>
+    </div>
+    {% else %}
+    <p class="empty-state">Пока нет записей</p>
+    {% endfor %}
+</div>
+{% endblock %}

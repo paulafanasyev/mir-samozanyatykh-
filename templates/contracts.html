@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Договоры — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📄 Мои договоры</h1>
+    <button class="btn btn-primary" onclick="showModal()">+ Новый договор</button>
+</div>
+<div class="contracts-list">
+    {% for contract in contracts %}
+    <div class="contract-card">
+        <div class="contract-header">
+            <h3>{{ contract.title }}</h3>
+            <span class="badge badge-{{ contract.status.value }}">{{ contract.status.value }}</span>
+        </div>
+        <p>👤 {{ contract.client_name }}</p>
+        <p>💰 {{ "{:,.0f}".format(contract.amount) }} ₽</p>
+        <p class="contract-date">{{ contract.created_at.strftime("%d.%m.%Y") }}</p>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Пока нет договоров. <a href="#" onclick="showModal()">Создать первый →</a></p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal" id="contractModal">
+    <div class="modal-content">
+        <h3>✨ Новый договор</h3>
+        <form id="contractForm">
+            <input type="text" id="title" placeholder="Название" required>
+            <input type="text" id="client_name" placeholder="Клиент" required>
+            <input type="number" id="amount" placeholder="Сумма" required>
+            <textarea id="description" placeholder="Описание"></textarea>
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showModal() { document.getElementById('contractModal').style.display = 'flex'; }
+document.getElementById('contractModal').addEventListener('click', e => { if(e.target === e.currentTarget) e.target.style.display='none'; });
+document.getElementById('contractForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await fetch('/api/contracts', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({title: document.getElementById('title').value, client_name: document.getElementById('client_name').value, amount: parseFloat(document.getElementById('amount').value), description: document.getElementById('description').value})
+    });
+    location.reload();
+});
+</script>
+{% endblock %}

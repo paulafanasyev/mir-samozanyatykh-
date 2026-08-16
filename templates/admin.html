@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Админ-панель — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="admin">
+    <h1>⚙️ Админ-панель</h1>
+    <div class="admin-stats">
+        <div class="admin-card">
+            <div class="admin-value">{{ users_count }}</div>
+            <div class="admin-label">Пользователей</div>
+        </div>
+        <div class="admin-card">
+            <div class="admin-value">{{ contracts_count }}</div>
+            <div class="admin-label">Договоров</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
