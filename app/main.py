@@ -236,7 +236,7 @@ async def api_logout(response: Response, request: Request, db: Session = Depends
 async def api_refresh(response: Response, request: Request, db: Session = Depends(get_db)):
     refresh = request.cookies.get("refresh_token")
     if not refresh: raise HTTPException(status_code=401, detail="Refresh token не найден")
-    payload = verify_token(refresh, token_type="refresh")
+    payload = verify_token(refresh, token_type="refresh")  # nosec B106
     if not payload: raise HTTPException(status_code=401, detail="Недействительный refresh token")
     user = db.query(User).filter(User.id == int(payload["sub"]), User.is_active == True).first()
     if not user: raise HTTPException(status_code=401, detail="Пользователь не найден")

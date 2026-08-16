@@ -1,3 +1,4 @@
+import os
 """Security utilities"""
 import hashlib
 import secrets
@@ -36,7 +37,7 @@ def create_refresh_token(data: dict):
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, os.getenv("SECRET_KEY", settings.SECRET_KEY), algorithm=settings.ALGORITHM)
 
-def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
+def verify_token(token: str, token_type: str = "access") -> Optional[dict]:  # nosec B107
     """Verify JWT token"""
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY", settings.SECRET_KEY), algorithms=[settings.ALGORITHM])
