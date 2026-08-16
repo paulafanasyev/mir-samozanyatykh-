@@ -1,0 +1,20 @@
+{
+  "name": "МИР Самозанятых",
+  "short_name": "МИР Самозанятых",
+  "description": "Платформа для самозанятых — договоры, финансы, CRM, маркетплейс, гранты",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F0F",
+  "theme_color": "#F5A623",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/static/images/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "/static/images/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/static/images/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/static/images/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/static/images/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/static/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/images/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "/static/images/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

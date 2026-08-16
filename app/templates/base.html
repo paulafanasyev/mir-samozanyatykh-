@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="МИР Самозанятых — платформа для самозанятых: договоры, финансы, CRM, маркетплейс, гранты, ИИ-ассистент Светлана">
+    <title>{% block title %}МИР Самозанятых{% endblock %}</title>
+    <link rel="manifest" href="/static/manifest/manifest.json">
+    <link rel="icon" href="/static/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">📘</span>
+                <span class="brand-text">МИР <span class="brand-accent">Самозанятых</span></span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Открыть меню">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/dashboard" class="nav-link">📊 Дашборд</a></li>
+                <li><a href="/contracts" class="nav-link">📝 Договоры</a></li>
+                <li><a href="/finance" class="nav-link">💰 Финансы</a></li>
+                <li><a href="/calculator" class="nav-link">🧮 Калькулятор</a></li>
+                <li><a href="/crm" class="nav-link">👥 CRM</a></li>
+                <li><a href="/marketplace" class="nav-link">🏪 Маркетплейс</a></li>
+                <li><a href="/grants" class="nav-link">🎁 Гранты</a></li>
+                <li><a href="/profile" class="nav-link">👤 Профиль</a></li>
+                <li id="adminLink" style="display:none"><a href="/admin" class="nav-link">⚙️ Админ</a></li>
+                <li><a href="/about" class="nav-link">ℹ️ О нас</a></li>
+                <li><button id="logoutBtn" class="btn btn-outline btn-sm">Выйти</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Svetlana AI Widget -->
+    <div class="svetlana-widget" id="svetlanaWidget">
+        <button class="svetlana-toggle" id="svetlanaToggle" aria-label="Открыть чат с Светланой">
+            <span class="svetlana-avatar">👩‍💼</span>
+        </button>
+        <div class="svetlana-chat" id="svetlanaChat">
+            <div class="svetlana-header">
+                <span class="svetlana-title">💡 Светлана — ИИ-ассистент</span>
+                <button class="svetlana-close" id="svetlanaClose">✕</button>
+            </div>
+            <div class="svetlana-messages" id="svetlanaMessages">
+                <div class="message bot">
+                    <div class="message-content">Здравствуйте! Я Светлана, ваш ИИ-ассистент. Чем могу помочь?</div>
+                    <div class="message-time">{{ now }}</div>
+                </div>
+            </div>
+            <div class="svetlana-input-area">
+                <input type="text" id="svetlanaInput" placeholder="Задайте вопрос..." maxlength="500" autocomplete="off">
+                <button id="svetlanaSend" class="btn btn-primary btn-sm">➤</button>
+            </div>
+            <div class="svetlana-quick">
+                <button class="quick-btn" data-q="Что такое НПД?">НПД</button>
+                <button class="quick-btn" data-q="Как оформить чек?">Чек</button>
+                <button class="quick-btn" data-q="Какие гранты доступны?">Гранты</button>
+                <button class="quick-btn" data-q="Как составить договор?">Договор</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>© 2026 МИР Самозанятых v8.7.0</p>
+            <p>Платформа для самозанятых — договоры, финансы, CRM, гранты, ИИ-ассистент</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

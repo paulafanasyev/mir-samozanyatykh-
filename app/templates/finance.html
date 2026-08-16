@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Финансы — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>💰 Финансы</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('financeModal').style.display='flex'">+ Транзакция</button>
+    </div>
+    <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-box">
+            <div class="label">Всего доходов</div>
+            <div class="value" style="color:var(--color-success)" id="totalIncome">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Всего расходов</div>
+            <div class="value" style="color:var(--color-error)" id="totalExpense">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Баланс</div>
+            <div class="value" style="color:var(--color-accent)" id="totalBalance">—</div>
+        </div>
+    </div>
+    <div id="financeList">
+        <div class="skeleton" style="height:200px"></div>
+    </div>
+</div>
+
+<div id="financeModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;padding:16px">
+    <div class="auth-card" style="max-width:500px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2>Новая транзакция</h2>
+            <button class="btn btn-ghost" onclick="document.getElementById('financeModal').style.display='none'">✕</button>
+        </div>
+        <form id="financeForm">
+            <div class="form-group">
+                <label class="form-label">Тип</label>
+                <select id="financeType" class="form-input">
+                    <option value="income">Доход</option>
+                    <option value="expense">Расход</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Сумма (₽)</label>
+                <input type="number" id="financeAmount" class="form-input" required min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <input type="text" id="financeCategory" class="form-input" placeholder="Услуги, аренда, материалы...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Описание</label>
+                <input type="text" id="financeDesc" class="form-input" placeholder="Описание транзакции">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Добавить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

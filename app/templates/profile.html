@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Профиль — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>👤 Профиль</h1>
+    </div>
+    <div style="max-width:600px">
+        <div class="card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">Основная информация</h3>
+            <div class="form-group">
+                <label class="form-label">Имя</label>
+                <div class="form-input" id="profileName" style="background:var(--color-surface-elevated)">—</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <div class="form-input" id="profileEmail" style="background:var(--color-surface-elevated)">—</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <div class="form-input" id="profilePhone" style="background:var(--color-surface-elevated)">—</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ИНН</label>
+                <div class="form-input" id="profileInn" style="background:var(--color-surface-elevated)">—</div>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:16px">Подписка</h3>
+            <div class="form-group">
+                <label class="form-label">Текущий тариф</label>
+                <div class="form-input" id="profileSubscription" style="background:var(--color-surface-elevated);color:var(--color-accent);font-weight:700">—</div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:16px">
+                <a href="/" class="btn btn-outline">Сменить тариф</a>
+                <button class="btn btn-ghost" id="logoutBtn2">Выйти</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

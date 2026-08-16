@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Дашборд — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>📊 Дашборд</h1>
+        <div style="display:flex;gap:8px">
+            <a href="/contracts" class="btn btn-primary btn-sm">+ Договор</a>
+            <a href="/finance" class="btn btn-outline btn-sm">+ Транзакция</a>
+        </div>
+    </div>
+
+    <div class="stats-grid stagger-children">
+        <div class="stat-box">
+            <div class="label">Доходы</div>
+            <div class="value" id="dashIncome" style="color:var(--color-success)">—</div>
+            <div class="change positive">+12.5% за месяц</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Расходы</div>
+            <div class="value" id="dashExpense" style="color:var(--color-error)">—</div>
+            <div class="change negative">+3.2% за месяц</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Баланс</div>
+            <div class="value" id="dashBalance" style="color:var(--color-accent)">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Договоры</div>
+            <div class="value" id="dashContracts">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Достижения</div>
+            <div class="value" id="dashAchievements">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Уведомления</div>
+            <div class="value" id="dashNotifications">0</div>
+        </div>
+    </div>
+
+    <div style="margin-top:32px">
+        <h2 style="margin-bottom:16px">🏆 Последние достижения</h2>
+        <div class="card">
+            <p style="color:var(--color-text-muted)">Загрузка...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

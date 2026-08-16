@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Маркетплейс — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>🏪 Маркетплейс услуг</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('serviceModal').style.display='flex'">+ Разместить услугу</button>
+    </div>
+    <div id="servicesList">
+        <div class="skeleton" style="height:200px"></div>
+    </div>
+</div>
+
+<div id="serviceModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;padding:16px">
+    <div class="auth-card" style="max-width:500px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2>Новая услуга</h2>
+            <button class="btn btn-ghost" onclick="document.getElementById('serviceModal').style.display='none'">✕</button>
+        </div>
+        <form id="serviceForm">
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="serviceTitle" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Описание</label>
+                <input type="text" id="serviceDesc" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Цена (₽)</label>
+                <input type="number" id="servicePrice" class="form-input" required min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <input type="text" id="serviceCategory" class="form-input" placeholder="Дизайн, разработка, маркетинг...">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Разместить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

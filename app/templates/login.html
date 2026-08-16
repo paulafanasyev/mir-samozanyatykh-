@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Вход — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card fade-in">
+        <h1>Вход в кабинет</h1>
+        <p class="subtitle">Введите email и пароль для входа</p>
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Пароль</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Войти</button>
+        </form>
+        <p class="auth-footer">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+    </div>
+</div>
+{% endblock %}

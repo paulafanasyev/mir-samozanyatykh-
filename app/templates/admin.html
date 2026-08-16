@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Админ-панель — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>⚙️ Админ-панель</h1>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="label">Пользователи</div>
+            <div class="value" id="adminUsers">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Договоры</div>
+            <div class="value" id="adminContracts">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Фин. записи</div>
+            <div class="value" id="adminFinance_records">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Услуги</div>
+            <div class="value" id="adminServices">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Гранты</div>
+            <div class="value" id="adminGrants">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Достижения</div>
+            <div class="value" id="adminAchievements">—</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

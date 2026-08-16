@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}МИР Самозанятых — Главная{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">МИР <span class="gradient-text">Самозанятых</span></h1>
+        <p class="hero-subtitle">Всё для вашего бизнеса в одной платформе</p>
+        <p class="hero-desc">Договоры, финансы, CRM, маркетплейс, гранты и ИИ-ассистент Светлана</p>
+        <div class="hero-buttons">
+            <a href="/register" class="btn btn-primary btn-lg">Начать бесплатно</a>
+            <a href="/about" class="btn btn-outline btn-lg">Узнать больше</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="stat-card">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">API методов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">13</div>
+            <div class="stat-label">HTML страниц</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">10+</div>
+            <div class="stat-label">Функций</div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <h2 class="section-title">Возможности платформы</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <h3>Договоры</h3>
+            <p>Создавайте, подписывайте и храните договоры ГПД, счета и акты</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h3>Финансы</h3>
+            <p>Учёт доходов и расходов, расчёт НПД, курсы валют ЦБ РФ</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <h3>CRM</h3>
+            <p>Управление клиентами, сделками и контактами</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏪</div>
+            <h3>Маркетплейс</h3>
+            <p>Размещайте услуги и находите заказчиков</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎁</div>
+            <h3>Гранты</h3>
+            <p>Подбор и оформление грантов для самозанятых</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>ИИ Светлана</h3>
+            <p>ИИ-ассистент отвечает на вопросы по налогам и бизнесу</p>
+        </div>
+    </div>
+</section>
+
+<section class="pricing">
+    <h2 class="section-title">Тарифы</h2>
+    <div class="pricing-grid">
+        <div class="pricing-card">
+            <h3>START</h3>
+            <div class="price">0 ₽</div>
+            <ul>
+                <li>✓ До 5 договоров</li>
+                <li>✓ Базовый фин. учёт</li>
+                <li>✓ ИИ-чат Светлана</li>
+            </ul>
+            <a href="/register" class="btn btn-outline">Выбрать</a>
+        </div>
+        <div class="pricing-card featured">
+            <div class="badge">Популярный</div>
+            <h3>PRO</h3>
+            <div class="price">300 ₽/мес</div>
+            <ul>
+                <li>✓ Безлимит договоры</li>
+                <li>✓ Расширенный CRM</li>
+                <li>✓ Маркетплейс</li>
+                <li>✓ PDF-генерация</li>
+            </ul>
+            <a href="/register" class="btn btn-primary">Выбрать</a>
+        </div>
+        <div class="pricing-card">
+            <h3>BUSINESS</h3>
+            <div class="price">990 ₽/мес</div>
+            <ul>
+                <li>✓ Всё из PRO</li>
+                <li>✓ Гранты + AI-оценка</li>
+                <li>✓ Приоритетная поддержка</li>
+                <li>✓ API доступ</li>
+            </ul>
+            <a href="/register" class="btn btn-outline">Выбрать</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

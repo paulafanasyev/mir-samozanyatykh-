@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Калькулятор НПД — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>🧮 Калькулятор НПД</h1>
+    </div>
+
+    <div style="max-width:600px;margin:0 auto">
+        <div class="card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">Расчёт налога</h3>
+            <form id="npdForm">
+                <div class="form-group">
+                    <label class="form-label">Сумма дохода (₽)</label>
+                    <input type="number" id="npdAmount" class="form-input" placeholder="100000" required min="0">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">Рассчитать</button>
+            </form>
+            <div id="npdResult" style="margin-top:24px"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">💱 Курсы валют ЦБ РФ</h3>
+            <div id="cbrRates">
+                <div class="skeleton" style="height:100px"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom:16px">📋 Ставки НПД 2026</h3>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Доход</th><th>Ставка (физлица)</th><th>Ставка (юрлица/ИП)</th></tr></thead>
+                    <tbody>
+                        <tr><td>До 2.4 млн ₽</td><td>4%</td><td>6%</td></tr>
+                        <tr><td>2.4 — 5 млн ₽</td><td>6%</td><td>8%</td></tr>
+                        <tr><td>5 — 20 млн ₽</td><td>8%</td><td>10%</td></tr>
+                        <tr><td>Свыше 20 млн ₽</td><td>10%</td><td>12%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="color:var(--color-text-muted);font-size:12px;margin-top:12px">* Налоговый вычет 10 000 ₽ применяется автоматически</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

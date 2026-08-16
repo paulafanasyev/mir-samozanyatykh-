@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}О нас — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>ℹ️ О платформе</h1>
+    </div>
+    <div style="max-width:800px">
+        <div class="card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">МИР Самозанятых v8.7.0</h3>
+            <p style="color:var(--color-text-secondary);line-height:1.8;margin-bottom:16px">
+                Платформа для самозанятых, объединяющая все необходимые инструменты для ведения бизнеса: 
+                создание договоров, финансовый учёт, CRM-система, маркетплейс услуг, подбор грантов 
+                и ИИ-ассистент Светлана.
+            </p>
+            <h4 style="margin:16px 0 8px">Возможности:</h4>
+            <ul style="color:var(--color-text-secondary);line-height:2;padding-left:20px">
+                <li>📝 Создание и хранение договоров ГПД</li>
+                <li>💰 Учёт доходов и расходов с расчётом НПД</li>
+                <li>👥 CRM для управления клиентами</li>
+                <li>🏪 Маркетплейс для размещения услуг</li>
+                <li>🎁 Подбор и оформление грантов</li>
+                <li>🤖 ИИ-ассистент Светлана 24/7</li>
+                <li>📱 PWA — работает как приложение</li>
+                <li>🌙 Тёмная и светлая тема</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:16px">Контакты</h3>
+            <p style="color:var(--color-text-secondary);line-height:1.8">
+                Email: <a href="mailto:support@mirsamozanyatykh.ru" style="color:var(--color-accent)">support@mirsamozanyatykh.ru</a><br>
+                Telegram: <a href="#" style="color:var(--color-accent)">@mir_samozanyatykh</a><br>
+                GitHub: <a href="https://github.com/paulafanasyev/mir-samozanyatykh-" target="_blank" style="color:var(--color-accent)">paulafanasyev/mir-samozanyatykh-</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

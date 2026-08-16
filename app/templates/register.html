@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card fade-in">
+        <h1>Создать аккаунт</h1>
+        <p class="subtitle">Начните работу с платформой бесплатно</p>
+        <form id="registerForm">
+            <div class="form-group">
+                <label class="form-label" for="name">Имя</label>
+                <input type="text" id="name" class="form-input" placeholder="Иван Петров" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="phone">Телефон</label>
+                <input type="tel" id="phone" class="form-input" placeholder="+79990000000" required pattern="\+7\d{10}">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="inn">ИНН (12 цифр)</label>
+                <input type="text" id="inn" class="form-input" placeholder="123456789012" pattern="\d{12}">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Пароль (мин. 8 символов)</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••" required minlength="8">
+                <div class="password-strength"><div class="password-strength-bar" id="passwordStrength"></div></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Зарегистрироваться</button>
+        </form>
+        <p class="auth-footer">Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </div>
+</div>
+{% endblock %}

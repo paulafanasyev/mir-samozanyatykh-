@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}CRM — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>👥 CRM — Клиенты</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('clientModal').style.display='flex'">+ Клиент</button>
+    </div>
+    <div id="clientsList">
+        <div class="skeleton" style="height:200px"></div>
+    </div>
+</div>
+
+<div id="clientModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;padding:16px">
+    <div class="auth-card" style="max-width:500px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2>Новый клиент</h2>
+            <button class="btn btn-ghost" onclick="document.getElementById('clientModal').style.display='none'">✕</button>
+        </div>
+        <form id="clientForm">
+            <div class="form-group">
+                <label class="form-label">Имя</label>
+                <input type="text" id="clientName" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="clientEmail" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <input type="tel" id="clientPhone" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ИНН</label>
+                <input type="text" id="clientInn" class="form-input" pattern="\d{10,12}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Статус</label>
+                <select id="clientStatus" class="form-input">
+                    <option value="lead">Лид</option>
+                    <option value="contact">Контакт</option>
+                    <option value="client">Клиент</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Заметки</label>
+                <input type="text" id="clientNotes" class="form-input">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Добавить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

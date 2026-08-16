@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Договоры — МИР Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>📝 Договоры</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('contractModal').style.display='flex'">+ Новый договор</button>
+    </div>
+    <div id="contractsList">
+        <div class="skeleton" style="height:200px"></div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="contractModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;padding:16px">
+    <div class="auth-card" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2>Новый договор</h2>
+            <button class="btn btn-ghost" onclick="document.getElementById('contractModal').style.display='none'">✕</button>
+        </div>
+        <form id="contractForm">
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="contractTitle" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Тип</label>
+                <select id="contractType" class="form-input">
+                    <option value="gpd">ГПД</option>
+                    <option value="service">Услуги</option>
+                    <option value="supply">Поставка</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Клиент</label>
+                <input type="text" id="clientName" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ИНН клиента</label>
+                <input type="text" id="clientInn" class="form-input" pattern="\d{10,12}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Сумма (₽)</label>
+                <input type="number" id="contractAmount" class="form-input" required min="0">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Создать</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
