@@ -5,29 +5,34 @@ from .models import AgentResult, AgentRole, AgentTask, TaskStatus
 
 
 REQUIRED_VERIFICATION = {
-    AgentRole.SECURITY: "security",
-    AgentRole.QA: "qa",
+    AgentRole.SECURITY: "static",
+    AgentRole.QA: "static",
     AgentRole.RUNTIME: "runtime",
 }
 
 
-def _verified(result: AgentResult, level: str) -> bool:
+def _verified(result: AgentResult, level: str, prefix: str) -> bool:
     return (
         result.status == TaskStatus.PASSED
         and result.metadata.get("verification_level") == level
-        and any(item.startswith(f"{level}:") for item in result.evidence)
+        and any(item.startswith(prefix) for item in result.evidence)
     )
 
 
 def judge_handler(task: AgentTask, previous: dict[str, AgentResult]) -> AgentResult:
     findings: list[str] = []
     results_by_role = {result.role: result for result in previous.values()}
+    evidence_prefixes = {
+        AgentRole.SECURITY: "static-security:",
+        AgentRole.QA: "qa:",
+        AgentRole.RUNTIME: "runtime:",
+    }
 
     for role, level in REQUIRED_VERIFICATION.items():
         result = results_by_role.get(role)
         if result is None:
             findings.append(f"missing critical result: {role.value}")
-        elif not _verified(result, level):
+        elif not _verified(result, level, evidence_prefixes[role]):
             findings.append(f"{role.value} lacks explicit {level} evidence")
 
     if findings:
