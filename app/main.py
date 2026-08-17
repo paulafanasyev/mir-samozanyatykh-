@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Мир Самозанятых", version="8.7.0", lifespan=lifespan, docs_url="/api/docs")
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.CORS_ORIGINS, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"])
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 security_bearer = HTTPBearer(auto_error=False)
