@@ -1,0 +1,44 @@
+name: Harden CORS Configuration
+
+on:
+  push:
+    branches: [feat/agent-orchestrator-v1]
+    paths:
+      - 'app/main.py'
+      - 'app/core/config.py'
+      - '.github/workflows/harden-cors.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: ${{ !contains(github.event.head_commit.message, 'harden CORS') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/agent-orchestrator-v1
+      - name: Replace wildcard CORS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/main.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])'
+          new = 'app.add_middleware(CORSMiddleware, allow_origins=settings.CORS_ORIGINS, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"])'
+          if old in text:
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/main.py
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'chore(security): harden CORS'
+          git push origin HEAD:feat/agent-orchestrator-v1
