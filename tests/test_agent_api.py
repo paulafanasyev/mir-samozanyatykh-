@@ -23,18 +23,19 @@ class AgentApiRuntimeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_agent_run_requires_auth(self):
-        response = self.client.post("/api/agents/run", json={"task": "test"})
+        response = self.client.post(
+            "/api/agents/run", json={"objective": "test objective"}
+        )
         self.assertEqual(response.status_code, 401)
 
     def test_agent_run_rejects_non_privileged_user(self):
-        # The endpoint must not be callable merely because a user is authenticated.
-        # A malformed token is intentionally treated as unauthenticated here.
+        # A malformed token is intentionally treated as unauthenticated.
         response = self.client.post(
             "/api/agents/run",
             headers={"Authorization": "Bearer invalid-test-token"},
-            json={"task": "test"},
+            json={"objective": "test objective"},
         )
-        self.assertIn(response.status_code, (401, 403))
+        self.assertEqual(response.status_code, 401)
 
     def test_agent_run_without_provider_is_not_reported_as_success(self):
         # No API key is configured in CI. The endpoint must fail closed rather
@@ -42,7 +43,7 @@ class AgentApiRuntimeTests(unittest.TestCase):
         response = self.client.post(
             "/api/agents/run",
             headers={"Authorization": "Bearer invalid-test-token"},
-            json={"task": "test"},
+            json={"objective": "test objective"},
         )
         self.assertNotEqual(response.status_code, 200)
 
