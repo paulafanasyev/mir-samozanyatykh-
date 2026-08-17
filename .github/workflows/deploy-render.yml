@@ -1,0 +1,37 @@
+name: Deploy to Render
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+  RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Render credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${RENDER_SERVICE_ID}" || { echo "RENDER_SERVICE_ID secret is not configured"; exit 1; }
+          test -n "${RENDER_API_KEY}" || { echo "RENDER_API_KEY secret is not configured"; exit 1; }
+
+      - name: Deploy to Render
+        uses: JorgeLNJunior/render-deploy@v1.5.0
+        with:
+          service_id: ${{ secrets.RENDER_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_deploy: true
+          clear_cache: true
+          github_deployment: false
+          deployment_environment: production
