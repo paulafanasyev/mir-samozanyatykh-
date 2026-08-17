@@ -1,13 +1,13 @@
 """Protected HTTP entry point for the multi-agent engineering loop."""
 from __future__ import annotations
 
+import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.agents.http_provider import build_env_providers
-from app.agents.models import TaskStatus
 from app.agents.service import build_execution_service
 from app.core.config import settings
 
@@ -23,20 +23,29 @@ class AgentRunRequest(BaseModel):
     max_iterations: int = Field(default=3, ge=1, le=5)
 
 
+def require_privileged_user(user):
+    if user.role.value not in {"admin", "moderator"}:
+        raise HTTPException(
+            status_code=403,
+            detail="Только администратор или модератор может использовать инженерный контур",
+        )
+    return user
+
+
 @router.get("/status")
-async def agent_status():
+async def agent_status(user=Depends(get_current_user_api)):
+    require_privileged_user(user)
     providers = build_env_providers()
     return {
         "enabled": bool(providers),
         "providers": [provider.name for provider in providers],
-        "runtime_verification_configured": bool(__import__("os").getenv("AGENT_RUNTIME_BASE_URL")),
+        "runtime_verification_configured": bool(os.getenv("AGENT_RUNTIME_BASE_URL")),
     }
 
 
 @router.post("/run")
 async def run_agent_loop(data: AgentRunRequest, user=Depends(get_current_user_api)):
-    if user.role.value not in {"admin", "moderator"}:
-        raise HTTPException(status_code=403, detail="Только администратор или модератор может запускать инженерный цикл")
+    require_privileged_user(user)
 
     providers = build_env_providers()
     if not providers:
