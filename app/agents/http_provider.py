@@ -20,15 +20,8 @@ def make_openai_compatible_call(*, provider: str, base_url: str, api_key: str,
     def call(model: str, prompt: str) -> ProviderResponse:
         if not api_key:
             raise HTTPProviderError(f"{provider}: API key is not configured")
-        body = json.dumps({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-        }).encode("utf-8")
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "mir-samozanyatykh-agent-router/1.0",
-        }
+        body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}]}).encode("utf-8")
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "User-Agent": "mir-samozanyatykh-agent-router/1.0"}
         if extra_headers:
             headers.update({k: v for k, v in extra_headers.items() if v})
         req = request.Request(endpoint, data=body, headers=headers, method="POST")
@@ -47,14 +40,14 @@ def make_openai_compatible_call(*, provider: str, base_url: str, api_key: str,
 
 
 def build_env_providers():
-    """Build only providers explicitly configured by environment variables."""
+    """Build only explicitly configured providers in configured priority order."""
     from .providers import ProviderAdapter
-    providers = []
+    configured = {}
 
     openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
     openrouter_model = os.getenv("AGENT_OPENROUTER_MODEL", "")
     if openrouter_key and openrouter_model:
-        providers.append(ProviderAdapter(
+        configured["openrouter"] = ProviderAdapter(
             "openrouter", openrouter_model,
             make_openai_compatible_call(
                 provider="openrouter",
@@ -62,29 +55,29 @@ def build_env_providers():
                 api_key=openrouter_key,
                 extra_headers={"HTTP-Referer": os.getenv("AGENT_HTTP_REFERER", "")},
             ),
-        ))
+        )
 
     openai_key = os.getenv("OPENAI_API_KEY", "")
     openai_model = os.getenv("AGENT_OPENAI_MODEL", "")
     if openai_key and openai_model:
-        providers.append(ProviderAdapter(
+        configured["openai"] = ProviderAdapter(
             "openai", openai_model,
             make_openai_compatible_call(
-                provider="openai",
-                base_url=os.getenv("AGENT_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-                api_key=openai_key,
+                provider="openai", base_url=os.getenv("AGENT_OPENAI_BASE_URL", "https://api.openai.com/v1"), api_key=openai_key
             ),
-        ))
+        )
 
     ollama_url = os.getenv("AGENT_OLLAMA_BASE_URL", "")
     ollama_model = os.getenv("AGENT_OLLAMA_MODEL", "")
     if ollama_url and ollama_model:
-        providers.append(ProviderAdapter(
+        configured["ollama"] = ProviderAdapter(
             "ollama", ollama_model,
             make_openai_compatible_call(
-                provider="ollama",
-                base_url=ollama_url,
-                api_key=os.getenv("AGENT_OLLAMA_API_KEY", "ollama"),
+                provider="ollama", base_url=ollama_url, api_key=os.getenv("AGENT_OLLAMA_API_KEY", "ollama")
             ),
-        ))
-    return providers
+        )
+
+    order = [name.strip().lower() for name in os.getenv(
+        "AGENT_PROVIDER_ORDER", "openrouter,openai,ollama"
+    ).split(",") if name.strip()]
+    return [configured[name] for name in order if name in configured]
