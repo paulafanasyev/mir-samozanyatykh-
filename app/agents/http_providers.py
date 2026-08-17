@@ -24,17 +24,11 @@ class ProviderServerError(ProviderUnavailable):
 
 def _post_json(base_url: str, api_key: str, model: str, prompt: str, timeout: float) -> dict:
     url = base_url.rstrip("/") + "/chat/completions"
-    payload = json.dumps({
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-    }).encode("utf-8")
+    payload = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}]}).encode("utf-8")
     request = urllib.request.Request(
         url,
         data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
     try:
@@ -50,7 +44,7 @@ def _post_json(base_url: str, api_key: str, model: str, prompt: str, timeout: fl
         raise ConnectionError("provider connection failed") from exc
 
 
-def openai_compatible_call(base_url: str, api_key: str, model: str, prompt: str, timeout: float) -> ProviderResponse:
+def openai_compatible_call(provider: str, base_url: str, api_key: str, model: str, prompt: str, timeout: float) -> ProviderResponse:
     if not api_key:
         raise ProviderUnavailable("provider API key is not configured")
     data = _post_json(base_url, api_key, model, prompt, timeout)
@@ -58,7 +52,7 @@ def openai_compatible_call(base_url: str, api_key: str, model: str, prompt: str,
         text = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
         raise ProviderUnavailable("provider returned an invalid response") from exc
-    return ProviderResponse(provider=base_url, model=model, text=str(text))
+    return ProviderResponse(provider=provider, model=model, text=str(text))
 
 
 def build_openrouter_adapter() -> ProviderAdapter:
@@ -66,6 +60,7 @@ def build_openrouter_adapter() -> ProviderAdapter:
         name="openrouter",
         model=os.getenv("AGENT_OPENROUTER_MODEL", ""),
         call=lambda model, prompt: openai_compatible_call(
+            "openrouter",
             os.getenv("AGENT_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
             os.getenv("AGENT_OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", "")),
             model,
@@ -81,8 +76,9 @@ def build_openai_adapter() -> ProviderAdapter:
         name="openai",
         model=os.getenv("AGENT_OPENAI_MODEL", ""),
         call=lambda model, prompt: openai_compatible_call(
+            "openai",
             os.getenv("AGENT_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            os.getenv("AGENT_OPENAI_API_KEY", ""),
+            os.getenv("AGENT_OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", "")),
             model,
             prompt,
             float(os.getenv("AGENT_PROVIDER_TIMEOUT", "30")),
