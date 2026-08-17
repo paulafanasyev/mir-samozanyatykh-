@@ -1,19 +1,15 @@
-"""Model-backed execution service for the multi-agent loop.
-
-The service deliberately separates model analysis from verified evidence. A
-model response is never treated as runtime proof. This keeps the evidence gate
-meaningful while allowing the same service to power architecture/security/QA
-analysis and, later, real runtime adapters.
-"""
+"""Model-backed execution service for the multi-agent loop."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict
 
+from .judge import judge_handler
 from .models import AgentResult, AgentRole, AgentTask, TaskStatus
 from .orchestrator import AgentOrchestrator
 from .providers import ProviderAdapter, ProviderRouter, ProviderUnavailable
 from .router import build_plan
+from .runtime import runtime_handler
 
 
 @dataclass
@@ -34,26 +30,17 @@ class AgentExecutionService:
             f"Previous specialist results:\n{prior or '(none)'}"
         )
 
-    def handler(self, task: AgentTask, previous: Dict[str, AgentResult]) -> AgentResult:
+    def model_handler(self, task: AgentTask, previous: Dict[str, AgentResult]) -> AgentResult:
         try:
             response = self.provider_router.run(self._prompt(task, previous))
         except ProviderUnavailable as exc:
             return AgentResult(
-                task.id,
-                task.role,
-                TaskStatus.BLOCKED,
+                task.id, task.role, TaskStatus.BLOCKED,
                 "No configured AI provider was available.",
-                findings=[str(exc)],
-                metadata={"verification_level": "none"},
-                retryable=True,
+                findings=[str(exc)], metadata={"verification_level": "none"}, retryable=True,
             )
-
         return AgentResult(
-            task.id,
-            task.role,
-            TaskStatus.PASSED,
-            response.text,
-            # This is intentionally analysis evidence, not verification proof.
+            task.id, task.role, TaskStatus.PASSED, response.text,
             evidence=[f"model-analysis:{response.provider}:{response.model}"],
             metadata={
                 "provider": response.provider,
@@ -64,11 +51,10 @@ class AgentExecutionService:
 
     def run(self, task_id: str, objective: str, max_iterations: int = 3):
         plan = build_plan(task_id, objective)
-        orchestrator = AgentOrchestrator(
-            {role: self.handler for role in AgentRole},
-            max_iterations=max_iterations,
-        )
-        return orchestrator.run(plan)
+        handlers = {role: self.model_handler for role in AgentRole}
+        handlers[AgentRole.RUNTIME] = runtime_handler
+        handlers[AgentRole.JUDGE] = judge_handler
+        return AgentOrchestrator(handlers, max_iterations=max_iterations).run(plan)
 
 
 def build_execution_service(providers: list[ProviderAdapter]) -> AgentExecutionService:
