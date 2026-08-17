@@ -1,9 +1,13 @@
+import tempfile
 import unittest
+from pathlib import Path
 
+from app.agents.artifacts import verify_artifacts
 from app.agents.models import AgentResult, AgentRole, TaskStatus
 from app.agents.orchestrator import AgentOrchestrator
-from app.agents.router import build_plan
 from app.agents.policy import inspect_instruction
+from app.agents.providers import ProviderAdapter, ProviderResponse, ProviderRouter
+from app.agents.router import build_plan
 
 
 class AgentOrchestratorTests(unittest.TestCase):
@@ -33,6 +37,27 @@ class AgentOrchestratorTests(unittest.TestCase):
 
         report = AgentOrchestrator({role: handler for role in AgentRole}).run(plan)
         self.assertTrue(report.passed)
+
+    def test_provider_router_falls_back(self):
+        def broken(model, prompt):
+            raise ConnectionError("offline")
+
+        def healthy(model, prompt):
+            return ProviderResponse("secondary", model, "ok")
+
+        router = ProviderRouter([
+            ProviderAdapter("primary", "m1", broken),
+            ProviderAdapter("secondary", "m2", healthy),
+        ])
+        self.assertEqual(router.run("hello").provider, "secondary")
+
+    def test_artifact_verification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            existing = Path(tmp) / "result.txt"
+            existing.write_text("verified", encoding="utf-8")
+            checks = verify_artifacts([str(existing), str(Path(tmp) / "missing.txt")])
+            self.assertTrue(checks[0].passed)
+            self.assertFalse(checks[1].passed)
 
 
 if __name__ == "__main__":
