@@ -1,10 +1,10 @@
 """Build the configured provider chain without exposing credentials to tasks."""
 from __future__ import annotations
 
+import json
 import os
 import urllib.error
 import urllib.request
-import json
 
 from .http_providers import openai_compatible_call
 from .providers import ProviderAdapter, ProviderResponse, ProviderUnavailable
@@ -35,9 +35,9 @@ def build_provider_chain():
     timeout = float(os.getenv("AGENT_PROVIDER_TIMEOUT", "30"))
     adapters = {
         "openrouter": ProviderAdapter(
-            "openrouter",
-            os.getenv("AGENT_OPENROUTER_MODEL", ""),
+            "openrouter", os.getenv("AGENT_OPENROUTER_MODEL", ""),
             lambda model, prompt: openai_compatible_call(
+                "openrouter",
                 os.getenv("AGENT_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
                 os.getenv("AGENT_OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", "")),
                 model, prompt, timeout,
@@ -45,21 +45,19 @@ def build_provider_chain():
             enabled=bool(os.getenv("AGENT_OPENROUTER_MODEL", "")),
         ),
         "openai": ProviderAdapter(
-            "openai",
-            os.getenv("AGENT_OPENAI_MODEL", ""),
+            "openai", os.getenv("AGENT_OPENAI_MODEL", ""),
             lambda model, prompt: openai_compatible_call(
+                "openai",
                 os.getenv("AGENT_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-                os.getenv("AGENT_OPENAI_API_KEY", ""),
+                os.getenv("AGENT_OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", "")),
                 model, prompt, timeout,
             ),
             enabled=bool(os.getenv("AGENT_OPENAI_MODEL", "")),
         ),
         "ollama": ProviderAdapter(
-            "ollama",
-            os.getenv("AGENT_OLLAMA_MODEL", ""),
+            "ollama", os.getenv("AGENT_OLLAMA_MODEL", ""),
             lambda model, prompt: ollama_call(
-                os.getenv("AGENT_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-                model, prompt, timeout,
+                os.getenv("AGENT_OLLAMA_BASE_URL", "http://127.0.0.1:11434"), model, prompt, timeout
             ),
             enabled=bool(os.getenv("AGENT_OLLAMA_MODEL", "")),
         ),
