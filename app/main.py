@@ -477,3 +477,8 @@ async def not_found(request: Request, exc):
 async def server_error(request: Request, exc):
     if request.url.path.startswith("/api/"): return JSONResponse({"error": "Internal server error"}, status_code=500)
     return templates.TemplateResponse("500.html", {"request": request}, status_code=500)
+
+
+# Multi-agent engineering API (wired after all main dependencies are defined).
+from app.agent_api import router as agent_router
+app.include_router(agent_router)
