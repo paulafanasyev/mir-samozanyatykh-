@@ -7,11 +7,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.agents.http_provider import build_env_providers
+from app.agents.provider_registry import build_provider_chain
 from app.agents.service import build_execution_service
 from app.core.config import settings
-
-# Imported lazily by the module at the end of app.main, after dependencies exist.
 from app.main import get_current_user_api
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
@@ -25,17 +23,14 @@ class AgentRunRequest(BaseModel):
 
 def require_privileged_user(user):
     if user.role.value not in {"admin", "moderator"}:
-        raise HTTPException(
-            status_code=403,
-            detail="Только администратор или модератор может использовать инженерный контур",
-        )
+        raise HTTPException(status_code=403, detail="Только администратор или модератор может использовать инженерный контур")
     return user
 
 
 @router.get("/status")
 async def agent_status(user=Depends(get_current_user_api)):
     require_privileged_user(user)
-    providers = build_env_providers()
+    providers = build_provider_chain()
     return {
         "enabled": bool(providers),
         "providers": [provider.name for provider in providers],
@@ -46,16 +41,13 @@ async def agent_status(user=Depends(get_current_user_api)):
 @router.post("/run")
 async def run_agent_loop(data: AgentRunRequest, user=Depends(get_current_user_api)):
     require_privileged_user(user)
-
-    providers = build_env_providers()
+    providers = build_provider_chain()
     if not providers:
         raise HTTPException(status_code=503, detail="AI-провайдеры не настроены: задайте API key и явную модель")
 
     task_id = data.task_id or f"web-{uuid.uuid4().hex[:12]}"
     try:
-        report = build_execution_service(providers).run(
-            task_id, data.objective, max_iterations=data.max_iterations
-        )
+        report = build_execution_service(providers).run(task_id, data.objective, max_iterations=data.max_iterations)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
