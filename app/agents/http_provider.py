@@ -1,8 +1,11 @@
-"""HTTP adapter for OpenAI-compatible chat completion APIs."""
+"""Backward-compatible HTTP provider helpers.
+
+Provider construction is centralized in provider_registry.py. This module keeps
+its low-level OpenAI-compatible call helper for existing imports and tests.
+"""
 from __future__ import annotations
 
 import json
-import os
 from urllib import error, request
 
 from .providers import ProviderResponse
@@ -29,7 +32,7 @@ def make_openai_compatible_call(*, provider: str, base_url: str, api_key: str,
             with request.urlopen(req, timeout=timeout) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except (error.HTTPError, error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-            raise HTTPProviderError(f"{provider}: {type(exc).__name__}: {exc}") from exc
+            raise HTTPProviderError(f"{provider}: {type(exc).__name__}") from exc
         try:
             text = payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
@@ -40,44 +43,6 @@ def make_openai_compatible_call(*, provider: str, base_url: str, api_key: str,
 
 
 def build_env_providers():
-    """Build only explicitly configured providers in configured priority order."""
-    from .providers import ProviderAdapter
-    configured = {}
-
-    openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
-    openrouter_model = os.getenv("AGENT_OPENROUTER_MODEL", "")
-    if openrouter_key and openrouter_model:
-        configured["openrouter"] = ProviderAdapter(
-            "openrouter", openrouter_model,
-            make_openai_compatible_call(
-                provider="openrouter",
-                base_url=os.getenv("AGENT_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-                api_key=openrouter_key,
-                extra_headers={"HTTP-Referer": os.getenv("AGENT_HTTP_REFERER", "")},
-            ),
-        )
-
-    openai_key = os.getenv("OPENAI_API_KEY", "")
-    openai_model = os.getenv("AGENT_OPENAI_MODEL", "")
-    if openai_key and openai_model:
-        configured["openai"] = ProviderAdapter(
-            "openai", openai_model,
-            make_openai_compatible_call(
-                provider="openai", base_url=os.getenv("AGENT_OPENAI_BASE_URL", "https://api.openai.com/v1"), api_key=openai_key
-            ),
-        )
-
-    ollama_url = os.getenv("AGENT_OLLAMA_BASE_URL", "")
-    ollama_model = os.getenv("AGENT_OLLAMA_MODEL", "")
-    if ollama_url and ollama_model:
-        configured["ollama"] = ProviderAdapter(
-            "ollama", ollama_model,
-            make_openai_compatible_call(
-                provider="ollama", base_url=ollama_url, api_key=os.getenv("AGENT_OLLAMA_API_KEY", "ollama")
-            ),
-        )
-
-    order = [name.strip().lower() for name in os.getenv(
-        "AGENT_PROVIDER_ORDER", "openrouter,openai,ollama"
-    ).split(",") if name.strip()]
-    return [configured[name] for name in order if name in configured]
+    """Compatibility entry point; canonical construction lives in provider_registry."""
+    from .provider_registry import build_provider_chain
+    return build_provider_chain()
