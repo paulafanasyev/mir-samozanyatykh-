@@ -1,14 +1,16 @@
-"""Конфигурация приложения"""
+"""Конфигурация приложения."""
 import os
+import secrets
 from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     APP_NAME: str = "Мир Самозанятых"
     APP_VERSION: str = "8.7.0"
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
-    # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "mir-samozanyatykh-secret-key-2026-change-in-production")
+    # Security: production deployments must provide SECRET_KEY explicitly.
+    SECRET_KEY: str = os.getenv("SECRET_KEY") or secrets.token_urlsafe(48)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -32,8 +34,12 @@ class Settings(BaseSettings):
     # FNS API
     FNS_API_URL: str = os.getenv("FNS_API_URL", "https://npd.nalog.ru/api")
 
-    # CORS
-    CORS_ORIGINS: list = ["*"]
+    # CORS: comma-separated explicit origins, never wildcard by default.
+    CORS_ORIGINS: list = [
+        origin.strip() for origin in os.getenv(
+            "CORS_ORIGINS", "http://localhost:8000,http://localhost:3000"
+        ).split(",") if origin.strip()
+    ]
 
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
@@ -42,5 +48,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
 
 settings = Settings()
