@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch
 
 from app.agents.models import AgentRole, AgentTask, TaskStatus
 from app.agents.orchestrator import AgentOrchestrator
@@ -11,11 +10,11 @@ class RuntimeRetryTests(unittest.TestCase):
 
         def security(task, previous):
             from app.agents.models import AgentResult
-            return AgentResult(task.id, task.role, TaskStatus.PASSED, "ok", evidence=["security:scan:passed"], metadata={"verification_level": "security"})
+            return AgentResult(task.id, task.role, TaskStatus.PASSED, "ok", evidence=["static-security:scan:passed"], metadata={"verification_level": "static"})
 
         def qa(task, previous):
             from app.agents.models import AgentResult
-            return AgentResult(task.id, task.role, TaskStatus.PASSED, "ok", evidence=["qa:tests:passed"], metadata={"verification_level": "qa"})
+            return AgentResult(task.id, task.role, TaskStatus.PASSED, "ok", evidence=["qa:tests:passed"], metadata={"verification_level": "static"})
 
         def runtime(task, previous):
             from app.agents.models import AgentResult
