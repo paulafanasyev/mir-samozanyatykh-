@@ -27,6 +27,9 @@ def runtime_handler(task: AgentTask, _previous: dict[str, AgentResult]) -> Agent
         with request.urlopen(req, timeout=float(os.getenv("AGENT_RUNTIME_TIMEOUT", "10"))) as response:
             body = response.read().decode("utf-8", errors="replace")
             status = response.status
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+        status = exc.code
     except (error.URLError, TimeoutError, ValueError) as exc:
         return AgentResult(
             task.id,
