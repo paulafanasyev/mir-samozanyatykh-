@@ -26,19 +26,32 @@ class AgentOrchestrator:
                 if task.id in results and results[task.id].status == TaskStatus.PASSED:
                     continue
 
-                missing = [dep for dep in task.dependencies if dep not in results or results[dep].status != TaskStatus.PASSED]
+                missing = [
+                    dep for dep in task.dependencies
+                    if dep not in results or results[dep].status != TaskStatus.PASSED
+                ]
                 if missing:
                     continue
 
                 handler = self.handlers.get(task.role)
                 if handler is None:
-                    results[task.id] = AgentResult(task.id, task.role, TaskStatus.BLOCKED,
-                                                   "No handler registered", findings=["handler missing"])
+                    results[task.id] = AgentResult(
+                        task.id,
+                        task.role,
+                        TaskStatus.BLOCKED,
+                        "No handler registered",
+                        findings=["handler missing"],
+                    )
                     blocked.append(f"{task.id}: handler missing")
                     progress = True
                     continue
 
-                result = handler(task, results)
+                handler_context = {
+                    key: value
+                    for key, value in results.items()
+                    if not (task.role == AgentRole.JUDGE and value.role == AgentRole.JUDGE)
+                }
+                result = handler(task, handler_context)
                 results[task.id] = result
                 progress = True
 
@@ -55,6 +68,8 @@ class AgentOrchestrator:
                 break
 
         final_results = list(results.values())
-        critical_failures = [r for r in final_results if r.status in (TaskStatus.FAILED, TaskStatus.BLOCKED)]
+        critical_failures = [
+            r for r in final_results if r.status in (TaskStatus.FAILED, TaskStatus.BLOCKED)
+        ]
         status = TaskStatus.FAILED if critical_failures or len(final_results) != len(task_list) else TaskStatus.PASSED
         return OrchestrationReport(status, final_results, self.max_iterations, blocked)

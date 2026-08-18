@@ -20,18 +20,18 @@ class JudgeEvidenceTests(unittest.TestCase):
 
     def test_model_analysis_cannot_be_runtime_evidence(self):
         previous = {
-            "security": self.result(AgentRole.SECURITY, "security", ["security:passed"]),
-            "qa": self.result(AgentRole.QA, "qa", ["qa:passed"]),
+            "security": self.result(AgentRole.SECURITY, "static", ["static-security:checked:app/main.py"]),
+            "qa": self.result(AgentRole.QA, "static", ["qa:unittest:exit:0"]),
             "runtime": self.result(AgentRole.RUNTIME, "model_analysis", ["model-analysis:healthy"]),
         }
         result = judge_handler(self.task, previous)
         self.assertEqual(result.status, TaskStatus.FAILED)
-        self.assertIn("runtime lacks explicit runtime evidence", result.findings)
+        self.assertIn("runtime result does not contain verified runtime evidence", result.findings)
 
     def test_all_explicit_evidence_classes_can_pass(self):
         previous = {
-            "security": self.result(AgentRole.SECURITY, "security", ["security:scan:passed"]),
-            "qa": self.result(AgentRole.QA, "qa", ["qa:tests:passed"]),
+            "security": self.result(AgentRole.SECURITY, "static", ["static-security:checked:app/main.py"]),
+            "qa": self.result(AgentRole.QA, "static", ["qa:unittest:exit:0"]),
             "runtime": self.result(AgentRole.RUNTIME, "runtime", ["runtime:http:200"]),
         }
         result = judge_handler(self.task, previous)
