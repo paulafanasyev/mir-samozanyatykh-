@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../data/datasources/remote/api_client.dart';
 import '../../widgets/common/svetlana_avatar_view.dart';
@@ -33,16 +34,7 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
     super.initState();
     _messages.add({
       'role': 'assistant',
-      'text': 'Здравствуйте! Я Светлана, ваш ИИ-ассистент по вопросам самозанятости и бизнеса.
-
-Я могу помочь с:
-• Налогами и отчётностью
-• Оформлением документов
-• Проверкой контрагентов
-• Грантами и поддержкой
-• Юридическими вопросами
-
-Чем могу помочь?',
+      'text': 'Здравствуйте! Я Светлана, ваш ИИ-ассистент по вопросам самозанятости и бизнеса.\n\nЯ могу помочь с:\n• Налогами и отчётностью\n• Оформлением документов\n• Проверкой контрагентов\n• Грантами и поддержкой\n• Юридическими вопросами\n\nЧем могу помочь?',
       'time': DateTime.now(),
     });
   }
@@ -73,9 +65,7 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
         _isTyping = false;
         _messages.add({
           'role': 'assistant',
-          'text': answer?.isNotEmpty == true
-              ? answer
-              : 'Не удалось получить ответ Светланы. Попробуйте ещё раз.',
+          'text': answer?.isNotEmpty == true ? answer : 'Не удалось получить ответ Светланы. Попробуйте ещё раз.',
           'time': DateTime.now(),
         });
       });
@@ -92,7 +82,6 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
     }
     _scrollToBottom();
   }
-
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -118,10 +107,7 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
+              decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(10)),
               child: Icon(Icons.smart_toy, color: colorScheme.primary, size: 20),
             ),
             const SizedBox(width: 12),
@@ -129,38 +115,23 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Светлана', style: theme.textTheme.titleMedium),
-                Text(
-                  'ИИ-ассистент',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                Text('ИИ-ассистент', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Голосовой ввод будет доступен после настройки микрофона.'))),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Голосовой ввод будет доступен после настройки микрофона.'))),
-          ),
+          IconButton(icon: const Icon(Icons.history), onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('История диалогов будет доступна после подключения хранилища.')))),
+          IconButton(icon: const Icon(Icons.more_vert), onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Настройки Светланы будут доступны в следующем этапе.')))),
         ],
       ),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: SvetlanaAvatarView(height: 190),
-          ),
-          // Quick questions
-          Container(
+          const Padding(padding: EdgeInsets.fromLTRB(12, 12, 12, 4), child: SvetlanaAvatarView(height: 190)),
+          SizedBox(
             height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               scrollDirection: Axis.horizontal,
               itemCount: _quickQuestions.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -178,8 +149,6 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
             ),
           ),
           const Divider(height: 1),
-
-          // Messages
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -188,19 +157,14 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
               itemBuilder: (context, index) {
                 final msg = _messages[index];
                 final isUser = msg['role'] == 'user';
-
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.8,
-                    ),
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
                     decoration: BoxDecoration(
-                      color: isUser
-                          ? colorScheme.primary
-                          : colorScheme.surfaceVariant,
+                      color: isUser ? colorScheme.primary : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -211,22 +175,9 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          msg['text'],
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isUser ? Colors.white : colorScheme.onSurface,
-                            height: 1.5,
-                          ),
-                        ),
+                        Text(msg['text']?.toString() ?? '', style: theme.textTheme.bodyMedium?.copyWith(color: isUser ? Colors.white : colorScheme.onSurface, height: 1.5)),
                         const SizedBox(height: 4),
-                        Text(
-                          _formatTime(msg['time'] as DateTime),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: isUser
-                                ? Colors.white.withOpacity(0.7)
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                        Text(_formatTime(msg['time'] as DateTime), style: theme.textTheme.labelSmall?.copyWith(color: isUser ? Colors.white.withOpacity(0.7) : colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -234,8 +185,6 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
               },
             ),
           ),
-
-          // Typing indicator
           if (_isTyping)
             Padding(
               padding: const EdgeInsets.only(left: 16, bottom: 8),
@@ -243,28 +192,19 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
                 alignment: Alignment.centerLeft,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(16)),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 40,
-                        child: Shimmer.fromColors(
-                          baseColor: colorScheme.onSurfaceVariant.withOpacity(0.3),
-                          highlightColor: colorScheme.onSurfaceVariant.withOpacity(0.1),
-                          child: Row(
-                            children: [
-                              Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
-                              const SizedBox(width: 4),
-                              Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
-                              const SizedBox(width: 4),
-                              Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
-                            ],
-                          ),
-                        ),
+                      Shimmer.fromColors(
+                        baseColor: colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        highlightColor: colorScheme.onSurfaceVariant.withOpacity(0.1),
+                        child: Row(children: [
+                          for (var i = 0; i < 3; i++) ...[
+                            Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                            if (i < 2) const SizedBox(width: 4),
+                          ],
+                        ]),
                       ),
                       const SizedBox(width: 8),
                       Text('Светлана печатает...', style: theme.textTheme.bodySmall),
@@ -273,46 +213,24 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
                 ),
               ),
             ),
-
-          // Input
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              border: Border(
-                top: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
+            decoration: BoxDecoration(color: colorScheme.surface, border: Border(top: BorderSide(color: colorScheme.outlineVariant))),
             child: SafeArea(
               child: Row(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.mic, color: colorScheme.onSurfaceVariant),
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Голосовой ввод будет доступен после настройки микрофона.'))),
-                  ),
+                  IconButton(icon: Icon(Icons.mic, color: colorScheme.onSurfaceVariant), onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Голосовой ввод будет доступен после настройки микрофона.')))),
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'Спросите Светлану...',
-                        filled: true,
-                        fillColor: colorScheme.surfaceVariant,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
+                      decoration: InputDecoration(hintText: 'Спросите Светлану...', filled: true, fillColor: colorScheme.surfaceContainerHighest, border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
                       maxLines: null,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(Icons.send, color: colorScheme.primary),
-                    onPressed: _sendMessage,
-                  ),
+                  IconButton(icon: Icon(Icons.send, color: colorScheme.primary), onPressed: _sendMessage),
                 ],
               ),
             ),
@@ -322,7 +240,5 @@ class _SvetlanaScreenState extends ConsumerState<SvetlanaScreen> {
     );
   }
 
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
+  String _formatTime(DateTime time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 }
