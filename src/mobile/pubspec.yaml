@@ -31,7 +31,7 @@ dependencies:
   cached_network_image: ^3.3.1
   qr_flutter: ^4.1.0
   mobile_scanner: ^5.2.3
-  flutter_form_builder: ^9.2.0
+  flutter_form_builder: ^10.3.0+2
   form_builder_validators: ^11.1.2
   equatable: ^2.0.5
   dartz: ^0.10.1
