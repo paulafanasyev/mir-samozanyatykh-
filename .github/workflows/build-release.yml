@@ -1,0 +1,121 @@
+name: Build release (Web + Android + iOS)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "frontend/**"
+      - "mobile/**"
+      - "scripts/**"
+      - ".github/workflows/build-release.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Vendor pinned Three.js runtime
+        working-directory: frontend
+        run: npm run vendor:svetlana
+      - name: Verify integrated Svetlana runtime
+        run: python scripts/verify_svetlana.py
+      - name: Build web
+        working-directory: frontend
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mir-samozanyatykh-web
+          path: frontend/dist/**
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Vendor pinned Three.js runtime
+        working-directory: frontend
+        run: npm run vendor:svetlana
+      - name: Verify integrated Svetlana runtime
+        run: python scripts/verify_svetlana.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+          channel: stable
+          cache: true
+      - name: Flutter dependencies
+        working-directory: mobile
+        run: flutter pub get
+      - name: Flutter analyze
+        working-directory: mobile
+        run: flutter analyze
+      - name: Flutter tests
+        working-directory: mobile
+        run: flutter test
+      - name: Build APK
+        working-directory: mobile
+        run: flutter build apk --release
+      - name: Build Android App Bundle
+        working-directory: mobile
+        run: flutter build appbundle --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mir-samozanyatykh-android-release
+          path: |
+            mobile/build/app/outputs/flutter-apk/*.apk
+            mobile/build/app/outputs/bundle/release/*.aab
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Vendor pinned Three.js runtime
+        working-directory: frontend
+        run: npm run vendor:svetlana
+      - name: Verify integrated Svetlana runtime
+        run: python3 scripts/verify_svetlana.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+          channel: stable
+          cache: true
+      - name: Flutter dependencies
+        working-directory: mobile
+        run: flutter pub get
+      - name: Flutter analyze
+        working-directory: mobile
+        run: flutter analyze
+      - name: Flutter tests
+        working-directory: mobile
+        run: flutter test
+      - name: Build unsigned iOS archive
+        working-directory: mobile
+        run: flutter build ios --release --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mir-samozanyatykh-ios-release-unsigned
+          path: mobile/build/ios/iphoneos/Runner.app
+          if-no-files-found: error

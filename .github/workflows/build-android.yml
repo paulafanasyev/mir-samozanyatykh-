@@ -1,0 +1,76 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/mobile/**"
+      - "src/frontend/**"
+      - "src/scripts/**"
+      - "src/.github/workflows/build-android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: src/frontend
+        run: npm install --no-audit --no-fund
+
+      - name: Vendor pinned Three.js runtime
+        working-directory: src/frontend
+        run: npm run vendor:svetlana
+
+      - name: Verify integrated Svetlana runtime
+        working-directory: src
+        run: python3 scripts/verify_svetlana.py
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+          channel: stable
+          cache: true
+
+      - name: Flutter dependencies
+        working-directory: src/mobile
+        run: flutter pub get
+
+      - name: Flutter analyze
+        working-directory: src/mobile
+        run: flutter analyze
+
+      - name: Flutter tests
+        working-directory: src/mobile
+        run: flutter test
+
+      - name: Build release APK
+        working-directory: src/mobile
+        run: flutter build apk --release --flavor prod
+
+      - name: Build release App Bundle
+        working-directory: src/mobile
+        run: flutter build appbundle --release --flavor prod
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mir-samozanyatykh-android-release
+          path: |
+            src/mobile/build/app/outputs/flutter-apk/*.apk
+            src/mobile/build/app/outputs/bundle/release/*.aab
+          if-no-files-found: error
