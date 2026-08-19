@@ -15,6 +15,15 @@ const required = [
   path.join('examples', 'jsm', 'utils', 'BufferGeometryUtils.js'),
 ];
 const packageRoot = path.join(frontend, 'node_modules', 'three');
+const canonicalLock = path.join(
+  frontend,
+  'public',
+  'svetlana',
+  'vendor',
+  'three',
+  '0.179.1',
+  'THREE_VENDOR_LOCK.json',
+);
 
 async function exists(p) { try { await fs.access(p); return true; } catch { return false; } }
 
@@ -45,6 +54,13 @@ const copies = [
   [path.join('examples', 'jsm', 'utils', 'BufferGeometryUtils.js'), path.join('examples', 'jsm', 'utils', 'BufferGeometryUtils.js')],
 ];
 
+if (!(await exists(canonicalLock))) {
+  console.error(`Missing canonical Three.js vendor lock: ${canonicalLock}`);
+  process.exit(5);
+}
+
+const lockContents = await fs.readFile(canonicalLock, 'utf8');
+
 for (const target of targets) {
   await fs.rm(target, { recursive: true, force: true });
   await fs.mkdir(target, { recursive: true });
@@ -53,6 +69,13 @@ for (const target of targets) {
     await fs.mkdir(path.dirname(dest), { recursive: true });
     await fs.copyFile(path.join(packageRoot, from), dest);
   }
+
+  await fs.writeFile(
+    path.join(target, 'THREE_VENDOR_LOCK.json'),
+    lockContents,
+    'utf8',
+  );
+
   console.log(`Vendored minimal Three.js ${pkg.version} runtime -> ${target}`);
 }
 
