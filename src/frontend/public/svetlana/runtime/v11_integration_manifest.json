@@ -1,0 +1,56 @@
+{
+  "version": "11.0.0",
+  "pipeline": [
+    "AI response",
+    "normalize",
+    "TTS provider",
+    "audio",
+    "SvetlanaBridge",
+    "conversation queue",
+    "Russian visemes",
+    "native morphs",
+    "emotion",
+    "idle"
+  ],
+  "offline_tests": true,
+  "network_required_for_tests": false,
+  "provider_contract": {
+    "synthesize_input": [
+      "text",
+      "voice",
+      "locale",
+      "signal"
+    ],
+    "synthesize_output": [
+      "audioUrl|audioBlob"
+    ]
+  },
+  "security": {
+    "secrets_in_browser": false,
+    "cross_origin_audio_policy": "same-origin/blob/data only",
+    "android_command_allowlist": true
+  },
+  "qa": {
+    "js_syntax": {
+      "app.js": {
+        "ok": true,
+        "stderr": ""
+      },
+      "runtime/svetlana-v9-bridge.js": {
+        "ok": true,
+        "stderr": ""
+      },
+      "runtime/svetlana-v10-host.js": {
+        "ok": true,
+        "stderr": ""
+      },
+      "runtime/svetlana-v11-tts-adapter.js": {
+        "ok": true,
+        "stderr": ""
+      }
+    },
+    "android_compile": "not_run",
+    "real_webgl2": "not_claimed",
+    "real_device": "not_run"
+  }
+}

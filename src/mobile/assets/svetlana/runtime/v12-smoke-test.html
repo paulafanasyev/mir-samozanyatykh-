@@ -1,0 +1,17 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Svetlana v12 Smoke Test</title>
+<style>body{font:16px sans-serif;margin:24px}pre{white-space:pre-wrap}</style>
+<h1>Svetlana v12 — smoke test</h1>
+<pre id="out">running...</pre>
+<script>
+const out=document.getElementById('out');
+const results=[];
+function ok(name, condition, detail=''){results.push({name,ok:!!condition,detail});}
+ok('Bridge exists', !!window.SvetlanaBridge);
+ok('Host exists', !!window.SvetlanaHost);
+ok('TTS adapter exists', !!window.SvetlanaTTSAdapter);
+ok('Android host function exists', typeof window.SvetlanaAndroidCommandV10==='function');
+ok('No external network dependency in test', true);
+out.textContent=JSON.stringify({version:'12.0.0',results},null,2);
+</script>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>Личный кабинет</h2>
+    <div id="user-info">Загрузка...</div>
+
+    <section class="dashboard-section">
+        <h3>📤 Загрузить документ</h3>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+            <button type="submit" class="btn-primary">Загрузить</button>
+        </form>
+        <div id="upload-result"></div>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadUser() {
+    const token = await MirAuth.getToken();
+    if (!token) { window.location.href = '/login'; return; }
+    try {
+        const res = await fetch('/api/user/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const user = await res.json();
+        document.getElementById('user-info').innerHTML = `
+            <p><strong>${user.full_name}</strong></p>
+            <p>Email: ${user.email}</p>
+            <p>ИНН: ${user.inn || 'не указан'}</p>
+            <p>Статус: ${user.is_verified ? '✅ Подтверждён' : '⏳ Ожидает подтверждения'}</p>
+        `;
+    } catch (err) {
+        MirAuth.clear();
+        window.location.href = '/login';
+    }
+}
+
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = await MirAuth.getToken();
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: form
+        });
+        const data = await res.json();
+        document.getElementById('upload-result').textContent = 
+            res.ok ? `Загружено: ${data.original_name}` : data.detail;
+    } catch (err) {
+        document.getElementById('upload-result').textContent = 'Ошибка загрузки';
+    }
+});
+
+loadUser();
+</script>
+{% endblock %}

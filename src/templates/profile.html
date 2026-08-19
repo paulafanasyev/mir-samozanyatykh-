@@ -1,0 +1,201 @@
+{% extends "base_v5.1.html" %}
+
+{% block title %}Профиль — Мир Самозанятых{% endblock %}
+{% block page %}profile{% endblock %}
+
+{% block content %}
+
+<section class="section" style="padding-top: 120px;">
+  <div class="container" style="max-width: 1000px;">
+
+    <!-- Profile Header -->
+    <div class="glass-card" style="padding: var(--space-8); margin-bottom: var(--space-6);">
+      <div style="display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap;">
+        <div style="width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 700;">
+          {{ user.name[0] if user.name else 'U' }}
+        </div>
+        <div>
+          <h1 style="margin-bottom: var(--space-2);">{{ user.name or 'Пользователь' }}</h1>
+          <p style="color: var(--neutral-500);">{{ user.email }}</p>
+          <div style="display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap;">
+            <span style="background: var(--primary-100); color: var(--primary-700); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 500;">
+              {{ user.activity or 'Самозанятый' }}
+            </span>
+            <span style="background: var(--accent-100); color: var(--accent-700); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 500;">
+              Уровень {{ user.level or 1 }}
+            </span>
+            <span style="background: var(--success-light); color: var(--success); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 500;">
+              {{ user.status or 'Активен' }}
+            </span>
+          </div>
+        </div>
+        <div style="margin-left: auto;">
+          <a href="/profile/edit" class="btn btn-glass">✏️ Редактировать</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+      <!-- Stats Column -->
+      <div>
+        <div class="glass-card" style="padding: var(--space-6); margin-bottom: var(--space-6);">
+          <h3 style="margin-bottom: var(--space-4);">📊 Статистика</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+            <div style="text-align: center; padding: var(--space-4); background: var(--primary-50); border-radius: var(--radius-lg);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary-700);">{{ user.total_income or 0 }} ₽</div>
+              <div style="font-size: 0.875rem; color: var(--neutral-500);">Общий доход</div>
+            </div>
+            <div style="text-align: center; padding: var(--space-4); background: var(--accent-50); border-radius: var(--radius-lg);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--accent-700);">{{ user.total_tax or 0 }} ₽</div>
+              <div style="font-size: 0.875rem; color: var(--neutral-500);">Уплачено налогов</div>
+            </div>
+            <div style="text-align: center; padding: var(--space-4); background: var(--success-light); border-radius: var(--radius-lg);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--success);">{{ user.clients or 0 }}</div>
+              <div style="font-size: 0.875rem; color: var(--neutral-500);">Клиентов</div>
+            </div>
+            <div style="text-align: center; padding: var(--space-4); background: var(--info-light); border-radius: var(--radius-lg);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--info);">{{ user.achievements or 0 }}</div>
+              <div style="font-size: 0.875rem; color: var(--neutral-500);">Достижений</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="glass-card" style="padding: var(--space-6);">
+          <h3 style="margin-bottom: var(--space-4);">🏆 Достижения</h3>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--primary-50); border-radius: var(--radius-lg);">
+              <span style="font-size: 1.5rem;">🎯</span>
+              <div>
+                <div style="font-weight: 600;">Первый клиент</div>
+                <div style="font-size: 0.875rem; color: var(--neutral-500);">Получен первый заказ</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--accent-50); border-radius: var(--radius-lg);">
+              <span style="font-size: 1.5rem;">💰</span>
+              <div>
+                <div style="font-weight: 600;">Первые 100K</div>
+                <div style="font-size: 0.875rem; color: var(--neutral-500);">Доход превысил 100 000 ₽</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--success-light); border-radius: var(--radius-lg);">
+              <span style="font-size: 1.5rem;">🤖</span>
+              <div>
+                <div style="font-weight: 600;">Друг Светланы</div>
+                <div style="font-size: 0.875rem; color: var(--neutral-500);">10 консультаций с ИИ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Svetlana History Column -->
+      <div>
+        <div class="glass-card" style="padding: var(--space-6); margin-bottom: var(--space-6);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3>🤖 История диалогов со Светланой</h3>
+            <button onclick="window.svetlana.exportHistory()" class="btn btn-sm btn-glass">📥 Экспорт</button>
+          </div>
+          <div id="svetlanaHistory" style="max-height: 300px; overflow-y: auto;">
+            <div style="text-align: center; padding: var(--space-8); color: var(--neutral-400);">
+              <div style="font-size: 3rem; margin-bottom: var(--space-4);">💬</div>
+              <p>История диалогов пуста</p>
+              <button onclick="window.svetlana.toggleChat()" class="btn btn-sm btn-primary mt-4">Начать общение</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="glass-card" style="padding: var(--space-6);">
+          <h3 style="margin-bottom: var(--space-4);">🔒 Безопасность</h3>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg);">
+              <div style="display: flex; align-items: center; gap: var(--space-3);">
+                <span style="font-size: 1.25rem;">📱</span>
+                <div>
+                  <div style="font-weight: 600;">Двухфакторная аутентификация</div>
+                  <div style="font-size: 0.875rem; color: var(--neutral-500);">Защитите аккаунт дополнительно</div>
+                </div>
+              </div>
+              <a href="/profile/2fa" class="btn btn-sm btn-glass">Настроить</a>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg);">
+              <div style="display: flex; align-items: center; gap: var(--space-3);">
+                <span style="font-size: 1.25rem;">🔑</span>
+                <div>
+                  <div style="font-weight: 600;">Сменить пароль</div>
+                  <div style="font-size: 0.875rem; color: var(--neutral-500);">Обновите пароль регулярно</div>
+                </div>
+              </div>
+              <a href="/profile/password" class="btn btn-sm btn-glass">Изменить</a>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg);">
+              <div style="display: flex; align-items: center; gap: var(--space-3);">
+                <span style="font-size: 1.25rem;">📧</span>
+                <div>
+                  <div style="font-weight: 600;">Email подтверждён</div>
+                  <div style="font-size: 0.875rem; color: var(--neutral-500);">{{ user.email }}</div>
+                </div>
+              </div>
+              <span style="color: var(--success); font-size: 1.25rem;">✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% block extra_scripts %}
+<script nonce="{{ csp_nonce }}">
+// Load Svetlana history into profile
+document.addEventListener('DOMContentLoaded', () => {
+  const historyContainer = document.getElementById('svetlanaHistory');
+  if (!historyContainer || !window.svetlana) return;
+
+  const messages = window.svetlana.messages;
+
+  if (messages.length === 0) {
+    historyContainer.innerHTML = `
+      <div style="text-align: center; padding: var(--space-8); color: var(--neutral-400);">
+        <div style="font-size: 3rem; margin-bottom: var(--space-4);">💬</div>
+        <p>История диалогов пуста</p>
+        <button onclick="window.svetlana.toggleChat()" class="btn btn-sm btn-primary mt-4">Начать общение</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Group by date
+  const grouped = {};
+  messages.forEach(msg => {
+    const date = new Date(msg.timestamp).toLocaleDateString('ru-RU');
+    if (!grouped[date]) grouped[date] = [];
+    grouped[date].push(msg);
+  });
+
+  let html = '';
+  Object.entries(grouped).forEach(([date, msgs]) => {
+    html += `<div style="margin-bottom: var(--space-4);">
+      <div style="font-size: 0.75rem; color: var(--neutral-400); text-align: center; margin-bottom: var(--space-2);">${date}</div>`;
+
+    msgs.forEach(msg => {
+      const isBot = msg.sender === 'bot';
+      html += `
+        <div style="display: flex; ${isBot ? '' : 'justify-content: flex-end;'} margin-bottom: var(--space-2);">
+          <div style="max-width: 80%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg); font-size: 0.875rem; ${isBot ? 'background: var(--primary-50); color: var(--neutral-800); border-bottom-left-radius: 4px;' : 'background: linear-gradient(135deg, var(--primary-600), var(--primary-700)); color: white; border-bottom-right-radius: 4px;'}">
+            ${msg.text.substring(0, 150)}${msg.text.length > 150 ? '...' : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    html += '</div>';
+  });
+
+  historyContainer.innerHTML = html;
+});
+</script>
+{% endblock %}
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{
+  "version": "10.0.0",
+  "js_syntax": {
+    "app.js": true,
+    "runtime/svetlana-v9-bridge.js": true,
+    "runtime/svetlana-v10-host.js": true
+  },
+  "android_bridge_allowlist": true,
+  "client_api_secrets": false,
+  "cross_origin_audio_blocked": true,
+  "real_webgl2_screenshot": false,
+  "android_compile": false
+}

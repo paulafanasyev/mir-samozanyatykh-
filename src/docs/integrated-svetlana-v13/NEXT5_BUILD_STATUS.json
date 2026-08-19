@@ -1,0 +1,48 @@
+{
+  "version": "NEXT5",
+  "local_environment": {
+    "node": "22.16.0",
+    "flutter_present": false,
+    "three_vendor_present": false,
+    "production_build_claimed": false
+  },
+  "static_checks": {
+    "svetlana_verifier": "FAIL_EXPECTED_VENDOR_MISSING",
+    "js_syntax": "PASS",
+    "python_compile": "PASS",
+    "web_mobile_model_sha_match": true,
+    "web_mobile_app_sha_match": true,
+    "security_hardening": "PASS"
+  },
+  "upstream_lock": {
+    "library": "three.js",
+    "version": "0.179.1",
+    "upstream_ref": "r179",
+    "upstream_repo": "mrdoob/three.js",
+    "upstream_tree_sha": "54ac263593c81b669ca9a089491ddd9e240427d2",
+    "required_files": {
+      "build/three.module.js": {
+        "blob_sha": "6c6b8a0880aa505b5ffadea5a3d68b15d74698fa",
+        "size": 603380
+      },
+      "build/three.core.js": {
+        "blob_sha": "3ed693adea2a7e940c56d16b4bfa0e61041c076a",
+        "size": 1401321
+      },
+      "examples/jsm/loaders/GLTFLoader.js": {
+        "blob_sha": "e8593bd4c60d56f99361ae349a46878482216fdd"
+      },
+      "examples/jsm/utils/BufferGeometryUtils.js": {
+        "blob_sha": "611478bf4177c2923a989f4c6c4a259b60cfb3c2"
+      }
+    },
+    "note": "All vendor files must come from exactly this upstream ref. No CDN fallback is permitted."
+  },
+  "ci": {
+    "workflow": ".github/workflows/build-release.yml",
+    "flutter": "3.44.7",
+    "web": "npm install -> vendor:svetlana -> verifier -> npm run build",
+    "android": "flutter pub get -> analyze -> test -> build apk --release",
+    "ios": "flutter pub get -> analyze -> test -> build ios --release --no-codesign"
+  }
+}

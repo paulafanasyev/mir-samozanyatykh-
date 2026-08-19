@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Мир Самозанятых — платформа поддержки самозанятых граждан. ИИ-ассистент Светлана, налоговый калькулятор, CRM, маркетплейс, гранты.">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Мир Самозанятых{% endblock %}</title>
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/app_v7.0.css">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+
+  {% block extra_head %}{% endblock %}
+<meta name="app-version" content="v5.1">
+</head>
+<body data-page="{% block page %}{% endblock %}">
+
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему" title="Переключить тему">
+    <!-- Sun Icon (shown in dark mode) -->
+    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/>
+      <line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+    <!-- Moon Icon (shown in light mode) -->
+    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
+
+  <!-- Navigation -->
+  <nav class="navbar" role="navigation" aria-label="Главное меню" id="navbar">
+    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+      <a href="/" class="navbar-brand">
+        <span class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </span>
+        Мир <span>Самозанятых</span>
+      </a>
+
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Открыть меню" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/" class="{% if request and request.url.path == '/' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Главная
+        </a></li>
+        <li><a href="/about">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          О проекте
+        </a></li>
+        <li><a href="/calculator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+          Калькулятор
+        </a></li>
+        <li><a href="/dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Кабинет
+        </a></li>
+        <li><a href="/marketplace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Маркетплейс
+        </a></li>
+        <li><a href="/grants">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Гранты
+        </a></li>
+        <li><a href="/blog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Блог
+        </a></li>
+        {% if user %}
+          <li><a href="/profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {{ user.name or 'Профиль' }}
+          </a></li>
+          <li><a href="/logout" class="btn btn-sm btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Выйти
+          </a></li>
+        {% else %}
+          <li><a href="/login" class="btn btn-sm btn-ghost">Войти</a></li>
+          <li><a href="/register" class="btn btn-sm btn-primary">Регистрация</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main style="padding-top: 80px; min-height: calc(100vh - 300px);">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <h4 style="display:flex;align-items:center;gap:var(--space-2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:var(--accent-500);">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Мир Самозанятых
+        </h4>
+        <p style="color: var(--text-tertiary); font-size: 0.9375rem; margin-top: var(--space-3); line-height: 1.7;">
+          Платформа поддержки самозанятых граждан. ИИ-ассистент Светлана, налоговый калькулятор, CRM, маркетплейс, гранты и многое другое.
+        </p>
+      </div>
+      <div>
+        <h4>Навигация</h4>
+        <a href="/">Главная</a>
+        <a href="/about">О проекте</a>
+        <a href="/projects">Проекты компании</a>
+        <a href="/calculator">Калькулятор</a>
+        <a href="/dashboard">Личный кабинет</a>
+      </div>
+      <div>
+        <h4>Сервисы</h4>
+        <a href="/marketplace">Маркетплейс</a>
+        <a href="/grants">Гранты</a>
+        <a href="/contracts">Договоры</a>
+        <a href="/crm">CRM</a>
+        <a href="/finance">Финансы</a>
+      </div>
+      <div>
+        <h4>Поддержка</h4>
+        <a href="/blog">Блог</a>
+        <a href="/faq">FAQ</a>
+        <a href="/contacts">Контакты</a>
+        <a href="mailto:it-laboratory@bk.ru">it-laboratory@bk.ru</a>
+        <a href="/privacy">Политика конфиденциальности</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Мир Самозанятых. Все права защищены. | <a href="/privacy" style="display:inline;color:var(--text-tertiary);">Политика конфиденциальности</a></p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/static/app_v7.0.js"></script>
+  {% block extra_scripts %}{% endblock %}
+
+  <!-- ===== СВЕТЛАНА v3.0 — ПЛАВАЮЩИЙ ВИДЖЕТ ===== -->
+  <div id="svetlanaWidget" class="svetlana-widget-collapsed" style="
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: var(--z-chat);
+    transition: all var(--transition-base);
+  ">
+    <!-- СВЕРНУТЫЙ: Аватар -->
+    <button id="svetlanaToggle" class="btn" style="
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      padding: 0;
+      background: var(--gradient-primary);
+      box-shadow: var(--shadow-glow), 0 4px 20px rgba(13, 71, 161, 0.3);
+      border: 3px solid var(--glass-border);
+      position: relative;
+      overflow: visible;
+      animation: svetlanaPulse 3s infinite;
+    " aria-label="Открыть чат с Светланой" title="Светлана — ИИ-ассистент">
+      <img src="/static/svetlana-avatar.png" alt="Светлана" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--gradient-primary); display: none; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.25rem;">СВ</div>
+      <span style="
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 18px;
+        height: 18px;
+        background: var(--success);
+        border-radius: 50%;
+        border: 2px solid var(--bg-body);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      "></span>
+    </button>
+  </div>
+
+  <!-- РАЗВЁРНУТЫЙ: Окно чата -->
+  <div id="svetlanaChat" style="
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: var(--z-chat);
+    width: 420px;
+    max-width: calc(100vw - 2rem);
+    height: 600px;
+    max-height: calc(100vh - 4rem);
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl), 0 0 40px rgba(13, 71, 161, 0.1);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all var(--transition-base);
+  ">
+    <!-- Header -->
+    <div style="
+      padding: var(--space-4) var(--space-5);
+      background: var(--gradient-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-shrink: 0;
+    ">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);">
+        <img src="/static/svetlana-avatar.png" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.innerHTML='СВ';">
+      </div>
+      <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 1rem;">Светлана</div>
+        <div style="font-size: 0.75rem; opacity: 0.8; display: flex; align-items: center; gap: 4px;">
+          <span style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%; display: inline-block;"></span>
+          ИИ-ассистент онлайн
+        </div>
+      </div>
+      <button id="svetlanaClose" style="
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.15);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background var(--transition-fast);
+      " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Quick Questions -->
+    <div id="svetlanaQuick" style="
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-surface-hover);
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    ">
+      <div style="display: flex; gap: var(--space-2);">
+        <button class="svetlana-quick-btn" data-q="Как зарегистрироваться как самозанятый?">Регистрация</button>
+        <button class="svetlana-quick-btn" data-q="Какие налоги платит самозанятый?">Налоги</button>
+        <button class="svetlana-quick-btn" data-q="Как получить налоговый вычет?">Вычет</button>
+        <button class="svetlana-quick-btn" data-q="Что такое социальный контракт?">Соцконтракт</button>
+        <button class="svetlana-quick-btn" data-q="Как оформить договор ГПД?">Договор</button>
+        <button class="svetlana-quick-btn" data-q="Какие гранты доступны?">Гранты</button>
+        <button class="svetlana-quick-btn" data-q="Как работает маркетплейс?">Маркетплейс</button>
+        <button class="svetlana-quick-btn" data-q="Расскажи про CRM">CRM</button>
+        <button class="svetlana-quick-btn" data-q="Как проверить ИНН?">ИНН</button>
+        <button class="svetlana-quick-btn" data-q="Как заполнить чек?">Чек</button>
+        <button class="svetlana-quick-btn" data-q="Что такое НПД?">НПД</button>
+        <button class="svetlana-quick-btn" data-q="Как перейти в ИП?">ИП</button>
+        <button class="svetlana-quick-btn" data-q="Какие штрафы у самозанятых?">Штрафы</button>
+        <button class="svetlana-quick-btn" data-q="Как получить кредит?">Кредит</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="svetlanaMessages" style="
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    ">
+      <div style="align-self: flex-start; max-width: 85%; background: var(--bg-surface); padding: var(--space-3) var(--space-4); border-radius: var(--space-3) var(--space-3) var(--space-3) 4px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+        <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6;">
+          Привет! Я Светлана, ваш ИИ-ассистент. Задайте вопрос или выберите быстрый ответ ниже. Я помогу с налогами, договорами, грантами и другими вопросами самозанятых.
+        </div>
+        <div style="font-size: 0.6875rem; color: var(--text-tertiary); margin-top: var(--space-1);">Светлана · сейчас</div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div style="
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+      display: flex;
+      gap: var(--space-2);
+      align-items: flex-end;
+    ">
+      <button id="svetlanaVoice" style="
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all var(--transition-fast);
+      " title="Голосовой ввод">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <textarea id="svetlanaInput" style="
+        flex: 1;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3) var(--space-4);
+        font-family: var(--font-family);
+        font-size: 0.9375rem;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        resize: none;
+        max-height: 120px;
+        outline: none;
+        transition: border-color var(--transition-fast);
+      " rows="1" placeholder="Напишите вопрос..." onfocus="this.style.borderColor='var(--primary-400)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+      <button id="svetlanaSend" class="btn btn-primary" style="
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        padding: 0;
+        flex-shrink: 0;
+      ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 18px; height: 18px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <style nonce="{{ csp_nonce }}">
+    @keyframes svetlanaPulse {
+      0%, 100% { box-shadow: var(--shadow-glow), 0 4px 20px rgba(13, 71, 161, 0.3); }
+      50% { box-shadow: var(--shadow-glow), 0 4px 30px rgba(13, 71, 161, 0.5), 0 0 20px rgba(13, 71, 161, 0.2); }
+    }
+    .svetlana-quick-btn {
+      padding: var(--space-1) var(--space-3);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--primary-600);
+      background: var(--primary-50);
+      border: 1px solid var(--primary-200);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      font-family: var(--font-family);
+    }
+    .svetlana-quick-btn:hover {
+      background: var(--primary-100);
+      border-color: var(--primary-400);
+      transform: translateY(-1px);
+    }
+    [data-theme="dark"] .svetlana-quick-btn {
+      background: rgba(30, 136, 229, 0.15);
+      border-color: rgba(30, 136, 229, 0.3);
+      color: var(--primary-300);
+    }
+    [data-theme="dark"] .svetlana-quick-btn:hover {
+      background: rgba(30, 136, 229, 0.25);
+    }
+    #svetlanaMessages::-webkit-scrollbar { width: 4px; }
+    #svetlanaMessages::-webkit-scrollbar-thumb { background: var(--border-color-strong); border-radius: var(--radius-full); }
+    .svetlana-message-user {
+      align-self: flex-end;
+      max-width: 85%;
+      background: var(--gradient-primary);
+      color: white;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--space-3) var(--space-3) 4px var(--space-3);
+      box-shadow: var(--shadow-md);
+    }
+    .svetlana-message-bot {
+      align-self: flex-start;
+      max-width: 85%;
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--space-3) var(--space-3) var(--space-3) 4px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+    .svetlana-message-time {
+      font-size: 0.6875rem;
+      opacity: 0.7;
+      margin-top: var(--space-1);
+    }
+    .svetlana-typing {
+      display: flex;
+      gap: 4px;
+      padding: var(--space-2) var(--space-3);
+    }
+    .svetlana-typing-dot {
+      width: 8px; height: 8px;
+      background: var(--text-tertiary);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .svetlana-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .svetlana-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    @media (max-width: 480px) {
+      #svetlanaChat {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        border-radius: 0 !important;
+      }
+    }
+  </style>
+
+  <script nonce="{{ csp_nonce }}">
+
+    // SECURITY: XSS Protection - sanitize user/AI content
+    function sanitizeForDisplay(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    function safeSetHTML(element, text) {
+        if (!element) return;
+        // Use textContent for safety, only allow <br> for newlines
+        element.textContent = text;
+    }
+    
+  (function() {
+    const widget = document.getElementById('svetlanaWidget');
+    const chat = document.getElementById('svetlanaChat');
+    const toggle = document.getElementById('svetlanaToggle');
+    const close = document.getElementById('svetlanaClose');
+    const messages = document.getElementById('svetlanaMessages');
+    const input = document.getElementById('svetlanaInput');
+    const send = document.getElementById('svetlanaSend');
+    const voice = document.getElementById('svetlanaVoice');
+
+    // Load history from localStorage
+    const STORAGE_KEY = 'svetlana_chat_v3';
+    let chatHistory = [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) chatHistory = JSON.parse(saved);
+      // Keep only last 100 messages
+      if (chatHistory.length > 100) chatHistory = chatHistory.slice(-100);
+    } catch(e) {}
+
+    function saveHistory() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory.slice(-100)));
+    }
+
+    function addMessage(text, isUser) {
+      const div = document.createElement('div');
+      div.className = isUser ? 'svetlana-message-user' : 'svetlana-message-bot';
+      const body = document.createElement('div');
+      body.style.cssText = 'font-size: 0.9375rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap:anywhere;';
+      body.textContent = String(text ?? '');
+      const meta = document.createElement('div');
+      meta.className = 'svetlana-message-time';
+      meta.textContent = `${isUser ? 'Вы' : 'Светлана'} · ${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}`;
+      div.replaceChildren(body, meta);
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+
+      chatHistory.push({ text, isUser, time: Date.now() });
+      saveHistory();
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.id = 'svetlanaTyping';
+      div.className = 'svetlana-message-bot';
+      div.innerHTML = '<div class="svetlana-typing"><div class="svetlana-typing-dot"></div><div class="svetlana-typing-dot"></div><div class="svetlana-typing-dot"></div></div>';
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    function removeTyping() {
+      const t = document.getElementById('svetlanaTyping');
+      if (t) t.remove();
+    }
+
+    async function sendMessage(text) {
+      if (!text.trim()) return;
+      addMessage(text, true);
+      input.value = '';
+      input.style.height = 'auto';
+
+      const typing = showTyping();
+
+      try {
+        const res = await MirSamozanyatykh.API.post('/api/svetlana/ask', { question: text });
+        removeTyping();
+        addMessage(res.answer || 'Извините, я не смогла обработать запрос. Попробуйте переформулировать.', false);
+      } catch (err) {
+        removeTyping();
+        addMessage('Произошла ошибка связи. Пожалуйста, попробуйте позже.', false);
+      }
+    }
+
+    // Toggle chat
+    toggle.addEventListener('click', () => {
+      widget.style.display = 'none';
+      chat.style.display = 'flex';
+      input.focus();
+    });
+
+    close.addEventListener('click', () => {
+      chat.style.display = 'none';
+      widget.style.display = 'block';
+    });
+
+    // Send on button
+    send.addEventListener('click', () => sendMessage(input.value));
+
+    // Send on Enter (Shift+Enter for new line)
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(input.value);
+      }
+    });
+
+    // Auto-resize textarea
+    input.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Quick questions
+    document.querySelectorAll('.svetlana-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sendMessage(btn.dataset.q);
+      });
+    });
+
+    // Voice input
+    let recognition = null;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        input.value = text;
+        voice.style.color = 'var(--text-secondary)';
+        voice.style.background = 'var(--bg-input)';
+      };
+
+      recognition.onerror = () => {
+        voice.style.color = 'var(--text-secondary)';
+        voice.style.background = 'var(--bg-input)';
+        MirSamozanyatykh.Toast.show('Ошибка распознавания речи', 'warning');
+      };
+
+      recognition.onend = () => {
+        voice.style.color = 'var(--text-secondary)';
+        voice.style.background = 'var(--bg-input)';
+      };
+
+      voice.addEventListener('click', () => {
+        if (recognition) {
+          voice.style.color = 'var(--danger)';
+          voice.style.background = 'var(--danger-light)';
+          recognition.start();
+        }
+      });
+    } else {
+      voice.style.display = 'none';
+    }
+  })();
+  </script>
+
+</body>
+</html>

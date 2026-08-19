@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}CRM — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>🤝 CRM — Клиенты и сделки</h2>
+
+    <section class="dashboard-section">
+        <h3>Добавить клиента</h3>
+        <form id="client-form">
+            <input type="text" name="name" placeholder="Имя клиента" required maxlength="255">
+            <input type="email" name="email" placeholder="Email" maxlength="255">
+            <input type="text" name="phone" placeholder="Телефон" maxlength="50">
+            <input type="text" name="company" placeholder="Компания" maxlength="255">
+            <textarea name="notes" placeholder="Заметки"></textarea>
+            <button type="submit" class="btn-primary">Добавить клиента</button>
+        </form>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>Мои клиенты</h3>
+        <div id="clients-list">Загрузка...</div>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>Сделки</h3>
+        <div id="deals-list">Загрузка...</div>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadClients() {
+    const token = await MirAuth.getToken();
+    try {
+        const res = await fetch('/api/crm/clients', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        let html = '<div class="cards-grid">';
+        data.clients.forEach(c => {
+            html += `<div class="card"><h4>${c.name}</h4><p>${c.company || ''}</p><p>${c.phone || ''}</p><p>${c.email || ''}</p></div>`;
+        });
+        html += '</div>';
+        document.getElementById('clients-list').innerHTML = html;
+    } catch (e) { document.getElementById('clients-list').textContent = 'Ошибка'; }
+}
+
+async function loadDeals() {
+    const token = await MirAuth.getToken();
+    try {
+        const res = await fetch('/api/crm/deals', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        let html = '<table class="data-table"><tr><th>Сделка</th><th>Клиент</th><th>Сумма</th><th>Статус</th></tr>';
+        data.deals.forEach(d => {
+            html += `<tr><td>${d.title}</td><td>${d.client_name}</td><td>${d.amount?.toLocaleString() || 0} ₽</td><td>${d.status}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('deals-list').innerHTML = html;
+    } catch (e) { document.getElementById('deals-list').textContent = 'Ошибка'; }
+}
+
+document.getElementById('client-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = await MirAuth.getToken();
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/crm/clients', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form });
+        if (res.ok) { e.target.reset(); loadClients(); }
+        else { const data = await res.json(); alert(data.detail); }
+    } catch (err) { alert('Ошибка'); }
+});
+
+loadClients();
+loadDeals();
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{
+  "version": "5.0",
+  "source": "model_base.glb",
+  "nativeMorphs": [
+    "blink_L",
+    "blink_R",
+    "browUp_L",
+    "browUp_R",
+    "jawOpen",
+    "mouthOpen",
+    "mouthSmile_L",
+    "mouthSmile_R",
+    "mouthPucker",
+    "mouthFunnel",
+    "mouthClose"
+  ],
+  "mappingSource": "GLB mesh extras targetNames and native morphTargetDictionary",
+  "syntheticMorphsRemoved": true,
+  "productionCaps": {
+    "blink_L": 0.82,
+    "blink_R": 0.82,
+    "browUp_L": 0.55,
+    "browUp_R": 0.55,
+    "jawOpen": 0.48,
+    "mouthOpen": 0.44,
+    "mouthSmile_L": 0.42,
+    "mouthSmile_R": 0.42,
+    "mouthPucker": 0.46,
+    "mouthFunnel": 0.36,
+    "mouthClose": 0.55
+  },
+  "runtime": "conversation-state + audio-clock lip-sync",
+  "stateMachine": [
+    "idle",
+    "listen",
+    "think",
+    "speak"
+  ],
+  "features": [
+    "native morph bounded mixer",
+    "audio-duration timeline normalization",
+    "same-origin audio allowlist",
+    "pause/resume/stop",
+    "conversation demo",
+    "gaze/head cue",
+    "micro idle motion"
+  ],
+  "verifiedInThisPass": [
+    "JavaScript syntax",
+    "audio timeline duration mismatch correction",
+    "timeline clock initialization",
+    "same-origin audio URL validation",
+    "conversation demo wiring",
+    "reset wiring"
+  ],
+  "notVerifiedInThisPass": [
+    "real browser/WebGL2 screenshot in this headless environment",
+    "Android hardware performance",
+    "final TTS voice quality"
+  ]
+}

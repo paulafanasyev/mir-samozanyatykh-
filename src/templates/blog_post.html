@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}{{ slug }} — Блог — Мир Самозанятых{% endblock %}
+{% block page %}blog_post{% endblock %}
+
+{% block extra_head %}
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Мир Самозанятых">
+<meta id="ogTitle" property="og:title" content="">
+<meta id="ogDesc" property="og:description" content="">
+<meta id="ogImage" property="og:image" content="">
+<meta id="ogUrl" property="og:url" content="">
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--space-16) var(--space-6); max-width: 800px;">
+  <!-- Breadcrumb -->
+  <nav style="margin-bottom: var(--space-6); font-size: 0.875rem; color: var(--text-tertiary);" data-animate>
+    <a href="/" style="color: var(--text-link); text-decoration: none;">Главная</a>
+    <span style="margin: 0 var(--space-2);">/</span>
+    <a href="/blog" style="color: var(--text-link); text-decoration: none;">Блог</a>
+    <span style="margin: 0 var(--space-2);">/</span>
+    <span id="breadcrumbTitle" style="color: var(--text-secondary);">Загрузка...</span>
+  </nav>
+
+  <div id="postContent">
+    <div class="skeleton skeleton-title" style="margin-bottom: var(--space-4); height: 2.5rem;"></div>
+    <div class="skeleton skeleton-text" style="width: 40%; margin-bottom: var(--space-8);"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem;"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem;"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem; width: 80%;"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem; margin-top: var(--space-4);"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem;"></div>
+    <div class="skeleton skeleton-text" style="height: 1rem; width: 70%;"></div>
+  </div>
+
+  <!-- Share -->
+  <div id="shareSection" style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-color); display: none;" data-animate>
+    <p style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: var(--space-3);">Поделиться:</p>
+    <div style="display: flex; gap: var(--space-3);">
+      <button class="btn btn-sm btn-secondary" onclick="shareSocial('vk')" title="ВКонтакте">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.57 4 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.678.864 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.254-1.406 2.151-3.574 2.151-3.574.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="shareSocial('tg')" title="Telegram">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="shareSocial('ok')" title="Одноклассники">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 3.6a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 0 1 0-7.2zm4.8 14.4h-1.2c-.96 0-1.2-.48-2.4-1.44-1.2-.96-1.68-1.08-1.92-1.08-.36 0-.48.12-.48.72v1.68c0 .48-.24.72-1.44.72-2.16 0-3.84-1.2-5.04-3.36C3.84 12.24 3.36 9.84 3.36 9.36c0-.36.12-.6.72-.6h1.92c.48 0 .72.24.96.84.96 3.12 2.64 5.64 3.36 5.64.24 0 .36-.12.36-.84v-3.12c-.12-1.44-.84-1.56-.84-2.04 0-.24.24-.48.6-.48h3.24c.48 0 .6.24.6.84v3.36c0 .48.24.72.36.72.24 0 .48-.12.96-.72 1.44-1.68 2.52-4.32 2.52-4.32.12-.36.36-.6.84-.6h1.92c.6 0 .72.36.6.84-.24 1.2-2.76 4.92-2.76 4.92-.24.36-.36.6 0 1.08.24.36 1.08 1.08 1.68 1.68 1.08 1.08 1.92 1.92 2.16 2.52.24.6-.12.96-.72.96z"/></svg>
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="copyLink()" title="Копировать ссылку">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  <div style="margin-top: var(--space-12); padding-top: var(--space-8); border-top: 1px solid var(--border-color);" data-animate>
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-3);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;color:var(--primary-500);"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Комментарии
+    </h2>
+
+    <!-- Comment Form -->
+    <div class="card" style="margin-bottom: var(--space-8);">
+      <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: var(--space-4); color: var(--text-primary);">Оставить комментарий</h3>
+      <form id="commentForm">
+        <div class="form-group">
+          <textarea class="form-textarea" id="commentContent" rows="4" placeholder="Напишите ваш комментарий..." required></textarea>
+        </div>
+        <div id="guestFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4);">
+          <div class="form-group" style="margin-bottom:0;">
+            <input type="text" class="form-input" id="commentName" placeholder="Ваше имя">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <input type="email" class="form-input" id="commentEmail" placeholder="Email (не публикуется)">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Отправить
+        </button>
+      </form>
+    </div>
+
+    <!-- Comments List -->
+    <div id="commentsList">
+      <div class="skeleton skeleton-text" style="height: 4rem; margin-bottom: var(--space-4);"></div>
+      <div class="skeleton skeleton-text" style="height: 4rem; width: 90%;"></div>
+    </div>
+  </div>
+
+  <!-- Related Posts -->
+  <div id="relatedPosts" style="margin-top: var(--space-12);"></div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+(function() {
+  const slug = '{{ slug }}';
+  let postId = null;
+  let postTitle = '';
+  let postUrl = window.location.href;
+
+  async function loadPost() {
+    try {
+      const post = await MirSamozanyatykh.API.get('/api/blog/posts/' + slug);
+      postId = post.id;
+      postTitle = post.title;
+      postUrl = window.location.href;
+
+      // Update meta
+      document.getElementById('ogTitle').content = post.title;
+      document.getElementById('ogDesc').content = post.meta_description || post.excerpt || '';
+      document.getElementById('ogImage').content = post.cover_image || '';
+      document.getElementById('ogUrl').content = postUrl;
+      document.title = post.title + ' — Блог — Мир Самозанятых';
+      document.getElementById('breadcrumbTitle').textContent = post.title;
+
+      const html = `
+        <div style="margin-bottom: var(--space-8);" data-animate>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-4);">
+            ${post.tags.map(t => `<span class="badge" style="background:${t.color}20;color:${t.color};">${t.name}</span>`).join('')}
+          </div>
+          <h1 style="font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; line-height: 1.2; margin-bottom: var(--space-4);">${post.title}</h1>
+          <div style="display:flex;align-items:center;gap:var(--space-4);color:var(--text-tertiary);font-size:0.875rem;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:var(--space-1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ${post.author_name}
+            </span>
+            <span style="display:flex;align-items:center;gap:var(--space-1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${new Date(post.published_at || post.created_at).toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'})}
+            </span>
+            <span style="display:flex;align-items:center;gap:var(--space-1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              ${post.views} просмотров
+            </span>
+            <button class="btn btn-sm btn-ghost" onclick="likePost()" style="display:flex;align-items:center;gap:var(--space-1);color:var(--danger);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span id="likeCount">${post.likes}</span>
+            </button>
+          </div>
+        </div>
+        ${post.cover_image ? '<div style="height:400px;background:url('' + post.cover_image + '') center/cover;border-radius:var(--radius-2xl);margin-bottom:var(--space-8);box-shadow:var(--shadow-lg);" data-animate></div>' : ''}
+        <div style="font-size:1.0625rem;line-height:1.8;color:var(--text-secondary);" data-animate>
+          ${post.content.replace(/\n/g, '<br>')}
+        </div>
+      `;
+      document.getElementById('postContent').innerHTML = html;
+      document.getElementById('shareSection').style.display = 'block';
+
+      // Related posts
+      if (post.related_posts && post.related_posts.length) {
+        document.getElementById('relatedPosts').innerHTML = `
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-2);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--accent-500);"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            Похожие статьи
+          </h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4);">
+            ${post.related_posts.map(r => `
+              <a href="/blog/${r.slug}" class="card" style="text-decoration: none; transition: transform var(--transition-base);" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                ${r.cover_image ? '<div style="height:140px;background:url('' + r.cover_image + '') center/cover;border-radius:var(--radius-md);margin-bottom:var(--space-3);"></div>' : ''}
+                <h4 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); line-height: 1.4; margin-bottom: var(--space-2);">${r.title}</h4>
+                <p style="font-size: 0.8125rem; color: var(--text-tertiary); line-height: 1.5;">${r.excerpt ? r.excerpt.substring(0, 100) + '...' : ''}</p>
+              </a>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      loadComments();
+    } catch (err) {
+      document.getElementById('postContent').innerHTML = '<div class="alert alert-danger" style="margin-top: var(--space-8);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Статья не найдена</span></div>';
+      document.getElementById('breadcrumbTitle').textContent = 'Не найдено';
+    }
+  }
+
+  async function loadComments() {
+    if (!postId) return;
+    try {
+      const data = await MirSamozanyatykh.API.get('/api/blog/posts/' + postId + '/comments');
+      const list = document.getElementById('commentsList');
+
+      if (!data.comments || !data.comments.length) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);padding:var(--space-8);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto var(--space-4);opacity:0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Пока нет комментариев. Будьте первым!</p></div>';
+        return;
+      }
+
+      function renderComment(c, level) {
+        const indent = level > 0 ? 'margin-left: ' + (level * 2) + 'rem; border-left: 2px solid var(--border-color); padding-left: var(--space-4);' : '';
+        return `
+          <div style="padding: var(--space-4) 0; ${indent} ${level === 0 ? 'border-bottom: 1px solid var(--border-color);' : ''}">
+            <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;flex-shrink:0;">
+                ${c.author_name ? c.author_name.charAt(0).toUpperCase() : 'Г'}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:0.9375rem;color:var(--text-primary);">${c.author_name || 'Гость'}</div>
+                <div style="font-size:0.75rem;color:var(--text-tertiary);">${new Date(c.created_at).toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+              </div>
+            </div>
+            <p style="color:var(--text-secondary);font-size:0.9375rem;line-height:1.7;">${c.content}</p>
+            ${c.replies && c.replies.length ? '<div style="margin-top:var(--space-3);">' + c.replies.map(r => renderComment(r, level + 1)).join('') + '</div>' : ''}
+          </div>
+        `;
+      }
+
+      list.innerHTML = data.comments.map(c => renderComment(c, 0)).join('');
+    } catch (e) {
+      document.getElementById('commentsList').innerHTML = '<p style="color:var(--danger);text-align:center;padding:var(--space-4);">Ошибка загрузки комментариев</p>';
+    }
+  }
+
+  window.likePost = async function() {
+    if (!postId) return;
+    try {
+      const res = await MirSamozanyatykh.API.post('/api/blog/posts/' + postId + '/like');
+      document.getElementById('likeCount').textContent = res.likes;
+    } catch (e) {}
+  };
+
+  window.shareSocial = function(network) {
+    const urls = {
+      vk: 'https://vk.com/share.php?url=' + encodeURIComponent(postUrl) + '&title=' + encodeURIComponent(postTitle),
+      tg: 'https://t.me/share/url?url=' + encodeURIComponent(postUrl) + '&text=' + encodeURIComponent(postTitle),
+      ok: 'https://connect.ok.ru/offer?url=' + encodeURIComponent(postUrl) + '&title=' + encodeURIComponent(postTitle)
+    };
+    if (urls[network]) window.open(urls[network], '_blank', 'width=600,height=400');
+  };
+
+  window.copyLink = function() {
+    MirSamozanyatykh.Clipboard.copy(postUrl);
+  };
+
+  // Comment form
+  document.getElementById('commentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!postId) return;
+
+    const content = document.getElementById('commentContent').value.trim();
+    if (!content) return;
+
+    const btn = this.querySelector('button[type="submit"]');
+    btn.classList.add('loading');
+
+    try {
+      await MirSamozanyatykh.API.post('/api/blog/posts/' + postId + '/comments', {
+        content: content,
+        author_name: document.getElementById('commentName').value || null,
+        author_email: document.getElementById('commentEmail').value || null
+      });
+
+      document.getElementById('commentContent').value = '';
+      MirSamozanyatykh.Toast.show('Комментарий отправлен! Он появится после модерации.', 'success', 4000);
+      loadComments();
+    } catch (err) {
+      MirSamozanyatykh.Toast.show('Ошибка отправки комментария', 'danger');
+    } finally {
+      btn.classList.remove('loading');
+    }
+  });
+
+  loadPost();
+})();
+</script>
+{% endblock %}

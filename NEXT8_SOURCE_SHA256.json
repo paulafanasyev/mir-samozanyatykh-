@@ -1,0 +1,132 @@
+[
+  {
+    "file": "Accounting.tsx",
+    "size": 11412,
+    "sha256": "c77a152022db3fd9e7160681f80653bef073d058d5c797a3ad28265aaf60d344"
+  },
+  {
+    "file": "AdminPanel.tsx",
+    "size": 22357,
+    "sha256": "885135d24f5b1da0826728bdd8c2859c63263b195198917cd5d62fca44d8a5ea"
+  },
+  {
+    "file": "AuditLogs.tsx",
+    "size": 14251,
+    "sha256": "6b4b64e98adbd64f144b94ea91c5fd3e2e0aed364e22ed9f658c1f5175f8d5c5"
+  },
+  {
+    "file": "CalendarPage.tsx",
+    "size": 15374,
+    "sha256": "a9b7cd9be5d43c2c841c7ef758cd30a20692981decd53c60b71362831665fd82"
+  },
+  {
+    "file": "Clients.tsx",
+    "size": 6396,
+    "sha256": "b783f8955f5efa8d3792ee341a7f18d077e590cdf44411d70167c4a9b96e8f03"
+  },
+  {
+    "file": "Contracts.tsx",
+    "size": 2697,
+    "sha256": "28c59ca384aeae08f81c1ddd7b17dfb3f906e1eebd18fa2e37fb0ff0f1a5cb0e"
+  },
+  {
+    "file": "Dashboard.tsx",
+    "size": 6651,
+    "sha256": "30c784c4966b081e4ddc53867d7edc936781c705851330d57fd4b569b8333887"
+  },
+  {
+    "file": "Deals.tsx",
+    "size": 10441,
+    "sha256": "eb9a116ef55f1dd906e7355e23f5b8fde53e2c8cfc8a1e8a166d2536c52ac612"
+  },
+  {
+    "file": "DocsPage.tsx",
+    "size": 15700,
+    "sha256": "55f71eaa2194dcb7efb7ad1b7c54d84b42de9434b4c6a303aede24afd61364a0"
+  },
+  {
+    "file": "Downloads.tsx",
+    "size": 4580,
+    "sha256": "e55f535c69fb43829acfa21d0537d0a6676d23999305a899c197cd260cd4581f"
+  },
+  {
+    "file": "EmailCampaigns.tsx",
+    "size": 9636,
+    "sha256": "b0ad0db44c39ea57a4e9a90160bc8fffece60f2d3b05f1627eb1c366fa21afeb"
+  },
+  {
+    "file": "Home.tsx",
+    "size": 8168,
+    "sha256": "dbfb48c73445c1dd964be198fdfee8a32b33ae593d7728eed87d07a7af3f0977"
+  },
+  {
+    "file": "Integrations.tsx",
+    "size": 22559,
+    "sha256": "9eb147729f863947c8b8abae4509096385e6853cbf4dd0239c425bdd6db9f3f3"
+  },
+  {
+    "file": "Invoices.tsx",
+    "size": 10570,
+    "sha256": "3f5c709f4a451f522df029ef4d1764e238589005675ba56e90443335d631b642"
+  },
+  {
+    "file": "Login.tsx",
+    "size": 4856,
+    "sha256": "f40bc8865b59fa50013d713fbf76acb19ffc3730a5dfa323c31275033a6cda89"
+  },
+  {
+    "file": "Notifications.tsx",
+    "size": 8048,
+    "sha256": "a7091976ccb7ab2714496979cba87e0a6e916248b4a2997c6dd613b601f94b25"
+  },
+  {
+    "file": "Products.tsx",
+    "size": 4927,
+    "sha256": "93de5a00c4351684c13159e793edc828aaa78826170b9c335f670204103571bc"
+  },
+  {
+    "file": "Profile.tsx",
+    "size": 1567,
+    "sha256": "b3b747a58d2fed76db6986b4bb2f9ac6dd8c280297826cb4b12a9474e39fa1a6"
+  },
+  {
+    "file": "ReceiptCheck.tsx",
+    "size": 7898,
+    "sha256": "c6ce5780f994f7482d01451987d7607697e23ea297f12c81399ccccce42d6c0d"
+  },
+  {
+    "file": "Referrals.tsx",
+    "size": 13902,
+    "sha256": "09570b04f915fcd5f1de799f69cbbb4426808079f05daafffd32b8eaf66a7d86"
+  },
+  {
+    "file": "Register.tsx",
+    "size": 3290,
+    "sha256": "09ecf1006007d90cc368c984a9a35de033f5f95ba09f259c4acfe9e06352f89f"
+  },
+  {
+    "file": "ResetPassword.tsx",
+    "size": 3214,
+    "sha256": "ef8bb1b9dca88d15383f5f93eef2268eea0a4642eaa05c4a55079e3e90f663e7"
+  },
+  {
+    "file": "Svetlana.tsx",
+    "size": 6181,
+    "sha256": "0dd2c52beb13244fcb5843df95366af4865e09d1252301ff3620cec0fd3663df"
+  },
+  {
+    "file": "Tasks.tsx",
+    "size": 19853,
+    "sha256": "24cc9cc81514397151f732acf2fbc33ea164e07e2d139e37bb4c9142bc8aac5f"
+  },
+  {
+    "file": "TaxReports.tsx",
+    "size": 11374,
+    "sha256": "527a1d3086b975e00049ef1eceb977395bc8f069e0537d2603552f6dc90d3a06"
+  },
+  {
+    "file": "VerifyEmail.tsx",
+    "size": 1455,
+    "sha256": "3a76b4a3b7d0efdc839c87ceb8b55fd01ff2b150bb304b56ef037162279f44b4"
+  }
+]

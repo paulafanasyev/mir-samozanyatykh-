@@ -1,0 +1,10 @@
+{
+  "backend_route_decorators": 234,
+  "mobile_raw_dio_screens": [],
+  "mobile_demo_literals": [
+    [
+      "mobile/lib/presentation/screens/home/home_screen.dart",
+      "Отправить КП"
+    ]
+  ]
+}

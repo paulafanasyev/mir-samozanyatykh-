@@ -1,0 +1,18 @@
+{
+  "version": "5.0",
+  "jsSyntax": "pass",
+  "nativeMorphs": 11,
+  "audioDurationSeconds": 3.455374149659864,
+  "timelineLastEndSeconds": 2.36,
+  "timelineNormalization": "enabled",
+  "audioUrlPolicy": "same-origin/blob/data",
+  "conversationStates": [
+    "idle",
+    "listen",
+    "think",
+    "speak"
+  ],
+  "visualRegressionSource": "qa/*.png from the same Svetlana GLB",
+  "browserWebGL2": "not_verified_due_to_headless_EGL_failure",
+  "note": "Storyboard is composed only from real Svetlana renders; it is not claimed to be a fresh browser runtime screenshot."
+}

@@ -1,0 +1,24 @@
+{
+  "library": "three.js",
+  "version": "0.179.1",
+  "upstream_ref": "r179",
+  "upstream_repo": "mrdoob/three.js",
+  "upstream_tree_sha": "54ac263593c81b669ca9a089491ddd9e240427d2",
+  "required_files": {
+    "build/three.module.js": {
+      "blob_sha": "6c6b8a0880aa505b5ffadea5a3d68b15d74698fa",
+      "size": 603380
+    },
+    "build/three.core.js": {
+      "blob_sha": "3ed693adea2a7e940c56d16b4bfa0e61041c076a",
+      "size": 1401321
+    },
+    "examples/jsm/loaders/GLTFLoader.js": {
+      "blob_sha": "e8593bd4c60d56f99361ae349a46878482216fdd"
+    },
+    "examples/jsm/utils/BufferGeometryUtils.js": {
+      "blob_sha": "611478bf4177c2923a989f4c6c4a259b60cfb3c2"
+    }
+  },
+  "note": "All vendor files must come from exactly this upstream ref. No CDN fallback is permitted."
+}

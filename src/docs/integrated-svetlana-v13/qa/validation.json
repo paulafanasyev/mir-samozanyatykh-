@@ -1,0 +1,21 @@
+{
+  "glb_size_bytes": 43580292,
+  "mesh_count": 1,
+  "vertex_count": 155043,
+  "triangle_count": 263660,
+  "native_morph_names": [
+    "blink_L",
+    "blink_R",
+    "browUp_L",
+    "browUp_R",
+    "jawOpen",
+    "mouthOpen",
+    "mouthSmile_L",
+    "mouthSmile_R",
+    "mouthPucker",
+    "mouthFunnel",
+    "mouthClose"
+  ],
+  "exact_name_mapping_ok": true,
+  "browser_webgl_test": "not_passed_in_this_environment"
+}

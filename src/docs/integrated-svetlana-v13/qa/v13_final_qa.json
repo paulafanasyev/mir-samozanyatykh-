@@ -1,0 +1,15 @@
+{
+  "version":"13.0.0",
+  "android_host":"hardened",
+  "webview_local_assets":true,
+  "external_navigation_blocked":true,
+  "android_js_bridge_allowlist":true,
+  "api_keys_in_client":false,
+  "js_syntax_checked":true,
+  "android_sdk_build":"not available in current execution environment",
+  "apk_created":false,
+  "real_device_screenshot":false,
+  "visual_reference":"qa/v70_real_model_regression_reference.png",
+  "visual_reference_is_project_render":true,
+  "visual_reference_is_new_v13_screenshot":false
+}

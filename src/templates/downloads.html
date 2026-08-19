@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Скачать приложение — Мир Самозанятых{% endblock %}
+{% block page %}downloads{% endblock %}
+{% block content %}
+<section class="container" style="padding:4rem 1rem;max-width:1100px;">
+  <div class="card" style="padding:2rem;background:linear-gradient(135deg,#0f172a,#1e3a8a);color:white;border-radius:24px;">
+    <div style="font-weight:700;color:#bfdbfe;">✦ Светлана рядом</div>
+    <h1 style="font-size:clamp(2rem,5vw,3.5rem);margin:.6rem 0;">Мобильное приложение</h1>
+    <p style="max-width:760px;color:#dbeafe;line-height:1.7;">Один аккаунт для сайта и приложения. Светлана сопровождает пользователя внутри рабочего пространства.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:1.5rem;">
+    <div class="card" style="padding:1.5rem;">
+      <h2>Android</h2><p>Release APK для Android.</p>
+      {% if android_available %}
+      <a class="btn btn-primary" href="/downloads/android">Скачать APK</a>
+      {% else %}
+      <p style="color:#b45309;">⚠ Реальный APK пока не опубликован.</p>
+      {% endif %}
+    </div>
+    <div class="card" style="padding:1.5rem;">
+      <h2>iPhone / iPad</h2><p>App Store или TestFlight.</p>
+      {% if ios_url %}
+      <a class="btn btn-primary" href="{{ ios_url }}" rel="noopener">Открыть iOS</a>
+      {% else %}
+      <p style="color:#b45309;">⚠ Реальная ссылка App Store/TestFlight пока не опубликована.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem;padding:1rem 1.25rem;">
+    <strong>Без фиктивных загрузок:</strong> кнопки активируются только после размещения настоящего бинарника/ссылки.
+  </div>
+</section>
+{% endblock %}

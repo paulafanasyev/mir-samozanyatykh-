@@ -1,0 +1,17 @@
+{
+  "version": "9.0.0",
+  "source": "svetlana-avatar-v7.0.zip",
+  "full_runtime_included": true,
+  "web_bridge": "runtime/svetlana-v9-bridge.js",
+  "android_bridge": "android-bridge/SvetlanaWebViewBridge.kt",
+  "security": {
+    "client_api_secrets": false,
+    "same_origin_postmessage": true,
+    "android_message_allowlist": true,
+    "arbitrary_navigation_not_enabled_by_bridge": true
+  },
+  "qa": {
+    "real_svetlana_regression_reference": "qa/v70_real_model_regression_reference.png",
+    "new_webgl2_screenshot": false
+  }
+}

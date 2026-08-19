@@ -1,0 +1,8 @@
+{
+  "frontend/public/svetlana/model_base.glb": "9a65654d5de83f73201f9577b3fb44478d7ef6d0412b81c2467724a4de1151f5",
+  "frontend/public/svetlana/app.js": "e0b40c5135b73aef6374d78480e8b04cc953846b76db7bad12ba6edc281d878c",
+  "frontend/public/svetlana/index.html": "d8f636868471a60d5449b52fc16d5adc4cf1a4916d2a0b7bd971f9a579cc01f0",
+  "mobile/assets/svetlana/model_base.glb": "9a65654d5de83f73201f9577b3fb44478d7ef6d0412b81c2467724a4de1151f5",
+  "mobile/lib/presentation/widgets/common/svetlana_avatar_view.dart": "25da7c91a190401792b92badf571f55acc9d9414ed8bb293094ccedaf5f0bc9d",
+  "mobile/lib/presentation/screens/svetlana/svetlana_screen.dart": "177cc81d0b27b7077927f5209d6227853ddc5ba13f949bca7eeb604706e64fb4"
+}

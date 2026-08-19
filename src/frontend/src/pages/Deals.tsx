@@ -1,0 +1,230 @@
+import type { FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import apiClient from '../api/client'
+import { Plus, Handshake, ArrowRight, TrendingUp, AlertCircle, Calendar, DollarSign, Search, X, Check, Filter } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+interface Deal {
+id: number
+title: string
+amount: number | null
+status: string
+priority: string
+probability: number
+client_id: number | null
+stage_id: number | null
+expected_close_date: string | null
+created_at: string
+}
+interface PipelineStage {
+id: number
+name: string
+color: string
+order: number
+}
+export default function Deals() {
+const [deals, setDeals] = useState<Deal[]>([])
+const [stages, setStages] = useState<PipelineStage[]>([])
+const [clients, setClients] = useState<Array<{id:number; name:string}>>([])
+const [loading, setLoading] = useState(true)
+const [search, setSearch] = useState('')
+const [filterStatus, setFilterStatus] = useState('')
+const [showForm, setShowForm] = useState(false)
+const [form, setForm] = useState({ title: '', amount: '', client_id: '', stage_id: '', priority: 'medium', expected_close_date: '' })
+useEffect(() => {
+fetchData()
+}, [])
+const fetchData = async () => {
+try {
+const [dealsRes, stagesRes, clientsRes] = await Promise.all([
+apiClient.get('/api/crm/deals'),
+apiClient.get('/api/crm/pipeline-stages'),
+apiClient.get('/api/crm/clients'),
+])
+setDeals(dealsRes.data)
+setStages(stagesRes.data)
+setClients(Array.isArray(clientsRes.data) ? clientsRes.data : [])
+} catch {
+toast.error('Не удалось загрузить сделки')
+} finally {
+setLoading(false)
+}
+}
+const handleCreate = async (e: FormEvent) => {
+e.preventDefault()
+try {
+await apiClient.post('/api/crm/deals', {
+...form,
+amount: form.amount ? parseFloat(form.amount) : null,
+client_id: Number(form.client_id),
+stage_id: form.stage_id ? parseInt(form.stage_id) : null,
+})
+toast.success('Сделка создана')
+setShowForm(false)
+setForm({ title: '', amount: '', client_id: '', stage_id: '', priority: 'medium', expected_close_date: '' })
+fetchData()
+} catch {
+toast.error('Ошибка создания сделки')
+}
+}
+const handleMoveStage = async (dealId: number, stageId: number) => {
+try {
+await apiClient.post(`/api/crm/deals/${dealId}/move?stage_id=${stageId}`)
+toast.success('Сделка перемещена')
+fetchData()
+} catch {
+toast.error('Ошибка перемещения')
+}
+}
+const getStageColor = (stageId: number | null) => {
+const stage = stages.find(s => s.id === stageId)
+return stage?.color || '#64748b'
+}
+const getStageName = (stageId: number | null) => {
+const stage = stages.find(s => s.id === stageId)
+return stage?.name || 'Без этапа'
+}
+const getPriorityColor = (p: string) => {
+const colors: Record<string, string> = {
+low: 'bg-slate-100 text-slate-600',
+medium: 'bg-orange-100 text-orange-700',
+high: 'bg-orange-100 text-orange-700',
+urgent: 'bg-red-100 text-red-700',
+}
+return colors[p] || colors.medium
+}
+const filtered = deals.filter(d => {
+const matchSearch = d.title.toLowerCase().includes(search.toLowerCase())
+const matchStatus = !filterStatus || d.status === filterStatus
+return matchSearch && matchStatus
+})
+if (loading) return <div className='text-center py-12'>Загрузка...</div>
+return (
+<div className='space-y-6'>
+<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+<h1 className='text-2xl font-bold text-slate-900'>Сделки</h1>
+<button onClick={() => setShowForm(true)} className='bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-700 transition-colors'>
+<Plus className='w-4 h-4' /> Новая сделка
+</button>
+</div>
+{/* Filters */}
+<div className='flex flex-col sm:flex-row gap-3'>
+<div className='relative flex-1'>
+<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400' />
+<input type='text' placeholder='Поиск сделок...' value={search} onChange={e => setSearch(e.target.value)}
+className='w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none' />
+{search && <button onClick={() => setSearch('')} className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400'><X className='w-4 h-4' /></button>}
+</div>
+<select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none'>
+<option value=''>Все статусы</option>
+<option value='new'>Новая</option>
+<option value='won'>Выиграна</option>
+<option value='lost'>Проиграна</option>
+</select>
+</div>
+{/* Add Form */}
+{showForm && (
+<div className='bg-white p-5 rounded-xl border border-slate-200'>
+<div className='flex justify-between items-center mb-4'>
+<h3 className='font-semibold text-slate-900'>Новая сделка</h3>
+<button onClick={() => setShowForm(false)} className='text-slate-400 hover:text-slate-600'><X className='w-4 h-4' /></button>
+</div>
+<form onSubmit={handleCreate} className='grid sm:grid-cols-2 gap-4'>
+<input type='text' placeholder='Название сделки *' required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none' />
+<input type='number' placeholder='Сумма (₽)' value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none' />
+<select required value={form.client_id} onChange={e => setForm({...form, client_id: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none'><option value=''>Выберите клиента *</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+<select value={form.stage_id} onChange={e => setForm({...form, stage_id: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none'>
+<option value=''>Выберите этап</option>
+{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+</select>
+<select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none'>
+<option value='low'>Низкий</option>
+<option value='medium'>Средний</option>
+<option value='high'>Высокий</option>
+<option value='urgent'>Срочный</option>
+</select>
+<input type='date' placeholder='Ожидаемая дата закрытия' value={form.expected_close_date} onChange={e => setForm({...form, expected_close_date: e.target.value})} className='px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none' />
+<div className='sm:col-span-2'>
+<button type='submit' className='bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2'>
+<Check className='w-4 h-4' /> Создать сделку
+</button>
+</div>
+</form>
+</div>
+)}
+{/* Pipeline View */}
+<div className='bg-white rounded-xl border border-slate-200 overflow-hidden'>
+<div className='p-4 border-b border-slate-100'>
+<h2 className='font-semibold text-slate-900 flex items-center gap-2'>
+<Filter className='w-4 h-4' /> Воронка продаж
+</h2>
+</div>
+<div className='p-4 overflow-x-auto'>
+<div className='flex gap-4 min-w-max'>
+{stages.map(stage => {
+const stageDeals = filtered.filter(d => d.stage_id === stage.id)
+const stageAmount = stageDeals.reduce((sum, d) => sum + (d.amount || 0), 0)
+return (
+<div key={stage.id} className='w-72 flex-shrink-0'>
+<div className='flex items-center gap-2 mb-3'>
+<div className='w-3 h-3 rounded-full' style={{ backgroundColor: stage.color }} />
+<h3 className='font-medium text-slate-800 text-sm'>{stage.name}</h3>
+<span className='text-xs text-slate-400 ml-auto'>{stageDeals.length} · {stageAmount.toLocaleString('ru-RU')} ₽</span>
+</div>
+<div className='space-y-2'>
+{stageDeals.map(deal => (
+<div key={deal.id} className='bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-orange-200 transition-colors'>
+<h4 className='font-medium text-slate-800 text-sm mb-1'>{deal.title}</h4>
+{deal.amount && <p className='text-sm font-semibold text-slate-700'>{deal.amount.toLocaleString('ru-RU')} ₽</p>}
+<div className='flex items-center gap-2 mt-2'>
+<span className={`text-[10px] px-1.5 py-0.5 rounded ${getPriorityColor(deal.priority)}`}>{deal.priority}</span>
+{deal.probability > 0 && <span className='text-[10px] text-slate-400'>{deal.probability}%</span>}
+</div>
+{/* Move buttons */}
+<div className='flex gap-1 mt-2'>
+{stages.filter(s => s.id !== deal.stage_id).map(s => (
+<button key={s.id} onClick={() => handleMoveStage(deal.id, s.id)} className='text-[10px] px-2 py-1 rounded bg-white border border-slate-200 hover:border-orange-300 transition-colors' style={{ color: s.color }}>
+→ {s.name}
+</button>
+))}
+</div>
+</div>
+))}
+</div>
+</div>
+)
+})}
+</div>
+</div>
+</div>
+{/* Deals List */}
+<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+{filtered.filter(d => !d.stage_id).map(deal => (
+<div key={deal.id} className='bg-white p-5 rounded-xl border border-slate-200 hover:shadow-md transition-all'>
+<div className='flex items-center justify-between mb-2'>
+<h3 className='font-semibold text-slate-800'>{deal.title}</h3>
+<span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(deal.priority)}`}>{deal.priority}</span>
+</div>
+{deal.amount && <p className='text-lg font-bold text-slate-900 mb-2'>{deal.amount.toLocaleString('ru-RU')} ₽</p>}
+<div className='flex items-center gap-2 text-sm text-slate-500'>
+<TrendingUp className='w-3.5 h-3.5' />
+<span>{deal.probability}% вероятность</span>
+</div>
+{deal.expected_close_date && (
+<div className='flex items-center gap-2 text-sm text-slate-500 mt-1'>
+<Calendar className='w-3.5 h-3.5' />
+<span>{new Date(deal.expected_close_date).toLocaleDateString('ru-RU')}</span>
+</div>
+)}
+</div>
+))}
+</div>
+{filtered.length === 0 && (
+<div className='text-center py-12'>
+<Handshake className='w-12 h-12 text-slate-300 mx-auto mb-3' />
+<p className='text-slate-500'>{search || filterStatus ? 'Сделки не найдены' : 'Пока нет сделок'}</p>
+</div>
+)}
+</div>
+)
+}

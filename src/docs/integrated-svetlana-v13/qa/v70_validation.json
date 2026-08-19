@@ -1,0 +1,23 @@
+{
+  "version": "7.0",
+  "native_morph_count": 11,
+  "features": [
+    "conversation_queue",
+    "interrupt",
+    "state_event_bus",
+    "listen_think_speak_idle",
+    "audio_generation_guard",
+    "page_lifecycle",
+    "visibility_pause",
+    "tts",
+    "russian_visemes",
+    "emotion",
+    "blink",
+    "gaze"
+  ],
+  "js_syntax": "passed",
+  "visual_qa": "regression_reference_only",
+  "webgl2_runtime": "not_verified_in_current_headless_environment",
+  "timeline_completion_guard": "passed",
+  "audio_generation_guard": "passed"
+}

@@ -1,0 +1,8 @@
+{
+  "version": "11.0.0",
+  "visual_reference": "v70_real_model_regression_reference.png",
+  "visual_reference_is_new_runtime_screenshot": false,
+  "real_webgl2_screenshot": false,
+  "reason": "Current environment does not provide a validated browser WebGL2 runtime.",
+  "policy": "Only real Svetlana project renders may be used as visual evidence."
+}

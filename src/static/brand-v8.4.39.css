@@ -1,0 +1,9 @@
+/* Brand layer v8.4.39: logo + warm orange/gold system. */
+:root { --brand-orange:#f97316; --brand-gold:#f6b73c; --brand-ink:#171a22; }
+body { background:#f7f7f5 !important; }
+.brand-identity { position:fixed; left:18px; top:18px; z-index:900; display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid #ece7df; border-radius:16px; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); color:#171a22; font-weight:800; text-decoration:none; box-shadow:0 10px 30px rgba(23,26,34,.07); }
+.brand-identity img { width:34px; height:34px; object-fit:contain; }
+.brand-identity span { font-size:14px; }
+[data-theme="dark"] body { background:#0d1016 !important; color:#f8fafc; }
+[data-theme="dark"] .brand-identity { background:#151922; border-color:#272d39; color:#f8fafc; box-shadow:none; }
+.btn-primary, .hero-cta .btn-primary { background:linear-gradient(135deg,#f97316,#f59e0b) !important; border-color:transparent !important; }

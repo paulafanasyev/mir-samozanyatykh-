@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Вход — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <h2>Вход в систему</h2>
+    <form id="login-form">
+        <input type="email" name="email" placeholder="Email" required maxlength="255">
+        <input type="password" autocomplete="current-password" name="password" placeholder="Пароль" required maxlength="128">
+        <button type="submit" class="btn-primary">Войти</button>
+    </form>
+    <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    try {
+        const res = await fetch('/api/auth/login', { method: 'POST', body: form });
+        const data = await res.json();
+        if (res.ok) {
+            MirAuth.setToken(data.access_token);
+            window.location.href = '/dashboard';
+        } else {
+            alert(data.detail || 'Ошибка входа');
+        }
+    } catch (err) {
+        alert('Ошибка сети');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+import 'package:flutter/material.dart';
+import '../../../data/datasources/remote/api_client.dart';
+
+class EditProfileScreen extends StatefulWidget { const EditProfileScreen({super.key}); @override State<EditProfileScreen> createState()=>_EditProfileScreenState(); }
+class _EditProfileScreenState extends State<EditProfileScreen>{ final _api=ApiClient(); final _name=TextEditingController(); final _phone=TextEditingController(); final _inn=TextEditingController(); bool _loading=true,_saving=false;
+ @override void initState(){super.initState();_load();} @override void dispose(){_name.dispose();_phone.dispose();_inn.dispose();super.dispose();}
+ Future<void> _load() async {try{final r=await _api.getCurrentUser();final d=Map<String,dynamic>.from(r.data as Map);_name.text=d['name']?.toString()??d['full_name']?.toString()??'';_phone.text=d['phone']?.toString()??'';_inn.text=d['inn']?.toString()??'';}finally{if(mounted)setState(()=>_loading=false);}}
+ Future<void> _save() async {setState(()=>_saving=true);try{await _api.dio.put('/api/users/me',data:{'name':_name.text.trim(),'phone':_phone.text.trim(),'inn':_inn.text.trim()});if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Профиль сохранён')));}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Ошибка: $e')));}finally{if(mounted)setState(()=>_saving=false);}}
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Редактировать профиль')),body:_loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(16),children:[TextField(controller:_name,decoration:const InputDecoration(labelText:'Имя')),const SizedBox(height:16),TextField(controller:_phone,decoration:const InputDecoration(labelText:'Телефон')),const SizedBox(height:16),TextField(controller:_inn,decoration:const InputDecoration(labelText:'ИНН')),const SizedBox(height:24),FilledButton(onPressed:_saving?null:_save,child:_saving?const CircularProgressIndicator():const Text('Сохранить'))]));
+}

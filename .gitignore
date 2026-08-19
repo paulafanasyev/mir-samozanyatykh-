@@ -1,0 +1,83 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+*.secrets
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Databases / local runtime
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+*.db-journal
+data/
+storage/
+uploads/
+backups/
+
+# Logs
+*.log
+logs/
+
+# Node / frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+dist/
+build/
+.vite/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.packages
+build/
+coverage/
+
+# Android / Gradle
+.gradle/
+local.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# iOS
+Pods/
+DerivedData/
+*.xcuserstate
+*.mobileprovision
+*.cer
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

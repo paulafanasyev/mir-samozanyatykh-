@@ -1,0 +1,29 @@
+{
+  "project": "mir-samozanyatykh",
+  "svetlana": "v13",
+  "source_archive": {
+    "path": "docs/source-archives/svetlana-avatar-v13.0.zip",
+    "bytes": 38749263,
+    "sha256": "dd6e6c2c80fa6478acb40c051328ec12f5820a6098dcf4ee7cf6aadfe6d25e4b"
+  },
+  "web": {
+    "app.js": "25985ebefef259fbed5439665020f95de405b1d7228ccb6c599cde49590ee4b8",
+    "index.html": "d8f636868471a60d5449b52fc16d5adc4cf1a4916d2a0b7bd971f9a579cc01f0",
+    "model_base.glb": "9a65654d5de83f73201f9577b3fb44478d7ef6d0412b81c2467724a4de1151f5",
+    "assets/svetlana_tts_smoke_test.wav": "e69cfa850489b6f77007c9ef0882604729d45cd65a669cb0162416dace3289bc"
+  },
+  "mobile": {
+    "app.js": "25985ebefef259fbed5439665020f95de405b1d7228ccb6c599cde49590ee4b8",
+    "index.html": "d8f636868471a60d5449b52fc16d5adc4cf1a4916d2a0b7bd971f9a579cc01f0",
+    "model_base.glb": "9a65654d5de83f73201f9577b3fb44478d7ef6d0412b81c2467724a4de1151f5",
+    "assets/svetlana_tts_smoke_test.wav": "e69cfa850489b6f77007c9ef0882604729d45cd65a669cb0162416dace3289bc"
+  },
+  "security": {
+    "chat_rate_limit": "30/minute",
+    "legacy_chat_xss": "textContent",
+    "bridge_origin": "same-origin-only",
+    "bridge_max_queue": 32,
+    "bridge_max_text": 8000
+  },
+  "known_runtime_dependency": "Three.js 0.179.1 + GLTFLoader loaded from jsDelivr; model/audio are local."
+}

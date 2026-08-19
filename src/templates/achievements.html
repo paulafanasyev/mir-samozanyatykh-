@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Достижения — Мир Самозанятых{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h2>🏆 Достижения</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="total-points">0</div>
+            <div class="stat-label">Баллов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="earned-count">0</div>
+            <div class="stat-label">Получено</div>
+        </div>
+    </div>
+
+    <section class="dashboard-section">
+        <h3>Мои достижения</h3>
+        <div id="achievements-list">Загрузка...</div>
+    </section>
+
+    <section class="dashboard-section">
+        <h3>🏅 Топ-20 лидеров</h3>
+        <div id="leaderboard">Загрузка...</div>
+    </section>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+async function loadAchievements() {
+    const token = await MirAuth.getToken();
+    try {
+        const res = await fetch('/api/gamification/achievements', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        document.getElementById('total-points').textContent = data.total_points;
+        document.getElementById('earned-count').textContent = data.earned_count + '/' + data.total_count;
+
+        let html = '<div class="achievements-grid">';
+        data.achievements.forEach(a => {
+            const opacity = a.earned ? '1' : '0.4';
+            html += `<div class="achievement-card" style="opacity:${opacity}"><div class="achievement-icon">${a.icon}</div><h4>${a.title}</h4><p>${a.description}</p><span class="points">+${a.points}</span></div>`;
+        });
+        html += '</div>';
+        document.getElementById('achievements-list').innerHTML = html;
+    } catch (e) { document.getElementById('achievements-list').textContent = 'Ошибка'; }
+}
+
+async function loadLeaderboard() {
+    try {
+        const res = await fetch('/api/gamification/leaderboard');
+        const data = await res.json();
+        let html = '<table class="data-table"><tr><th>#</th><th>Имя</th><th>Баллы</th></tr>';
+        data.leaderboard.forEach(l => {
+            html += `<tr><td>${l.rank}</td><td>${l.name}</td><td>${l.points}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('leaderboard').innerHTML = html;
+    } catch (e) { document.getElementById('leaderboard').textContent = 'Ошибка'; }
+}
+
+loadAchievements();
+loadLeaderboard();
+</script>
+{% endblock %}
