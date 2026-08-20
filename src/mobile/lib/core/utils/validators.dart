@@ -32,6 +32,14 @@ class Validators {
 class Formatters {
   Formatters._();
 
-  static String currency(num value) => NumberFormat('#,##0.##', 'ru_RU').format(value).replaceAll(',', ' ') + ' ₽';
+  static String currency(num value) {
+    final formatted = NumberFormat('#,##0.##', 'ru_RU')
+        .format(value)
+        .replaceAll(',', ' ')
+        .replaceAll('\u00A0', ' ')
+        .replaceAll('\u202F', ' ');
+    return '$formatted ₽';
+  }
+
   static String date(DateTime value) => DateFormat('dd.MM.yyyy').format(value);
 }
