@@ -21,29 +21,28 @@ from .logging import logger
 def _normalize_database_url(url: str) -> URL | str:
     """Build a SQLAlchemy URL object from a Render PostgreSQL URL.
 
-    Passing the URL object directly to SQLAlchemy avoids a second parse of the
-    connection string and safely handles URL-encoded credentials.
+    Render dashboard values are sometimes pasted with surrounding quotes or
+    as a complete ``DATABASE_URL=...`` assignment. Normalize those harmless
+    wrappers first, then pass a structured SQLAlchemy URL to the engine so
+    SQLAlchemy never has to parse the original connection string again.
     """
     value = url.strip()
-    if value.startswith("postgresql+asyncpg://"):
-        return URL.create(
-            drivername="postgresql+asyncpg",
-            username=unquote(urlsplit(value).username) if urlsplit(value).username is not None else None,
-            password=unquote(urlsplit(value).password) if urlsplit(value).password is not None else None,
-            host=urlsplit(value).hostname,
-            port=urlsplit(value).port,
-            database=urlsplit(value).path.lstrip("/") or None,
-            query=dict(parse_qsl(urlsplit(value).query, keep_blank_values=True)),
-        )
 
-    if value.startswith("postgresql://"):
-        value = value[len("postgresql://"):]
+    if value.startswith("DATABASE_URL="):
+        value = value[len("DATABASE_URL="):].strip()
+
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1].strip()
+
+    if value.startswith("postgresql+asyncpg://"):
+        parsed = urlsplit(value)
+    elif value.startswith("postgresql://"):
+        parsed = urlsplit(value)
     elif value.startswith("postgres://"):
-        value = value[len("postgres://"):]
+        parsed = urlsplit(value)
     else:
         return value
 
-    parsed = urlsplit("postgresql://" + value)
     if not parsed.hostname:
         raise ValueError("DATABASE_URL does not contain a PostgreSQL hostname")
 
@@ -82,32 +81,3 @@ async_session = async_sessionmaker(
     expire_on_commit=False,
     autoflush=False,
 )
-
-# Declarative base
-Base = declarative_base()
-
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency для получения сессии БД в FastAPI"""
-    async with async_session() as session:
-        try:
-            yield session
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"Database transaction error: {e}")
-            raise
-        finally:
-            await session.close()
-
-
-async def init_db():
-    """Инициализация базы данных (создание таблиц)"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created")
-
-
-async def close_db():
-    """Закрытие соединений с БД"""
-    await engine.dispose()
-    logger.info("Database connections closed")
