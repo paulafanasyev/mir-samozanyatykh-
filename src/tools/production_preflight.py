@@ -1,30 +1,71 @@
 #!/usr/bin/env python3
-import base64, os, re, sys
-required = ["SECRET_KEY","BANK_ENCRYPTION_KEY","POSTGRES_PASSWORD","REDIS_PASSWORD","DOMAIN","FRONTEND_URL"]
-missing=[k for k in required if not os.getenv(k)]
+"""Validate the environment required before starting the production API.
+
+Render supplies DATABASE_URL and REDIS_URL as connection strings. The
+preflight must therefore validate those runtime contracts instead of
+requiring database/cache passwords as separate environment variables.
+"""
+import base64
+import os
+import re
+import sys
+from urllib.parse import urlparse
+
+
+def fail(message: str) -> None:
+    print(message)
+    sys.exit(1)
+
+
+required = [
+    "SECRET_KEY",
+    "BANK_ENCRYPTION_KEY",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "DOMAIN",
+    "FRONTEND_URL",
+]
+missing = [key for key in required if not os.getenv(key)]
 if missing:
-    print("Missing required production variables: " + ", ".join(missing)); sys.exit(1)
-if os.getenv("DEBUG","false").lower() in {"1","true","yes","on"}:
-    print("DEBUG must be false in production"); sys.exit(1)
+    fail("Missing required production variables: " + ", ".join(missing))
+
+if os.getenv("DEBUG", "false").lower() in {"1", "true", "yes", "on"}:
+    fail("DEBUG must be false in production")
+
 if len(os.environ["SECRET_KEY"]) < 64:
-    print("SECRET_KEY must be at least 64 characters"); sys.exit(1)
+    fail("SECRET_KEY must be at least 64 characters")
+
 try:
-    raw=base64.urlsafe_b64decode(os.environ["BANK_ENCRYPTION_KEY"] + "=" * (-len(os.environ["BANK_ENCRYPTION_KEY"]) % 4))
+    raw = base64.urlsafe_b64decode(
+        os.environ["BANK_ENCRYPTION_KEY"]
+        + "=" * (-len(os.environ["BANK_ENCRYPTION_KEY"]) % 4)
+    )
 except Exception:
-    print("BANK_ENCRYPTION_KEY is not valid URL-safe base64"); sys.exit(1)
+    fail("BANK_ENCRYPTION_KEY is not valid URL-safe base64")
+
 if len(raw) != 32:
-    print("BANK_ENCRYPTION_KEY must decode to exactly 32 bytes"); sys.exit(1)
-for k in ("POSTGRES_PASSWORD","REDIS_PASSWORD"):
-    if len(os.environ[k]) < 24 or os.environ[k].startswith(("CHANGE_ME","your-","change-me")):
-        print(f"{k} is too weak or still a placeholder"); sys.exit(1)
+    fail("BANK_ENCRYPTION_KEY must decode to exactly 32 bytes")
+
+for key in ("DATABASE_URL", "REDIS_URL"):
+    value = os.environ[key].strip()
+    parsed = urlparse(value)
+    if not parsed.scheme or not parsed.netloc:
+        fail(f"{key} must be a valid connection URL")
+    if any(ch.isspace() for ch in value):
+        fail(f"{key} must not contain whitespace")
+
 if os.getenv("ENVIRONMENT") == "production":
     domain = os.environ["DOMAIN"].strip()
     if "localhost" in domain.lower() or "127.0.0.1" in domain:
-        print("DOMAIN cannot point to localhost/127.0.0.1 in production"); sys.exit(1)
+        fail("DOMAIN cannot point to localhost/127.0.0.1 in production")
     if "://" in domain or "/" in domain or any(ch.isspace() for ch in domain):
-        print("DOMAIN must be a hostname without scheme, path, or whitespace"); sys.exit(1)
-    if not re.match(r"^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$", domain):
-        print("DOMAIN must be a valid DNS hostname"); sys.exit(1)
+        fail("DOMAIN must be a hostname without scheme, path, or whitespace")
+    if not re.match(
+        r"^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$",
+        domain,
+    ):
+        fail("DOMAIN must be a valid DNS hostname")
     if not re.match(r"^https://[^\s/]+(?:/.*)?$", os.environ["FRONTEND_URL"]):
-        print("FRONTEND_URL must use HTTPS in production"); sys.exit(1)
+        fail("FRONTEND_URL must use HTTPS in production")
+
 print("production preflight: PASS")
