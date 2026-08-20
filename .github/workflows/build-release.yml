@@ -105,6 +105,9 @@ jobs:
           flutter-version: "3.44.7"
           channel: stable
           cache: true
+      - name: Generate missing iOS platform files
+        working-directory: src/mobile
+        run: flutter create --platforms=ios --org com.mirsamozanyatykh .
       - name: Flutter dependencies
         working-directory: src/mobile
         run: flutter pub get
