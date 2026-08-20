@@ -18,14 +18,17 @@ from .config import settings
 from .logging import logger
 
 
+# Shared declarative base. Alembic imports this object to collect model metadata.
+Base = declarative_base()
+
+
 def _normalize_database_url(url: str) -> URL:
     """Convert a Render PostgreSQL URL into a structured SQLAlchemy URL.
 
     Render environment values can be copied with harmless wrappers such as
-    ``DATABASE_URL=...`` or surrounding quotes.  We normalize those wrappers,
-    detect the actual URI scheme with ``urlsplit`` rather than string prefixes,
-    and then construct a SQLAlchemy URL object so SQLAlchemy does not have to
-    parse the original connection string.
+    ``DATABASE_URL=...`` or surrounding quotes. We normalize those wrappers,
+    validate the URI scheme and construct a SQLAlchemy URL object so the async
+    engine receives a structured connection URL.
     """
     value = str(url).strip()
 
