@@ -29,8 +29,11 @@ RUN mkdir -p uploads logs data backups && chown -R appuser:appgroup /app && chmo
 
 USER appuser
 
+# Render supplies PORT at runtime (default 10000). The health check must follow
+# the same port contract as the web process.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -fsS http://localhost:${PORT:-8000}/api/health || exit 1
+    CMD sh -c 'curl -fsS "http://127.0.0.1:${PORT:-10000}/api/health" || exit 1'
 
-EXPOSE 8000
+# Render web services expect the application to bind to 0.0.0.0:$PORT.
+EXPOSE 10000
 ENTRYPOINT ["./startup.sh"]
