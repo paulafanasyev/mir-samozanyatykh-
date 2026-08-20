@@ -1,5 +1,5 @@
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class OfflineSyncService {
   static final OfflineSyncService _instance = OfflineSyncService._internal();
@@ -17,31 +17,29 @@ class OfflineSyncService {
   }
 
   Future<void> queueAction(String endpoint, Map<String, dynamic> data) async {
-    final action = {
+    if (!_isInitialized) await initialize();
+    await _syncBox.add({
       'endpoint': endpoint,
       'data': data,
       'timestamp': DateTime.now().toIso8601String(),
       'retryCount': 0,
-    };
-    await _syncBox.add(action);
+    });
   }
 
   Future<void> syncPending() async {
-    final connectivity = await Connectivity().checkConnectivity();
-    if (connectivity == ConnectivityResult.none) return;
+    if (!_isInitialized) await initialize();
 
-    final pending = _syncBox.values.toList();
-    for (var action in pending) {
-      try {
-        await _syncBox.deleteAt(pending.indexOf(action));
-      } catch (e) {
-        // Retry later
-      }
-    }
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity.contains(ConnectivityResult.none)) return;
+
+    // Keep the queued records until the actual network operation succeeds.
+    // The previous implementation deleted every record without sending it.
+    // This service only owns the queue; callers are responsible for executing
+    // the request and deleting the corresponding key after success.
   }
 
   Future<bool> isOnline() async {
     final connectivity = await Connectivity().checkConnectivity();
-    return connectivity != ConnectivityResult.none;
+    return !connectivity.contains(ConnectivityResult.none);
   }
 }
