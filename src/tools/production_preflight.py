@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the environment required before starting the production API.
-
-Render supplies DATABASE_URL and REDIS_URL as connection strings. The
-preflight must therefore validate those runtime contracts instead of
-requiring database/cache passwords as separate environment variables.
-"""
+"""Validate the environment required before starting the production API."""
 import base64
 import os
 import re
@@ -46,13 +41,23 @@ except Exception:
 if len(raw) != 32:
     fail("BANK_ENCRYPTION_KEY must decode to exactly 32 bytes")
 
-for key in ("DATABASE_URL", "REDIS_URL"):
-    value = os.environ[key].strip()
-    parsed = urlparse(value)
-    if not parsed.scheme or not parsed.netloc:
-        fail(f"{key} must be a valid connection URL")
-    if any(ch.isspace() for ch in value):
-        fail(f"{key} must not contain whitespace")
+# Render Postgres connectionString is a postgresql:// URL. Some libraries
+# rewrite it to postgres://, so accept both PostgreSQL schemes here and leave
+# credential/SSL semantics to SQLAlchemy/asyncpg during the actual migration.
+database_url = os.environ["DATABASE_URL"].strip()
+database = urlparse(database_url)
+if database.scheme not in {"postgresql", "postgres"} or not database.hostname:
+    fail("DATABASE_URL must be a valid PostgreSQL connection URL")
+
+redis_url = os.environ["REDIS_URL"].strip()
+redis = urlparse(redis_url)
+if redis.scheme not in {"redis", "rediss"} or not redis.hostname:
+    fail("REDIS_URL must be a valid Redis connection URL")
+
+if any(ch.isspace() for ch in database_url):
+    fail("DATABASE_URL must not contain whitespace")
+if any(ch.isspace() for ch in redis_url):
+    fail("REDIS_URL must not contain whitespace")
 
 if os.getenv("ENVIRONMENT") == "production":
     domain = os.environ["DOMAIN"].strip()
