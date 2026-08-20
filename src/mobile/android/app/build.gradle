@@ -30,6 +30,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -60,8 +61,6 @@ android {
 
     buildTypes {
         release {
-            // Use the configured release keystore when present. For local/CI builds without
-            // signing secrets, fall back to the debug keystore so a runnable APK can still be built.
             signingConfig = (System.getenv("KEYSTORE_PATH") && System.getenv("KEY_ALIAS") && System.getenv("KEY_PASSWORD") && System.getenv("KEYSTORE_PASSWORD"))
                 ? signingConfigs.release
                 : signingConfigs.debug
@@ -94,4 +93,5 @@ flutter {
 
 dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
