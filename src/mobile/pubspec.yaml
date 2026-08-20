@@ -37,6 +37,7 @@ dependencies:
   flutter_webrtc: ^0.9.47
   hive_flutter: ^1.1.0
   table_calendar: ^3.1.2
+  app_links: ^7.0.0
 
 dev_dependencies:
   flutter_test:
