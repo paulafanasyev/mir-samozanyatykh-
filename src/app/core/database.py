@@ -23,13 +23,7 @@ Base = declarative_base()
 
 
 def _normalize_database_url(url: str) -> URL:
-    """Convert a Render PostgreSQL URL into a structured SQLAlchemy URL.
-
-    Render environment values can be copied with harmless wrappers such as
-    ``DATABASE_URL=...`` or surrounding quotes. We normalize those wrappers,
-    validate the URI scheme and construct a SQLAlchemy URL object so the async
-    engine receives a structured connection URL.
-    """
+    """Convert a Render PostgreSQL URL into a structured SQLAlchemy URL."""
     value = str(url).strip()
 
     if value.startswith("DATABASE_URL="):
@@ -94,3 +88,22 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+
+
+async def init_db() -> None:
+    """Initialize the schema for local/test environments only.
+
+    Production schema changes are applied exclusively by Alembic from
+    startup.sh before Uvicorn starts.
+    """
+    if settings.ENVIRONMENT == "production":
+        logger.info("Skipping create_all in production; schema is managed by Alembic")
+        return
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def close_db() -> None:
+    """Dispose the SQLAlchemy engine during application shutdown."""
+    await engine.dispose()
