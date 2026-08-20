@@ -18,15 +18,16 @@ from .config import settings
 from .logging import logger
 
 
-def _normalize_database_url(url: str) -> URL | str:
-    """Build a SQLAlchemy URL object from a Render PostgreSQL URL.
+def _normalize_database_url(url: str) -> URL:
+    """Convert a Render PostgreSQL URL into a structured SQLAlchemy URL.
 
-    Render dashboard values are sometimes pasted with surrounding quotes or
-    as a complete ``DATABASE_URL=...`` assignment. Normalize those harmless
-    wrappers first, then pass a structured SQLAlchemy URL to the engine so
-    SQLAlchemy never has to parse the original connection string again.
+    Render environment values can be copied with harmless wrappers such as
+    ``DATABASE_URL=...`` or surrounding quotes.  We normalize those wrappers,
+    detect the actual URI scheme with ``urlsplit`` rather than string prefixes,
+    and then construct a SQLAlchemy URL object so SQLAlchemy does not have to
+    parse the original connection string.
     """
-    value = url.strip()
+    value = str(url).strip()
 
     if value.startswith("DATABASE_URL="):
         value = value[len("DATABASE_URL="):].strip()
@@ -34,14 +35,13 @@ def _normalize_database_url(url: str) -> URL | str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
         value = value[1:-1].strip()
 
-    if value.startswith("postgresql+asyncpg://"):
-        parsed = urlsplit(value)
-    elif value.startswith("postgresql://"):
-        parsed = urlsplit(value)
-    elif value.startswith("postgres://"):
-        parsed = urlsplit(value)
-    else:
-        return value
+    parsed = urlsplit(value)
+    scheme = parsed.scheme.lower()
+
+    if scheme not in {"postgres", "postgresql", "postgresql+asyncpg"}:
+        raise ValueError(
+            f"DATABASE_URL must use a PostgreSQL URI scheme; detected '{scheme or 'none'}'"
+        )
 
     if not parsed.hostname:
         raise ValueError("DATABASE_URL does not contain a PostgreSQL hostname")
@@ -59,12 +59,10 @@ def _normalize_database_url(url: str) -> URL | str:
 
 _database_url = _normalize_database_url(settings.DATABASE_URL)
 
-_pool_kwargs = {}
-if "sqlite" not in str(_database_url):
-    _pool_kwargs = {
-        "pool_size": settings.DATABASE_POOL_SIZE,
-        "max_overflow": settings.DATABASE_MAX_OVERFLOW,
-    }
+_pool_kwargs = {
+    "pool_size": settings.DATABASE_POOL_SIZE,
+    "max_overflow": settings.DATABASE_MAX_OVERFLOW,
+}
 
 engine: AsyncEngine = create_async_engine(
     _database_url,
