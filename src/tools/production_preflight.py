@@ -41,17 +41,22 @@ except Exception:
 if len(raw) != 32:
     fail("BANK_ENCRYPTION_KEY must decode to exactly 32 bytes")
 
-# Render Postgres connectionString is a postgresql:// URL. Some libraries
-# rewrite it to postgres://, so accept both PostgreSQL schemes here and leave
-# credential/SSL semantics to SQLAlchemy/asyncpg during the actual migration.
+# Render supplies PostgreSQL connection strings. Validate only the URI
+# contract here; the real credential, SSL, host, and database checks belong to
+# SQLAlchemy/asyncpg during Alembic migration. Over-validating urlparse() here
+# can reject otherwise valid connection strings containing escaped credentials.
 database_url = os.environ["DATABASE_URL"].strip()
 database = urlparse(database_url)
-if database.scheme not in {"postgresql", "postgres"} or not database.hostname:
+if database.scheme not in {"postgresql", "postgres"}:
+    fail("DATABASE_URL must be a valid PostgreSQL connection URL")
+if not database_url.startswith(("postgresql://", "postgres://")):
     fail("DATABASE_URL must be a valid PostgreSQL connection URL")
 
 redis_url = os.environ["REDIS_URL"].strip()
 redis = urlparse(redis_url)
-if redis.scheme not in {"redis", "rediss"} or not redis.hostname:
+if redis.scheme not in {"redis", "rediss"}:
+    fail("REDIS_URL must be a valid Redis connection URL")
+if not redis_url.startswith(("redis://", "rediss://")):
     fail("REDIS_URL must be a valid Redis connection URL")
 
 if any(ch.isspace() for ch in database_url):
