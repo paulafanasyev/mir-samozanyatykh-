@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mirsamozanyatykh-api
+    runtime: docker
+    rootDir: src
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  - type: web
+    name: mirsamozanyatykh-frontend
+    runtime: static
+    rootDir: src/frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        value: https://mirsamozanyatykh-api.onrender.com
