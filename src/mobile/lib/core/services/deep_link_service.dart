@@ -1,33 +1,33 @@
-import 'package:flutter/services.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 
 class DeepLinkService {
   static final DeepLinkService _instance = DeepLinkService._internal();
   factory DeepLinkService() => _instance;
   DeepLinkService._internal();
 
+  final AppLinks _appLinks = AppLinks();
+
   Future<void> initialize() async {
     try {
-      final initialLink = await getInitialLink();
+      final initialLink = await _appLinks.getInitialLink();
       if (initialLink != null) _handleLink(initialLink);
-    } on PlatformException {}
+    } catch (_) {
+      // Ignore malformed or unavailable initial links.
+    }
 
-    linkStream.listen((String? link) {
-      if (link != null) _handleLink(link);
-    });
+    _appLinks.uriLinkStream.listen(_handleLink);
   }
 
-  void _handleLink(String link) {
-    final uri = Uri.parse(link);
-    if (uri.scheme == 'mirsamoz') {
-      switch (uri.host) {
-        case 'payment':
-          // Handle payment deep link without logging identifiers.
-          break;
-        case 'contract':
-          // Handle contract deep link without logging identifiers.
-          break;
-      }
+  void _handleLink(Uri uri) {
+    if (uri.scheme != 'mirsamoz') return;
+
+    switch (uri.host) {
+      case 'payment':
+        // Handle payment deep link without logging identifiers.
+        break;
+      case 'contract':
+        // Handle contract deep link without logging identifiers.
+        break;
     }
   }
 }
