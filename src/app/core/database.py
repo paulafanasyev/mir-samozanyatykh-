@@ -15,16 +15,33 @@ from .config import settings
 from .logging import logger
 
 
+# Render обычно предоставляет PostgreSQL connection string как
+# postgresql://... (а некоторые интеграции могут отдавать postgres://...).
+# Наше приложение использует asyncpg, поэтому SQLAlchemy должен получить
+# явную async-схему. Остальную часть URL (credentials/host/options) не меняем.
+def _normalize_database_url(url: str) -> str:
+    value = url.strip()
+    if value.startswith("postgresql+asyncpg://"):
+        return value
+    if value.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + value[len("postgresql://"):]
+    if value.startswith("postgres://"):
+        return "postgresql+asyncpg://" + value[len("postgres://"):]
+    return value
+
+
+_database_url = _normalize_database_url(settings.DATABASE_URL)
+
 # Async engine с pool pre-ping для стабильности
 _pool_kwargs = {}
-if "sqlite" not in settings.DATABASE_URL:
+if "sqlite" not in _database_url:
     _pool_kwargs = {
         "pool_size": settings.DATABASE_POOL_SIZE,
         "max_overflow": settings.DATABASE_MAX_OVERFLOW,
     }
 
 engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL,
+    _database_url,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_recycle=300,
