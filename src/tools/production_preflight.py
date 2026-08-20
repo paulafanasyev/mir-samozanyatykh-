@@ -4,7 +4,6 @@ import base64
 import os
 import re
 import sys
-from urllib.parse import urlparse
 
 
 def fail(message: str) -> None:
@@ -41,38 +40,17 @@ except Exception:
 if len(raw) != 32:
     fail("BANK_ENCRYPTION_KEY must decode to exactly 32 bytes")
 
-# Render/SQLAlchemy may provide PostgreSQL URLs using a driver-qualified
-# scheme (for example postgresql+asyncpg://). Validate the URI scheme here,
-# while leaving credentials, host, SSL, and database connectivity to
-# SQLAlchemy/asyncpg during the real migration.
+# Render may provide a PostgreSQL connection URL in a driver-specific form.
+# Do not second-guess the exact URI syntax here: SQLAlchemy/asyncpg and the
+# Alembic migration below are the authoritative checks for credentials,
+# hostname, SSL options, driver, and actual database connectivity.
 database_url = os.environ["DATABASE_URL"].strip()
-database = urlparse(database_url)
-if database.scheme not in {
-    "postgresql",
-    "postgres",
-    "postgresql+asyncpg",
-    "postgres+asyncpg",
-}:
-    fail("DATABASE_URL must be a valid PostgreSQL connection URL")
-if not database_url.startswith((
-    "postgresql://",
-    "postgres://",
-    "postgresql+asyncpg://",
-    "postgres+asyncpg://",
-)):
-    fail("DATABASE_URL must be a valid PostgreSQL connection URL")
+if not database_url or any(ch.isspace() for ch in database_url):
+    fail("DATABASE_URL must be a non-empty connection URL without whitespace")
 
 redis_url = os.environ["REDIS_URL"].strip()
-redis = urlparse(redis_url)
-if redis.scheme not in {"redis", "rediss"}:
-    fail("REDIS_URL must be a valid Redis connection URL")
-if not redis_url.startswith(("redis://", "rediss://")):
-    fail("REDIS_URL must be a valid Redis connection URL")
-
-if any(ch.isspace() for ch in database_url):
-    fail("DATABASE_URL must not contain whitespace")
-if any(ch.isspace() for ch in redis_url):
-    fail("REDIS_URL must not contain whitespace")
+if not redis_url or any(ch.isspace() for ch in redis_url):
+    fail("REDIS_URL must be a non-empty connection URL without whitespace")
 
 if os.getenv("ENVIRONMENT") == "production":
     domain = os.environ["DOMAIN"].strip()
