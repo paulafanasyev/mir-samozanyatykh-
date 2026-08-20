@@ -1,6 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../data/datasources/remote/api_client.dart';
+
 class OfflineSyncService {
   static final OfflineSyncService _instance = OfflineSyncService._internal();
   factory OfflineSyncService() => _instance;
@@ -16,11 +18,16 @@ class OfflineSyncService {
     _isInitialized = true;
   }
 
-  Future<void> queueAction(String endpoint, Map<String, dynamic> data) async {
+  Future<void> queueAction(
+    String endpoint,
+    Map<String, dynamic> data, {
+    String method = 'POST',
+  }) async {
     if (!_isInitialized) await initialize();
     await _syncBox.add({
       'endpoint': endpoint,
       'data': data,
+      'method': method.toUpperCase(),
       'timestamp': DateTime.now().toIso8601String(),
       'retryCount': 0,
     });
@@ -32,10 +39,39 @@ class OfflineSyncService {
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) return;
 
-    // Keep the queued records until the actual network operation succeeds.
-    // The previous implementation deleted every record without sending it.
-    // This service only owns the queue; callers are responsible for executing
-    // the request and deleting the corresponding key after success.
+    final api = ApiClient();
+    final keys = _syncBox.keys.toList(growable: false);
+
+    for (final key in keys) {
+      final raw = _syncBox.get(key);
+      if (raw is! Map) continue;
+
+      final endpoint = raw['endpoint']?.toString();
+      if (endpoint == null || endpoint.isEmpty) continue;
+
+      final method = (raw['method']?.toString() ?? 'POST').toUpperCase();
+      final data = raw['data'] is Map
+          ? Map<String, dynamic>.from(raw['data'] as Map)
+          : <String, dynamic>{};
+
+      try {
+        await api.dio.request<dynamic>(
+          endpoint,
+          data: method == 'GET' || method == 'DELETE' ? null : data,
+          queryParameters: method == 'GET' ? data : null,
+          options: Options(method: method),
+        );
+        await _syncBox.delete(key);
+      } catch (_) {
+        final retryCount = (raw['retryCount'] is num)
+            ? (raw['retryCount'] as num).toInt()
+            : 0;
+        await _syncBox.put(key, {
+          ...Map<String, dynamic>.from(raw),
+          'retryCount': retryCount + 1,
+        });
+      }
+    }
   }
 
   Future<bool> isOnline() async {
