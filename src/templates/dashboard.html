@@ -1,60 +1,17 @@
-{% extends "base.html" %}
+{% extends "site_base.html" %}
 {% block title %}Личный кабинет — Мир Самозанятых{% endblock %}
 {% block content %}
-<div class="dashboard">
-    <h2>Личный кабинет</h2>
-    <div id="user-info">Загрузка...</div>
-
-    <section class="dashboard-section">
-        <h3>📤 Загрузить документ</h3>
-        <form id="upload-form" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-            <button type="submit" class="btn-primary">Загрузить</button>
-        </form>
-        <div id="upload-result"></div>
-    </section>
-</div>
-
-<script nonce="{{ csp_nonce }}">
-async function loadUser() {
-    const token = await MirAuth.getToken();
-    if (!token) { window.location.href = '/login'; return; }
-    try {
-        const res = await fetch('/api/user/me', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (!res.ok) throw new Error('Unauthorized');
-        const user = await res.json();
-        document.getElementById('user-info').innerHTML = `
-            <p><strong>${user.full_name}</strong></p>
-            <p>Email: ${user.email}</p>
-            <p>ИНН: ${user.inn || 'не указан'}</p>
-            <p>Статус: ${user.is_verified ? '✅ Подтверждён' : '⏳ Ожидает подтверждения'}</p>
-        `;
-    } catch (err) {
-        MirAuth.clear();
-        window.location.href = '/login';
-    }
-}
-
-document.getElementById('upload-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const token = await MirAuth.getToken();
-    const form = new FormData(e.target);
-    try {
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
-            body: form
-        });
-        const data = await res.json();
-        document.getElementById('upload-result').textContent = 
-            res.ok ? `Загружено: ${data.original_name}` : data.detail;
-    } catch (err) {
-        document.getElementById('upload-result').textContent = 'Ошибка загрузки';
-    }
-});
-
-loadUser();
-</script>
+<section class="section"><div class="container" id="cabinet" style="display:none">
+  <div class="section-head"><span class="eyebrow">Личный кабинет</span><h1>Ваше рабочее пространство</h1><p id="user-summary">Загрузка профиля…</p></div>
+  <div class="cards">
+    <article class="card"><span class="pill">Клиенты</span><h3>CRM</h3><p>Карточки клиентов, сделки, статусы, история и следующие задачи.</p><a class="btn btn-primary" href="/crm">Открыть CRM</a></article>
+    <article class="card"><span class="pill">Планирование</span><h3>Календарь</h3><p>Встречи, задачи, дедлайны договоров, оплат и рабочих проектов.</p><a class="btn btn-soft" href="/calendar">Открыть календарь</a></article>
+    <article class="card"><span class="pill">Документы</span><h3>Договоры и акты</h3><p>Подготовка документов по данным сделки и работа с документами.</p><a class="btn btn-soft" href="/contracts">Открыть документы</a></article>
+    <article class="card"><span class="pill">Финансы</span><h3>Доходы и расчёты</h3><p>Финансовые показатели, счета, оплаты и ориентировочный НПД.</p><a class="btn btn-soft" href="/finance">Финансы</a></article>
+    <article class="card"><span class="pill">Возможности</span><h3>Маркетплейс</h3><p>Заказы, услуги, вакансии, партнёрство и проекты самозанятых.</p><a class="btn btn-soft" href="/marketplace">Маркетплейс</a></article>
+    <article class="card"><span class="pill">Помощник</span><h3>Светлана</h3><p>Собственный локальный помощник с базой официальных знаний и рабочими сценариями.</p><a class="btn btn-primary" href="/svetlana">Открыть Светлану</a></article>
+  </div>
+  <div class="card" style="margin-top:22px;background:linear-gradient(135deg,#fff7ed,#eff6ff)"><h2>Что здесь должно быть</h2><p>Доходы и расходы, счета и оплаты, клиенты и сделки, CRM, календарь, документы, чеки НПД, уведомления, профиль, настройки, Светлана, маркетплейс, обучение, проекты и интеграции. Разделы открываются из рабочего пространства и постепенно подключаются к реальным данным аккаунта.</p></div>
+</div></section>
+<script nonce="{{ csp_nonce }}">(async()=>{const token=await MirAuth.getToken();if(!token){window.location.replace('/login');return;}try{const r=await fetch('/api/user/me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw new Error('unauthorized');const u=await r.json();document.getElementById('cabinet').style.display='block';document.getElementById('user-summary').textContent=(u.full_name||u.email)+' · '+(u.is_verified?'Email подтверждён':'ожидает подтверждения');}catch(_){MirAuth.clear();window.location.replace('/login');}})();</script>
 {% endblock %}
