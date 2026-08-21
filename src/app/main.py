@@ -1,14 +1,13 @@
 """
-Main FastAPI application - Security Hardened v8.4.3
+Main FastAPI application - Security Hardened v8.4.4
 ANO TsPS INN 9724016805
 """
 
 import os
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -58,8 +57,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# The Docker image contains src/static. Mount it explicitly so the logo and
-# other public API assets resolve instead of returning 404 on Render.
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.state.limiter = limiter
@@ -76,11 +73,7 @@ app.add_middleware(
 
 _known_render_host = "mir-samozanyatykh-api-frankfurt.onrender.com"
 _allowed_hosts = []
-for _host in (
-    settings.DOMAIN,
-    os.getenv("RENDER_EXTERNAL_HOSTNAME", ""),
-    _known_render_host,
-):
+for _host in (settings.DOMAIN, os.getenv("RENDER_EXTERNAL_HOSTNAME", ""), _known_render_host):
     _host = _host.strip().lower()
     if _host.startswith("https://"):
         _host = _host[8:]
@@ -117,7 +110,9 @@ async def security_headers(request: Request, call_next):
     duration = (time.time() - start_time) * 1000
 
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
+    # Same-origin iframe is required for the authored 3D Svetlana runtime.
+    # Keep framing restricted to this origin rather than disabling framing globally.
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
     if settings.ENVIRONMENT == "production":
@@ -126,9 +121,8 @@ async def security_headers(request: Request, call_next):
         f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; "
         f"font-src 'self'; img-src 'self' data: https:; "
         f"connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru; "
-        f"frame-src 'self' https://mirsamozanyatykh-frontend.onrender.com; "
-        f"media-src 'self' blob: data:; "
-        f"frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+        f"frame-src 'self'; media-src 'self' blob: data:; "
+        f"frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://{settings.DOMAIN};"
     )
     response.headers["Content-Security-Policy"] = csp
     response.headers["X-Response-Time"] = f"{duration:.2f}ms"
@@ -144,26 +138,14 @@ async def request_logging(request: Request, call_next):
         record_request(response.status_code, duration / 1000.0)
         logger.info(
             f"{request.method} {request.url.path} {response.status_code} {duration:.2f}ms {request.client.host}",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status": response.status_code,
-                "duration_ms": round(duration, 2),
-                "ip_address": request.client.host,
-                "user_agent": request.headers.get("user-agent", "")[:100],
-            },
+            extra={"method": request.method, "path": request.url.path, "status": response.status_code, "duration_ms": round(duration, 2), "ip_address": request.client.host, "user_agent": request.headers.get("user-agent", "")[:100]},
         )
         return response
     except Exception as e:
         duration = (time.time() - start_time) * 1000
         logger.error(
             f"{request.method} {request.url.path} ERROR {duration:.2f}ms",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "error_type": type(e).__name__,
-                "ip_address": request.client.host,
-            },
+            extra={"method": request.method, "path": request.url.path, "error_type": type(e).__name__, "ip_address": request.client.host},
         )
         raise
 
