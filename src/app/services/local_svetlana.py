@@ -1,8 +1,8 @@
-"""Offline Svetlana runtime backed by the project's official-source knowledge base.
+"""Offline Svetlana runtime backed by the project's official-source knowledge bases.
 
-No network I/O is performed here. Legal/tax facts live in a versioned JSON file
+No network I/O is performed here. Legal/tax facts live in versioned JSON files
 with source URLs; the assistant never invents a legal answer when the local
-knowledge base does not contain one.
+knowledge bases do not contain one.
 """
 from __future__ import annotations
 
@@ -11,21 +11,25 @@ import re
 from pathlib import Path
 from typing import Any
 
-KNOWLEDGE_PATH = Path(__file__).resolve().parents[2] / "static" / "svetlana_knowledge_v4.json"
+KNOWLEDGE_PATHS = (
+    Path(__file__).resolve().parents[2] / "static" / "svetlana_knowledge_v4.json",
+    Path(__file__).resolve().parents[2] / "static" / "svetlana_knowledge_v5.json",
+)
 
 
 def _load_topics() -> list[dict[str, Any]]:
-    try:
-        data = json.loads(KNOWLEDGE_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return []
-    topics = data.get("topics", {})
-    if not isinstance(topics, dict):
-        return []
     result: list[dict[str, Any]] = []
-    for key, value in topics.items():
-        if isinstance(value, dict):
-            result.append({"id": key, **value})
+    for knowledge_path in KNOWLEDGE_PATHS:
+        try:
+            data = json.loads(knowledge_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        topics = data.get("topics", {})
+        if not isinstance(topics, dict):
+            continue
+        for key, value in topics.items():
+            if isinstance(value, dict):
+                result.append({"id": key, **value})
     return result
 
 
@@ -44,9 +48,11 @@ def _rank_topics(message: str) -> list[tuple[int, dict[str, Any]]]:
     ranked: list[tuple[int, dict[str, Any]]] = []
     for topic in _load_topics():
         keywords = " ".join(str(x) for x in topic.get("keywords", []))
+        questions = " ".join(str(x) for x in topic.get("questions", []))
         title = str(topic.get("title", ""))
         content = str(topic.get("content", ""))
         score = len(query & _tokens(keywords)) * 5
+        score += len(query & _tokens(questions)) * 7
         score += len(query & _tokens(title)) * 3
         score += min(5, len(query & _tokens(content)))
         if score:
@@ -97,7 +103,6 @@ def answer_local(message: str, context: str | None = None) -> str:
 
     ranked = _rank_topics(message)
     if ranked:
-        # Combine the two strongest local topics when the user asks a multi-part question.
         selected = [topic for score, topic in ranked[:2] if score >= 5]
         parts: list[str] = []
         for topic in selected:
@@ -136,7 +141,7 @@ def local_status() -> dict[str, Any]:
         "mode": "offline",
         "provider": "local",
         "network_required": False,
-        "knowledge_base": KNOWLEDGE_PATH.name,
+        "knowledge_base": [path.name for path in KNOWLEDGE_PATHS],
         "knowledge_topics": len(topics),
         "llm_runtime": "local_knowledge_runtime",
         "documents_repository": "genoffice",
