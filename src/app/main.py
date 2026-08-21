@@ -126,6 +126,8 @@ async def security_headers(request: Request, call_next):
         f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; "
         f"font-src 'self'; img-src 'self' data: https:; "
         f"connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru; "
+        f"frame-src 'self' https://mirsamozanyatykh-frontend.onrender.com; "
+        f"media-src 'self' blob: data:; "
         f"frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     )
     response.headers["Content-Security-Policy"] = csp
