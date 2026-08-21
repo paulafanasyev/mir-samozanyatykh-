@@ -59,7 +59,6 @@ app = FastAPI(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -125,6 +124,10 @@ async def security_headers(request: Request, call_next):
     )
     response.headers["Content-Security-Policy"] = csp
     response.headers["X-Response-Time"] = f"{duration:.2f}ms"
+    if request.url.path.startswith("/static/svetlana3d/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=604800"
     return response
 
 
@@ -149,9 +152,6 @@ async def request_logging(request: Request, call_next):
         raise
 
 
-# Extended registration/tariff router MUST precede the legacy auth router so
-# /api/auth/register accepts and persists account_type without changing the
-# established authentication implementation.
 app.include_router(account_profiles.router)
 app.include_router(auth.router)
 app.include_router(users.router)
