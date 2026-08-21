@@ -1,0 +1,24 @@
+name: Python smoke check
+
+on:
+  push:
+    paths:
+      - 'src/app/**'
+      - 'src/templates/**'
+      - '.github/workflows/python-smoke.yml'
+  pull_request:
+    paths:
+      - 'src/app/**'
+      - 'src/templates/**'
+      - '.github/workflows/python-smoke.yml'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python sources
+        run: python -m compileall -q src/app
