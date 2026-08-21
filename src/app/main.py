@@ -29,6 +29,7 @@ from app.api import import_export, search, calendar, notifications, webrtc
 from app.api import ai_analytics, white_label, mfa, telegram_bot, api_keys
 from app.api import webhooks, whatsapp, reports, backups, health, admin
 from app.api import referrals, tasks, export, import_data, accounting, fns, bank, metrics
+from app.api import account_profiles
 from app.html_routes import router as html_router
 
 
@@ -110,8 +111,6 @@ async def security_headers(request: Request, call_next):
     duration = (time.time() - start_time) * 1000
 
     response.headers["X-Content-Type-Options"] = "nosniff"
-    # Same-origin iframe is required for the authored 3D Svetlana runtime.
-    # Keep framing restricted to this origin rather than disabling framing globally.
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
@@ -150,6 +149,10 @@ async def request_logging(request: Request, call_next):
         raise
 
 
+# Extended registration/tariff router MUST precede the legacy auth router so
+# /api/auth/register accepts and persists account_type without changing the
+# established authentication implementation.
+app.include_router(account_profiles.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(sales.router)
