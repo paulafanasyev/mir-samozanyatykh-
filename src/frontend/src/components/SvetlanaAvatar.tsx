@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '../api/client'
 
-type Props = {
-  size?: 'sm' | 'md' | 'lg'
-  interactive?: boolean
-  className?: string
-}
+type Props = { size?: 'sm' | 'md' | 'lg'; interactive?: boolean; className?: string }
 
 export default function SvetlanaAvatar({ size = 'md', interactive = false, className = '' }: Props) {
   const ref = useRef<HTMLIFrameElement>(null)
@@ -18,18 +14,18 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
       if (e.source !== ref.current?.contentWindow) return
       if (e.data?.type === 'svetlana.ready') {
         setRuntimeError(false)
-        if (interactive) {
-          ref.current?.contentWindow?.postMessage(
-            { type: 'svetlana.emotion', name: 'smile', duration: 1800 },
-            window.location.origin,
-          )
-        }
+        if (interactive) ref.current?.contentWindow?.postMessage({ type: 'svetlana.emotion', name: 'smile', duration: 1800 }, window.location.origin)
       }
       if (e.data?.type === 'svetlana.error') setRuntimeError(true)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [interactive])
+
+  const retry = () => {
+    setRuntimeError(false)
+    if (ref.current) ref.current.src = `${window.location.origin}/svetlana/index.html?retry=${Date.now()}`
+  }
 
   return (
     <div className={`${dims} ${className} relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg`} aria-label="Светлана">
@@ -39,9 +35,10 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
         <img src={portraitUrl} alt="Светлана" className="h-full w-full object-cover object-top" loading="lazy" />
       )}
       {runtimeError && interactive && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-950 p-3 text-center text-white">
-          <span className="text-sm font-bold">Светлана</span>
-          <span className="text-[10px] text-white/60">локальный 3D runtime недоступен</span>
+        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/90 px-3 py-2 text-white backdrop-blur">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400" />
+          <span className="min-w-0 flex-1 text-[11px]">3D runtime не ответил. Портрет и чат Светланы продолжают работать.</span>
+          <button type="button" onClick={retry} className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-900">Повторить</button>
         </div>
       )}
       <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" title="Светлана" />
@@ -49,6 +46,4 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
   )
 }
 
-export function commandSvetlana(iframe: HTMLIFrameElement | null, payload: Record<string, unknown>) {
-  iframe?.contentWindow?.postMessage({ type: 'svetlana.command', payload }, window.location.origin)
-}
+export function commandSvetlana(iframe: HTMLIFrameElement | null, payload: Record<string, unknown>) { iframe?.contentWindow?.postMessage({ type: 'svetlana.command', payload }, window.location.origin) }
