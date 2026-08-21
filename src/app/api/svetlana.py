@@ -1,16 +1,17 @@
 """Svetlana local/offline API.
 
-No cloud AI provider is used here. The runtime is deliberately local: it
-answers from the versioned Svetlana knowledge base and can later be backed by
-an actual local model without changing the HTTP contract.
+No cloud AI provider is used here. The runtime answers from the versioned local
+knowledge base and exposes a stable HTTP contract for the web UI.
 """
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
-from app.models import User, SvetlanaChatMessage
+
 from app.core.auth import get_current_user_optional
+from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.models import SvetlanaChatMessage, User
 from app.services.local_svetlana import answer_local, local_status
 
 router = APIRouter(prefix="/api/svetlana", tags=["svetlana"])
@@ -28,7 +29,6 @@ async def _save_message(db: AsyncSession, user_id: int, role: str, content: str)
 
 @router.get("/status")
 async def svetlana_status() -> dict:
-    """Non-sensitive runtime status for the UI and diagnostics."""
     return local_status()
 
 
@@ -40,7 +40,7 @@ async def svetlana_chat(
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
-    """Answer locally. Authentication is optional so the public assistant can work before registration."""
+    """Answer locally. Authentication is optional so Svetlana works before registration."""
     if current_user:
         await _save_message(db, current_user.id, "user", payload.message)
     content = answer_local(payload.message, payload.context)
@@ -58,7 +58,7 @@ async def svetlana_chat(
 async def svetlana_history(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
     """История диалога только текущего авторизованного пользователя."""
     if not current_user:
