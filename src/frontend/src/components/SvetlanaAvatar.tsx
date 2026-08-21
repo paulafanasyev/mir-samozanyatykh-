@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { API_BASE_URL } from '../api/client'
 
 type Props = {
   size?: 'sm' | 'md' | 'lg'
@@ -10,12 +9,14 @@ type Props = {
 export default function SvetlanaAvatar({ size = 'md', interactive = false, className = '' }: Props) {
   const ref = useRef<HTMLIFrameElement>(null)
   const dims = size === 'lg' ? 'h-64 w-full' : size === 'sm' ? 'h-12 w-12' : 'h-24 w-24'
-  const portraitUrl = `${API_BASE_URL}/static/svetlana/face.png`
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.source === ref.current?.contentWindow && e.data?.type === 'svetlana.ready') {
-        ref.current?.contentWindow?.postMessage({ type: 'svetlana.emotion', name: 'smile', duration: 1800 }, window.location.origin)
+        ref.current?.contentWindow?.postMessage(
+          { type: 'svetlana.emotion', name: 'smile', duration: 1800 },
+          window.location.origin,
+        )
       }
     }
     window.addEventListener('message', onMessage)
@@ -30,11 +31,16 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
           title="Светлана — 3D AI-ассистент"
           src="/svetlana/index.html"
           className="h-full w-full border-0"
-          loading="lazy"
-          sandbox="allow-scripts allow-same-origin"
+          loading="eager"
+          allow="autoplay"
+          sandbox="allow-scripts allow-same-origin allow-modals"
         />
       ) : (
-        <img src={portraitUrl} alt="Светлана" className="h-full w-full object-cover object-top" loading="lazy" />
+        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_35%_20%,#fff7ed_0,#fed7aa_28%,#f97316_62%,#9a3412_100%)]">
+          <div className="flex h-[72%] w-[72%] items-center justify-center rounded-full border border-white/40 bg-white/15 text-2xl font-black text-white shadow-inner backdrop-blur-sm">
+            С
+          </div>
+        </div>
       )}
       <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
     </div>
