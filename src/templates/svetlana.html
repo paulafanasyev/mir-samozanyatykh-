@@ -1,74 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Светлана — ИИ-ассистент{% endblock %}
+{% block title %}Светлана — собственный офлайн ИИ-помощник{% endblock %}
 {% block content %}
-<div class="chat-container svetlana-page-v839">
-    <div class="svetlana-hero-head">
-      <div class="svetlana-photo"><img src="/static/svetlana/face.png" alt="Светлана"></div>
-      <div><div class="eyebrow">МИР САМОЗАНЯТЫХ</div><h2>Светлана — ваш ИИ-ассистент</h2><p>Помогает с налогами, документами, клиентами и рабочими задачами.</p></div>
-    </div>
-    <div id="chat-messages" class="chat-messages"></div>
-    <div class="chat-input">
-        <select id="category-select"><option value="">Все категории</option></select>
-        <input type="text" id="question-input" placeholder="Задайте вопрос..." maxlength="500">
-        <button onclick="askSvetlana()" class="btn-primary">Спросить</button>
-    </div>
+<div class="chat-container svetlana-page-v840">
+  <div class="svetlana-hero-head"><div class="svetlana-photo"><img src="/static/svetlana/base.png" alt="Светлана"></div><div><div class="eyebrow">МИР САМОЗАНЯТЫХ · OFFLINE</div><h2>Светлана — наш собственный ИИ-помощник</h2><p>Собственная разработка проекта. Работает локально, использует локальную базу знаний и не отправляет вопросы во внешний AI.</p></div></div>
+  <div class="svetlana-info"><div><strong>🧠 Собственная разработка</strong><span>Не облачный чат-бот, а компонент экосистемы «Мира Самозанятых».</span></div><div><strong>📚 База знаний</strong><span>НПД, налоги, поддержка, документы, работа, развитие и возможности для самозанятых.</span></div><div><strong>📡 Без интернета</strong><span>При наличии локальной модели и базы знаний Светлана может отвечать без подключения к сети.</span></div></div>
+  <div id="chat-messages" class="chat-messages"></div>
+  <div class="chat-input"><select id="category-select"><option value="">Все категории</option></select><input type="text" id="question-input" placeholder="Спросите о НПД, документах, поддержке или работе..." maxlength="8000"><button onclick="askSvetlana()" class="btn-primary">Спросить</button></div>
 </div>
 <style nonce="{{ csp_nonce }}">
-.svetlana-page-v839{max-width:960px;margin:40px auto;padding:28px;border:1px solid #ece7df;border-radius:28px;background:#fff;box-shadow:0 20px 60px rgba(23,26,34,.08)}
-.svetlana-hero-head{display:flex;gap:18px;align-items:center;padding:18px;border-radius:22px;background:linear-gradient(135deg,#fff7ed,#fffbeb);border:1px solid #fed7aa;margin-bottom:20px}
-.svetlana-photo{width:78px;height:78px;overflow:hidden;border-radius:22px;background:#171a22;flex:none}.svetlana-photo img{width:100%;height:100%;object-fit:cover;object-position:top}.svetlana-hero-head h2{margin:4px 0 4px}.svetlana-hero-head p{margin:0;color:#64748b}
-@media(max-width:640px){.svetlana-hero-head{align-items:flex-start}.svetlana-photo{width:64px;height:64px}}
+.svetlana-page-v840{max-width:1040px;margin:40px auto;padding:28px;border:1px solid #ece7df;border-radius:28px;background:#fff;box-shadow:0 20px 60px rgba(23,26,34,.08)}
+.svetlana-hero-head{display:flex;gap:22px;align-items:center;padding:22px;border-radius:22px;background:linear-gradient(135deg,#fff7ed,#eff6ff);border:1px solid #fed7aa;margin-bottom:18px}.svetlana-photo{width:170px;height:240px;overflow:hidden;border-radius:22px;background:#171a22;flex:none;display:flex;align-items:flex-end;justify-content:center}.svetlana-photo img{width:100%;height:100%;object-fit:contain;object-position:center bottom}.svetlana-hero-head h2{margin:4px 0 6px}.svetlana-hero-head p{margin:0;color:#64748b;line-height:1.6}.svetlana-info{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.svetlana-info>div{padding:16px;border:1px solid #e5e7eb;border-radius:18px;background:#fafafa}.svetlana-info strong,.svetlana-info span{display:block}.svetlana-info span{margin-top:6px;color:#64748b;font-size:.9rem;line-height:1.5}@media(max-width:700px){.svetlana-hero-head{align-items:flex-start}.svetlana-photo{width:120px;height:190px}.svetlana-info{grid-template-columns:1fr}}@media(max-width:480px){.svetlana-hero-head{flex-direction:column}.svetlana-photo{width:160px;height:230px;align-self:center}}
 </style>
-
 <script nonce="{{ csp_nonce }}">
-async function loadCategories() {
-    try {
-        const res = await fetch('/api/svetlana/categories');
-        const data = await res.json();
-        const select = document.getElementById('category-select');
-        data.categories.forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat.key;
-            opt.textContent = cat.title;
-            select.appendChild(opt);
-        });
-    } catch (e) {}
-}
-
-function addMessage(text, isUser = false) {
-    const div = document.createElement('div');
-    div.className = isUser ? 'message user' : 'message bot';
-    div.textContent = text;
-    document.getElementById('chat-messages').appendChild(div);
-    div.scrollIntoView();
-}
-
-async function askSvetlana() {
-    const input = document.getElementById('question-input');
-    const category = document.getElementById('category-select').value;
-    const question = input.value.trim();
-    if (!question) return;
-
-    addMessage(question, true);
-    input.value = '';
-
-    try {
-        const form = new FormData();
-        form.append('question', question);
-        if (category) form.append('category', category);
-        const res = await fetch('/api/svetlana/ask', { method: 'POST', body: form });
-        const data = await res.json();
-        addMessage(data.answer);
-    } catch (err) {
-        addMessage('Извините, произошла ошибка. Попробуйте позже.');
-    }
-}
-
-document.getElementById('question-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') askSvetlana();
-});
-
-loadCategories();
-addMessage('Привет! Я Светлана, ваш ИИ-ассистент. Чем могу помочь?');
+async function loadCategories(){try{const res=await fetch('/api/svetlana/categories');const data=await res.json();const select=document.getElementById('category-select');(data.categories||[]).forEach(cat=>{const opt=document.createElement('option');opt.value=cat.key;opt.textContent=cat.title;select.appendChild(opt)})}catch(e){}}
+function addMessage(text,isUser=false){const div=document.createElement('div');div.className=isUser?'message user':'message bot';div.textContent=text;document.getElementById('chat-messages').appendChild(div);div.scrollIntoView({behavior:'smooth'})}
+async function askSvetlana(){const input=document.getElementById('question-input');const question=input.value.trim();if(!question)return;addMessage(question,true);input.value='';try{const res=await fetch('/api/svetlana/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:question,context:document.getElementById('category-select').value||null})});const data=await res.json();if(!res.ok)throw new Error(data.detail||'Ошибка');addMessage(data.response||data.answer||'Светлана не получила ответ.')}catch(err){addMessage('Светлана сейчас недоступна. Проверьте локальный runtime или попробуйте ещё раз.')}}
+document.getElementById('question-input').addEventListener('keypress',e=>{if(e.key==='Enter')askSvetlana()});loadCategories();addMessage('Здравствуйте! Я Светлана — собственный офлайн ИИ-помощник «Мира Самозанятых». Спросите меня о работе, НПД, документах или мерах поддержки.');
 </script>
 {% endblock %}
