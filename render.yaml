@@ -83,7 +83,7 @@ services:
         value: /app/uploads
 
   - type: web
-    name: mirsamozanyatykh
+    name: mirsamozanyatykh-frontend
     runtime: static
     rootDir: src/frontend
     buildCommand: npm ci && npm run build
