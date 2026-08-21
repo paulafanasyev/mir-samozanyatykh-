@@ -15,7 +15,6 @@ templates = Jinja2Templates(
     context_processors=[lambda request: {"csp_nonce": getattr(request.state, "csp_nonce", "")}],
 )
 
-
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -103,6 +102,10 @@ async def finance_page(request: Request):
 @router.get("/marketplace", response_class=HTMLResponse)
 async def marketplace_page(request: Request):
     return templates.TemplateResponse("marketplace.html", {"request": request})
+
+@router.get("/education", response_class=HTMLResponse)
+async def education_page(request: Request):
+    return templates.TemplateResponse("education.html", {"request": request})
 
 @router.get("/grants", response_class=HTMLResponse)
 async def grants_page(request: Request):
