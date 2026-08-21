@@ -29,7 +29,7 @@ from app.api import import_export, search, calendar, notifications, webrtc
 from app.api import ai_analytics, white_label, mfa, telegram_bot, api_keys
 from app.api import webhooks, whatsapp, reports, backups, health, admin
 from app.api import referrals, tasks, export, import_data, accounting, fns, bank, metrics
-from app.api import account_profiles
+from app.api import account_profiles, marketplace
 from app.html_routes import router as html_router
 
 
@@ -188,6 +188,7 @@ app.include_router(accounting.router)
 app.include_router(fns.router)
 app.include_router(bank.router)
 app.include_router(metrics.router)
+app.include_router(marketplace.router)
 app.include_router(html_router)
 
 
