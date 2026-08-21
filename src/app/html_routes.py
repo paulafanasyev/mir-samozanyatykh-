@@ -102,6 +102,10 @@ async def blog_page(request: Request):
 async def faq_page(request: Request):
     return templates.TemplateResponse("faq.html", {"request": request})
 
+@router.get("/support", response_class=HTMLResponse)
+async def support_page(request: Request):
+    return templates.TemplateResponse("support.html", {"request": request})
+
 @router.get("/contacts", response_class=HTMLResponse)
 async def contacts_page(request: Request):
     return templates.TemplateResponse("contacts.html", {"request": request})
