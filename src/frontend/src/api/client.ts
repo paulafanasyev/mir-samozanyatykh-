@@ -1,21 +1,16 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-// The Frankfurt API is the current production backend. Keep an explicit
-// fallback so the static Render frontend never silently sends /api/* to itself
-// when VITE_API_URL is missing. Also migrate the old Oregon hostname.
-const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+// Production API is intentionally pinned to the current Frankfurt service so an
+// old/misconfigured VITE_API_URL cannot send auth requests to a stale deployment.
 const currentApiUrl = 'https://mir-samozanyatykh-api-frankfurt.onrender.com'
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const isKnownCurrentApi = /mir-samozanyatykh-api-frankfurt\.onrender\.com/i.test(configuredApiUrl)
 const isOldOregonApi = /mirsamozanyatykh-api\.onrender\.com/i.test(configuredApiUrl)
-const rawApiBaseUrl = configuredApiUrl && !isOldOregonApi ? configuredApiUrl : currentApiUrl
+const rawApiBaseUrl = isKnownCurrentApi ? configuredApiUrl : currentApiUrl
 
-// Accept both host URLs and legacy URLs ending in /api; request paths are normalized below.
-export const API_BASE_URL = rawApiBaseUrl.replace(/\/api$/, '')
+export const API_BASE_URL = (isOldOregonApi ? currentApiUrl : rawApiBaseUrl).replace(/\/api$/, '')
 
-// Do not force application/json globally. Auth registration/login use FastAPI
-// Form(...) parameters and therefore need application/x-www-form-urlencoded;
-// Axios will select the appropriate content type for URLSearchParams/FormData.
-// JSON endpoints continue to receive application/json automatically.
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
