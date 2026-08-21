@@ -28,7 +28,7 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
 
   return (
     <div
-      className={`${sizeClass[size]} ${className} relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_25%,rgba(251,146,60,.25),transparent_55%),linear-gradient(145deg,#0f172a,#020617)] shadow-2xl`}
+      className={`${sizeClass[size]} ${className} relative flex items-end justify-center overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_25%,rgba(251,146,60,.25),transparent_55%),linear-gradient(145deg,#0f172a,#020617)] shadow-2xl`}
       aria-label="Светлана"
       data-svetlana-avatar="local"
     >
@@ -36,7 +36,7 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
         <img
           src="/static/svetlana/base.png"
           alt="Светлана — помощник «Мира Самозанятых»"
-          className={`h-full w-full object-cover object-top transition duration-700 ${loaded ? 'opacity-100' : 'opacity-0'} ${interactive ? 'animate-[svetlanaFloat_4s_ease-in-out_infinite]' : ''}`}
+          className={`h-full w-full object-contain object-bottom transition duration-700 ${loaded ? 'opacity-100' : 'opacity-0'} ${interactive ? 'animate-[svetlanaFloat_4s_ease-in-out_infinite]' : ''}`}
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           draggable={false}
