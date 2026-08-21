@@ -58,9 +58,10 @@ html[data-theme='dark'] body { background: #0d1016; color: #f8fafc; }
 .theme-switch { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:12px; border:1px solid #e2e8f0; background:#fff; color:#475569; transition:.2s; }
 .theme-switch:hover { border-color:#fdba74; color:#ea580c; background:#fff7ed; }
 
-/* Defensive sizing: icons must never expand to viewport size if a utility class is delayed or missing. */
-.nav-item > svg, .download-nav > svg, .svetlana-nav-card > svg, header a > svg, header button > svg { width: 1.25rem; height: 1.25rem; min-width: 1.25rem; max-width: 1.25rem; max-height: 1.25rem; flex: 0 0 1.25rem; }
-button[aria-label*="меню"] > svg, button[aria-label*="Меню"] > svg { width: 1.25rem; height: 1.25rem; }
+/* Defensive icon sizing: never let an SVG expand to viewport size during CSS hydration/loading. */
+svg.lucide { width: 1.25rem !important; height: 1.25rem !important; min-width: 1.25rem; max-width: 1.25rem; min-height: 1.25rem; max-height: 1.25rem; flex: 0 0 1.25rem; }
+.nav-item > svg, .download-nav > svg, .svetlana-nav-card > svg, header a > svg, header button > svg { width: 1.25rem !important; height: 1.25rem !important; min-width: 1.25rem; max-width: 1.25rem; max-height: 1.25rem; flex: 0 0 1.25rem; }
+button[aria-label*="меню"] > svg, button[aria-label*="Меню"] > svg { width: 1.25rem !important; height: 1.25rem !important; }
 input + svg, input ~ button svg { max-width: 1rem; max-height: 1rem; }
 
 html[data-theme='dark'] .app-shell { background:#0d1016; color:#f8fafc; }
