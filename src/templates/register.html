@@ -5,15 +5,15 @@
 
 {% block content %}
 <section class="section" style="padding-top:120px;min-height:calc(100vh - 80px);display:flex;align-items:center;">
-  <div class="container" style="max-width:620px;width:100%;">
+  <div class="container" style="max-width:680px;width:100%;">
     <div class="text-center mb-8">
       <h1 class="text-gradient">Создать аккаунт</h1>
-      <p style="color:var(--neutral-500);">Выберите формат работы — кабинет подстроится под вашу деятельность.</p>
+      <p style="color:var(--neutral-500);">Выберите формат работы — кабинет и тариф подстроятся под вашу деятельность.</p>
     </div>
 
     <div class="glass-card" style="padding:var(--space-8);">
       <form action="/api/auth/register" method="POST" id="registerForm">
-        <div class="form-group" data-svetlana-help="Выберите, от чьего имени вы будете работать на платформе.">
+        <div class="form-group">
           <label class="form-label">Кто вы?</label>
           <select name="account_type" id="accountType" class="glass-input" required>
             <option value="">Выберите тип аккаунта...</option>
@@ -21,65 +21,61 @@
             <option value="individual_entrepreneur">ИП</option>
             <option value="company">ООО / юридическое лицо</option>
             <option value="employer">Компания / работодатель</option>
+            <option value="education_center">Учебный центр</option>
           </select>
-          <div class="form-hint">Все типы получают доступ к платформе. Для бизнеса будут доступны корпоративные возможности и тарифы.</div>
+          <div class="form-hint">Для всех форматов доступна платформа. Отличаются рабочие возможности и модель тарификации.</div>
         </div>
 
-        <div id="tariffHint" class="notice" style="display:none;margin-bottom:16px;line-height:1.55;"></div>
+        <div id="tariffBox" class="notice" style="display:none;margin-bottom:16px;line-height:1.6"></div>
 
-        <div class="form-group" data-svetlana-help="Введите ваше полное имя. Оно будет отображаться в профиле и документах.">
+        <div id="educationAgreement" class="notice" style="display:none;margin-bottom:16px;background:#eff6ff;border-color:#bfdbfe;color:#1e40af">
+          <strong>Для учебного центра:</strong> мы размещаем и продвигаем ваши курсы и программы и получаем комиссию с фактически оплаченных продаж. Перед регистрацией ознакомьтесь с <a href="/education-partner-offer" target="_blank" rel="noopener" style="text-decoration:underline">партнёрской офертой</a>.
+          <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-weight:600;cursor:pointer"><input type="checkbox" name="education_partner_agree" id="educationPartnerAgree" style="margin-top:4px"> <span>Согласен с условиями партнёрской оферты и комиссионной моделью.</span></label>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Имя / контактное лицо</label>
           <input type="text" name="full_name" class="glass-input" placeholder="Иван Иванов" required>
         </div>
-
-        <div class="form-group" data-svetlana-help="Укажите действующий email.">
+        <div class="form-group">
           <label class="form-label">Email</label>
           <input type="email" name="email" class="glass-input" placeholder="ivan@example.com" required>
         </div>
-
         <div class="form-group">
           <label class="form-label">Телефон</label>
           <input type="tel" name="phone" class="glass-input" placeholder="+79123456789">
         </div>
-
         <div class="form-group">
-          <label class="form-label">ИНН <span style="font-weight:400;color:var(--neutral-400);">(необязательно)</span></label>
+          <label class="form-label">ИНН <span style="font-weight:400;color:var(--neutral-400)">(необязательно)</span></label>
           <input type="text" name="inn" class="glass-input" placeholder="ИНН">
         </div>
-
         <div class="form-group">
           <label class="form-label">Вид деятельности</label>
           <select name="activity" class="glass-input" required>
-            <option value="">Выберите...</option><option value="it">IT и программирование</option><option value="design">Дизайн и креатив</option><option value="consulting">Консультирование</option><option value="education">Образование и репетиторство</option><option value="writing">Копирайтинг и переводы</option><option value="photo">Фото и видео</option><option value="repair">Ремонт и строительство</option><option value="beauty">Красота и здоровье</option><option value="delivery">Доставка и курьерство</option><option value="other">Другое</option>
+            <option value="">Выберите...</option>
+            <option value="it">IT и программирование</option><option value="design">Дизайн и креатив</option><option value="consulting">Консультирование</option><option value="education">Образование и репетиторство</option><option value="writing">Копирайтинг и переводы</option><option value="photo">Фото и видео</option><option value="repair">Ремонт и строительство</option><option value="beauty">Красота и здоровье</option><option value="delivery">Доставка и курьерство</option><option value="other">Другое</option>
           </select>
         </div>
-
         <div class="form-group">
           <label class="form-label">Пароль</label>
           <input type="password" name="password" class="glass-input" placeholder="Не менее 12 символов" required minlength="12" id="password" autocomplete="new-password">
           <div class="form-hint" id="passwordHint">Минимум 12 символов</div>
           <div id="passwordStrength" style="margin-top:var(--space-2);height:4px;border-radius:var(--radius-full);background:var(--neutral-200);overflow:hidden"><div id="passwordStrengthBar" style="height:100%;width:0%;transition:all var(--transition-fast);border-radius:var(--radius-full)"></div></div>
         </div>
-
         <div class="form-group">
           <label class="form-label">Подтвердите пароль</label>
           <input type="password" name="password_confirm" class="glass-input" placeholder="Повторите пароль" required minlength="12" id="passwordConfirm" autocomplete="new-password">
         </div>
-
         <div class="form-group">
-          <label style="display:flex;align-items:flex-start;gap:var(--space-3);cursor:pointer;font-size:.9375rem;color:var(--neutral-600);">
+          <label style="display:flex;align-items:flex-start;gap:var(--space-3);cursor:pointer;font-size:.9375rem;color:var(--neutral-600)">
             <input type="checkbox" name="agree" required style="margin-top:4px;accent-color:var(--primary-600)">
             <span>Я согласен с <a href="/terms">условиями использования</a> и <a href="/privacy">политикой конфиденциальности</a>.</span>
           </label>
         </div>
-
         <div id="registerStatus" role="status" aria-live="polite" style="display:none;margin-top:16px;padding:14px;border-radius:12px"></div>
         <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:var(--space-4)"><span>✨</span> Создать аккаунт</button>
       </form>
-
-      <div class="text-center" style="margin-top:var(--space-6);padding-top:var(--space-6);border-top:1px solid var(--neutral-200)">
-        <p style="color:var(--neutral-500);font-size:.9375rem">Уже есть аккаунт? <a href="/login" style="font-weight:600">Войти</a></p>
-      </div>
+      <div class="text-center" style="margin-top:var(--space-6);padding-top:var(--space-6);border-top:1px solid var(--neutral-200)"><p style="color:var(--neutral-500);font-size:.9375rem">Уже есть аккаунт? <a href="/login" style="font-weight:600">Войти</a></p></div>
     </div>
   </div>
 </section>
@@ -87,17 +83,21 @@
 {% block extra_scripts %}
 <script nonce="{{ csp_nonce }}">
 const typeSelect=document.getElementById('accountType');
-const tariffHint=document.getElementById('tariffHint');
-const tariffText={
- self_employed:'Для самозанятого: Free — базовые инструменты; Pro — расширенные CRM, документы, аналитика и продвижение.',
- individual_entrepreneur:'Для ИП: Business Start — рабочие инструменты и документы; Business Pro — расширенные CRM, финансы, команда и интеграции.',
- company:'Для ООО: Business Pro — корпоративная рабочая среда; Corporate — расширенные роли, команда, документы, CRM и интеграции.',
- employer:'Для работодателя: Business Start — публикации и работа с исполнителями; Business Pro — расширенный маркетплейс, CRM, команда и аналитика.'
+const tariffBox=document.getElementById('tariffBox');
+const educationAgreement=document.getElementById('educationAgreement');
+const educationPartnerAgree=document.getElementById('educationPartnerAgree');
+const tariffData={
+ self_employed:{text:'Самозанятый: Free — 0 ₽. До 25 клиентов, до 10 договоров в месяц и базовый набор рабочих инструментов. Pro — 499 ₽/мес. без этих базовых лимитов, с расширенными CRM, документами, аналитикой и продвижением.'},
+ individual_entrepreneur:{text:'ИП: Business Start — 1 490 ₽/мес. для работы с клиентами, документами, CRM и исполнителями. Business Pro — 2 990 ₽/мес. для расширенной команды и интеграций.'},
+ company:{text:'ООО / юридическое лицо: Business Pro — 2 990 ₽/мес. или Corporate — 7 990 ₽/мес. с расширенными ролями, командами, API и корпоративными возможностями.'},
+ employer:{text:'Компания / работодатель: Business Start — 1 490 ₽/мес. для публикации вакансий и работы с исполнителями; Business Pro — 2 990 ₽/мес. для CRM, команды и аналитики.'},
+ education_center:{text:'Учебный центр: отдельная подписка за размещение не является обязательной частью модели. Мы продаём ваши курсы через платформу и получаем комиссию с фактически оплаченных продаж; конкретный процент и расчёты фиксируются в партнёрском договоре.'}
 };
-typeSelect.addEventListener('change',()=>{const text=tariffText[typeSelect.value];tariffHint.textContent=text||'';tariffHint.style.display=text?'block':'none';});
+function updateType(){const type=typeSelect.value;tariffBox.textContent=tariffData[type]?.text||'';tariffBox.style.display=tariffData[type]?'block':'none';const edu=type==='education_center';educationAgreement.style.display=edu?'block':'none';educationPartnerAgree.required=edu;}
+typeSelect.addEventListener('change',updateType);
 const password=document.getElementById('password'),confirmPassword=document.getElementById('passwordConfirm'),bar=document.getElementById('passwordStrengthBar'),hint=document.getElementById('passwordHint'),form=document.getElementById('registerForm'),statusBox=document.getElementById('registerStatus');
 password.addEventListener('input',function(){const value=this.value;let strength=0;if(value.length>=12)strength+=30;if(/[a-z]/.test(value))strength+=15;if(/[A-Z]/.test(value))strength+=15;if(/[0-9]/.test(value))strength+=20;if(/[^a-zA-Z0-9]/.test(value))strength+=20;bar.style.width=strength+'%';hint.textContent=strength<45?'Слабый пароль':strength<75?'Средний пароль':'Надёжный пароль';});
-form.addEventListener('submit',async function(event){event.preventDefault();if(password.value!==confirmPassword.value){statusBox.style.display='block';statusBox.style.background='#fef2f2';statusBox.style.color='#b91c1c';statusBox.textContent='Пароли не совпадают.';return;}const button=form.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Регистрируем…';statusBox.style.display='none';try{localStorage.setItem('ms_account_type',typeSelect.value);const response=await fetch('/api/auth/register',{method:'POST',body:new FormData(form),headers:{'Accept':'application/json'}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||'Не удалось зарегистрировать аккаунт');statusBox.style.display='block';statusBox.style.background='#ecfdf5';statusBox.style.color='#047857';statusBox.innerHTML='<strong>Регистрация прошла.</strong><br>Проверьте почту для подтверждения email и затем войдите в Личный кабинет.';form.reset();}catch(error){statusBox.style.display='block';statusBox.style.background='#fef2f2';statusBox.style.color='#b91c1c';statusBox.textContent=error.message||'Ошибка регистрации';}finally{button.disabled=false;button.innerHTML='<span>✨</span> Создать аккаунт';}});
+form.addEventListener('submit',async function(event){event.preventDefault();if(password.value!==confirmPassword.value){statusBox.style.display='block';statusBox.style.background='#fef2f2';statusBox.style.color='#b91c1c';statusBox.textContent='Пароли не совпадают.';return;}const button=form.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Регистрируем…';statusBox.style.display='none';try{const response=await fetch('/api/auth/register',{method:'POST',body:new FormData(form),headers:{'Accept':'application/json'}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||'Не удалось зарегистрировать аккаунт');statusBox.style.display='block';statusBox.style.background='#ecfdf5';statusBox.style.color='#047857';statusBox.innerHTML='<strong>Регистрация прошла.</strong><br>Проверьте почту для подтверждения email и затем войдите в Личный кабинет.';form.reset();updateType();}catch(error){statusBox.style.display='block';statusBox.style.background='#fef2f2';statusBox.style.color='#b91c1c';statusBox.textContent=error.message||'Ошибка регистрации';}finally{button.disabled=false;button.innerHTML='<span>✨</span> Создать аккаунт';}});
 </script>
 {% endblock %}
 {% endblock %}
