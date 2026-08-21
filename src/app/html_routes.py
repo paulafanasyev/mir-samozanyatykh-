@@ -56,23 +56,37 @@ async def dashboard_page(request: Request):
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
-    # Legacy public route: do not expose fabricated personal/financial data.
-    user = {
-        "name": "",
-        "email": "",
-        "activity": "",
-        "level": None,
-        "status": "Не авторизован",
-        "total_income": None,
-        "total_tax": None,
-        "clients": None,
-        "achievements": None,
-    }
+    user = {"name": "", "email": "", "activity": "", "level": None, "status": "Не авторизован", "total_income": None, "total_tax": None, "clients": None, "achievements": None}
     return templates.TemplateResponse("profile.html", {"request": request, "user": user})
 
 @router.get("/svetlana", response_class=HTMLResponse)
 async def svetlana_page(request: Request):
     return templates.TemplateResponse("svetlana.html", {"request": request})
+
+@router.post("/api/svetlana/chat")
+async def public_svetlana_chat(request: Request):
+    """Public, offline-first Svetlana endpoint. No external model/provider is called here."""
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    message = str((payload or {}).get("message", "")).strip()
+    if not message:
+        raise HTTPException(status_code=422, detail="message is required")
+    text = message.lower()
+    if any(x in text for x in ("налог", "ндп", "ндфл")):
+        answer = "По НПД базовая ставка — 4% с доходов от физических лиц и 6% с доходов от организаций и ИП. Для точной суммы используйте калькулятор и проверяйте итог в ФНС."
+    elif any(x in text for x in ("регистра", "войти", "аккаунт")):
+        answer = "Для начала работы зарегистрируйтесь. После авторизации откроется Личный кабинет с вашими рабочими разделами."
+    elif any(x in text for x in ("маркет", "заказ", "услуг", "ваканс")):
+        answer = "В Маркетплейсе работодатели и самозанятые могут размещать вакансии, услуги, проектные задачи и предложения о партнёрстве."
+    elif any(x in text for x in ("документ", "договор", "акт")):
+        answer = "Я могу помочь выбрать подходящий документ и объяснить, какие данные нужны для его подготовки."
+    elif any(x in text for x in ("светлана", "ты кто", "кто ты")):
+        answer = "Я Светлана — локальный ИИ-помощник «Мира Самозанятых». На публичной странице я работаю в офлайн-first режиме."
+    else:
+        answer = "Я Светлана. Расскажите, что нужно сделать: налоги, регистрация, документы, услуги, поиск работы или работа с платформой."
+    return {"response": answer, "mode": "offline-first"}
 
 @router.get("/contracts", response_class=HTMLResponse)
 async def contracts_page(request: Request):
