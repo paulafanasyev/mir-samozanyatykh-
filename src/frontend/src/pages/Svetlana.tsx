@@ -1,21 +1,81 @@
 import { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff, Send, Sparkles, ArrowLeft, Plus } from 'lucide-react'
+import { Mic, MicOff, Send, Sparkles, ArrowLeft, Plus, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import apiClient from '../api/client'
 import toast from 'react-hot-toast'
 import SvetlanaAvatar, { commandSvetlana } from '../components/SvetlanaAvatar'
+
 interface Message { role: 'user' | 'assistant'; content: string }
+interface SvetlanaStatus { mode: string; provider: string; network_required: boolean; knowledge_topics: number; llm_runtime: string }
+
 export default function Svetlana() {
- const [messages,setMessages]=useState<Message[]>([{role:'assistant',content:'Здравствуйте! Я Светлана. Помогу разобраться с задачами, документами, клиентами и финансами. С чего начнём?'}]); const [input,setInput]=useState(''); const [isRecording,setIsRecording]=useState(false); const [loading,setLoading]=useState(false); const end=useRef<HTMLDivElement>(null)
- useEffect(()=>end.current?.scrollIntoView({behavior:'smooth'}),[messages,loading])
- const sendMessage=async()=>{if(!input.trim()||loading)return;const text=input.trim();setMessages(p=>[...p,{role:'user',content:text}]);setInput('');setLoading(true);try{const r=await apiClient.post('/api/svetlana/chat',{message:text});setMessages(p=>[...p,{role:'assistant',content:r.data.response}]); const frame=document.querySelector<HTMLIFrameElement>('iframe[title="Светлана — 3D AI-ассистент"]'); commandSvetlana(frame,{type:'avatar.emotion',name:'smile',duration:2200})}catch{setMessages(p=>[...p,{role:'assistant',content:'Не удалось связаться с сервисом. Проверьте соединение и попробуйте ещё раз.'}])}finally{setLoading(false)}}
- const toggle=()=>{setIsRecording(v=>!v);toast(isRecording?'Запись остановлена':'Голосовой ввод пока требует подключения браузерного STT')}
- const suggestions=['Составь план на сегодня','Проверь мои счета','Помоги подготовить договор']
- return <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[300px_1fr]">
-   <aside className="hidden rounded-3xl bg-slate-950 p-6 text-white lg:block"><Link to="/dashboard" className="mb-10 flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4"/>Вернуться в кабинет</Link><SvetlanaAvatar size="lg" interactive/><h1 className="mt-5 text-2xl font-black">Светлана</h1><p className="mt-2 text-sm leading-6 text-white/60">Ваш цифровой помощник внутри «Мира Самозанятых».</p><div className="mt-8 space-y-3 text-sm text-white/70"><div className="rounded-2xl bg-white/10 p-3">Работает с контекстом рабочего пространства</div><div className="rounded-2xl bg-white/10 p-3">Помогает с документами и задачами</div><div className="rounded-2xl bg-white/10 p-3">Доступна на сайте и в приложении</div></div></aside>
-   <section className="flex min-h-[calc(100vh-170px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6"><div className="lg:hidden"><SvetlanaAvatar size="sm"/></div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h2 className="font-black text-slate-950">Светлана</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">онлайн</span></div><p className="text-xs text-slate-400">ИИ-помощник · Мир Самозанятых</p></div><button className="rounded-xl p-2 text-slate-400 hover:bg-slate-50"><Plus className="h-5 w-5"/></button></header>
-   <div className="flex-1 space-y-5 overflow-y-auto bg-[#fbfbfd] p-5 sm:p-8">{messages.map((m,i)=><div key={i} className={`flex ${m.role==='user'?'justify-end':'justify-start'}`}><div className={`flex max-w-[88%] gap-3 ${m.role==='user'?'flex-row-reverse':''}`}>{m.role==='assistant'&&<SvetlanaAvatar size="sm"/>}<div><div className={`rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${m.role==='user'?'rounded-tr-md bg-slate-950 text-white':'rounded-tl-md border border-slate-200 bg-white text-slate-700'}`}>{m.content}</div></div></div></div>)}{messages.length===1&&!loading&&<div className="ml-12 flex flex-wrap gap-2">{suggestions.map(s=><button key={s} onClick={()=>{setInput(s)}} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:border-orange-300 hover:text-orange-600">{s}</button>)}</div>}{loading&&<div className="flex gap-3"><SvetlanaAvatar size="sm"/><div className="rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-400">Светлана думает…</div></div>}<div ref={end}/></div>
-   <div className="border-t border-slate-100 bg-white p-4 sm:p-5"><div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-orange-400 focus-within:bg-white"><button onClick={toggle} className={`rounded-xl p-3 ${isRecording?'bg-red-50 text-red-600':'text-slate-400 hover:bg-white hover:text-slate-700'}`}>{isRecording?<MicOff className="h-5 w-5"/>:<Mic className="h-5 w-5"/>}</button><textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}} rows={1} placeholder="Напишите Светлане…" className="max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-3 text-sm outline-none ring-0 focus:border-0 focus:ring-0"/><button onClick={sendMessage} disabled={loading||!input.trim()} className="rounded-xl bg-orange-500 p-3 text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-40"><Send className="h-5 w-5"/></button></div><div className="mt-2 flex items-center gap-2 px-1 text-[10px] text-slate-400"><Sparkles className="h-3 w-3"/>Проверяйте важные финансовые и юридические решения перед отправкой.</div></div>
-   </section>
- </div>
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: 'Здравствуйте! Я Светлана. Я работаю локально и не отправляю ваши сообщения во внешний AI. С чего начнём?' },
+  ])
+  const [input, setInput] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<SvetlanaStatus | null>(null)
+  const end = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
+  useEffect(() => {
+    apiClient.get('/api/svetlana/status').then((r) => setStatus(r.data)).catch(() => setStatus(null))
+  }, [])
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return
+    const text = input.trim()
+    setMessages((p) => [...p, { role: 'user', content: text }])
+    setInput('')
+    setLoading(true)
+    try {
+      const r = await apiClient.post('/api/svetlana/chat', { message: text })
+      setMessages((p) => [...p, { role: 'assistant', content: r.data.response }])
+      const frame = document.querySelector<HTMLIFrameElement>('iframe[title="Светлана — 3D AI-ассистент"]')
+      commandSvetlana(frame, { type: 'avatar.emotion', name: 'smile', duration: 2200 })
+    } catch (err: any) {
+      setMessages((p) => [...p, { role: 'assistant', content: err.response?.data?.detail || 'Не удалось получить локальный ответ. Попробуйте ещё раз.' }])
+    } finally { setLoading(false) }
+  }
+
+  const toggle = () => {
+    setIsRecording((v) => !v)
+    toast(isRecording ? 'Запись остановлена' : 'Голосовой ввод пока требует подключения браузерного STT')
+  }
+
+  const suggestions = ['Как платить НПД?', 'Какие вычеты мне доступны?', 'Какие документы нужны самозанятому?']
+
+  return <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[330px_1fr]">
+    <aside className="hidden overflow-hidden rounded-3xl bg-slate-950 text-white shadow-xl lg:block">
+      <div className="p-6 pb-4">
+        <Link to="/dashboard" className="mb-6 flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4"/>Вернуться в кабинет</Link>
+        <SvetlanaAvatar size="lg" interactive />
+        <h1 className="mt-5 text-3xl font-black tracking-tight">Светлана</h1>
+        <p className="mt-2 text-sm leading-6 text-white/60">Локальный помощник «Мира Самозанятых».</p>
+      </div>
+      <div className="space-y-3 border-t border-white/10 p-6 text-sm">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4"><ShieldCheck className="h-5 w-5 text-emerald-400"/><div><div className="font-bold">Offline</div><div className="text-xs text-white/50">запросы не уходят во внешний AI</div></div></div>
+        <div className="rounded-2xl bg-white/5 p-4"><div className="font-bold">Локальная база</div><div className="mt-1 text-xs text-white/50">{status?.knowledge_topics ?? 17} тематических разделов</div></div>
+        <div className="rounded-2xl bg-white/5 p-4"><div className="font-bold">3D-аватар</div><div className="mt-1 text-xs text-white/50">модель хранится в проекте</div></div>
+      </div>
+    </aside>
+
+    <section className="flex min-h-[calc(100vh-170px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+      <header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+        <div className="lg:hidden"><SvetlanaAvatar size="sm"/></div>
+        <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h2 className="font-black text-slate-950">Светлана</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">offline</span></div><p className="text-xs text-slate-400">Локальный ИИ-помощник · Мир Самозанятых</p></div>
+        <button onClick={() => setMessages([{ role: 'assistant', content: 'Новый диалог начат. Я Светлана и работаю локально.' }])} aria-label="Новый диалог" className="rounded-xl p-2 text-slate-400 hover:bg-slate-50"><Plus className="h-5 w-5"/></button>
+      </header>
+
+      <div className="flex-1 space-y-5 overflow-y-auto bg-gradient-to-b from-slate-50 to-white p-5 sm:p-8">
+        {messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`flex max-w-[90%] gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>{m.role === 'assistant' && <SvetlanaAvatar size="sm"/>}<div><div className={`whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${m.role === 'user' ? 'rounded-tr-md bg-slate-950 text-white' : 'rounded-tl-md border border-slate-200 bg-white text-slate-700'}`}>{m.content}</div></div></div></div>)}
+        {messages.length === 1 && !loading && <div className="ml-12 flex flex-wrap gap-2">{suggestions.map((s) => <button key={s} onClick={() => setInput(s)} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:border-orange-300 hover:text-orange-600">{s}</button>)}</div>}
+        {loading && <div className="flex gap-3"><SvetlanaAvatar size="sm"/><div className="rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-400">Светлана обрабатывает запрос локально…</div></div>}
+        <div ref={end}/>
+      </div>
+
+      <div className="border-t border-slate-100 bg-white p-4 sm:p-5"><div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-sm"><button onClick={toggle} className={`rounded-xl p-3 ${isRecording ? 'bg-red-50 text-red-600' : 'text-slate-400 hover:bg-white hover:text-slate-700'}`}>{isRecording ? <MicOff className="h-5 w-5"/> : <Mic className="h-5 w-5"/>}</button><textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }} rows={1} placeholder="Напишите Светлане…" className="max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-3 text-sm outline-none ring-0 focus:border-0 focus:ring-0"/><button onClick={sendMessage} disabled={loading || !input.trim()} className="rounded-xl bg-orange-500 p-3 text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-40"><Send className="h-5 w-5"/></button></div><div className="mt-2 flex items-center gap-2 px-1 text-[10px] text-slate-400"><Sparkles className="h-3 w-3"/>Локальный режим: сообщения не отправляются во внешний AI.</div></div>
+    </section>
+  </div>
 }
