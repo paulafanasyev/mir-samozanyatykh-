@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { API_BASE_URL } from '../api/client'
 
 type Props = {
   size?: 'sm' | 'md' | 'lg'
@@ -9,6 +10,7 @@ type Props = {
 export default function SvetlanaAvatar({ size = 'md', interactive = false, className = '' }: Props) {
   const ref = useRef<HTMLIFrameElement>(null)
   const dims = size === 'lg' ? 'h-64 w-full' : size === 'sm' ? 'h-12 w-12' : 'h-24 w-24'
+  const portraitUrl = `${API_BASE_URL}/static/svetlana/face.png`
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -32,7 +34,7 @@ export default function SvetlanaAvatar({ size = 'md', interactive = false, class
           sandbox="allow-scripts allow-same-origin"
         />
       ) : (
-        <img src="/static/svetlana/face.png" alt="Светлана" className="h-full w-full object-cover object-top" />
+        <img src={portraitUrl} alt="Светлана" className="h-full w-full object-cover object-top" loading="lazy" />
       )}
       <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
     </div>
