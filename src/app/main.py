@@ -12,6 +12,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -57,6 +58,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# The Docker image contains src/static. Mount it explicitly so the logo and
+# other public API assets resolve instead of returning 404 on Render.
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -69,9 +74,6 @@ app.add_middleware(
     max_age=600,
 )
 
-# Render's public hostname is fixed for this service. Keep it explicitly in
-# the allowlist as a fallback in case RENDER_EXTERNAL_HOSTNAME is unavailable
-# during health checks. Never accept an arbitrary Host header.
 _known_render_host = "mir-samozanyatykh-api-frankfurt.onrender.com"
 _allowed_hosts = []
 for _host in (
