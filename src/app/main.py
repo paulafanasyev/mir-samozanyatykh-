@@ -112,7 +112,7 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=()"
     if settings.ENVIRONMENT == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     csp = (
@@ -124,7 +124,7 @@ async def security_headers(request: Request, call_next):
     )
     response.headers["Content-Security-Policy"] = csp
     response.headers["X-Response-Time"] = f"{duration:.2f}ms"
-    if request.url.path.startswith("/static/svetlana3d/"):
+    if request.url.path.startswith("/static/svetlana/"):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "public, max-age=604800"
