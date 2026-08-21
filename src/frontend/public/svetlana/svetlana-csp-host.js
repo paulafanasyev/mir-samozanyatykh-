@@ -1,12 +1,17 @@
 /* CSP-safe host bridge for Svetlana v13. No inline JavaScript is required in index.html. */
-(function(){
+(async function(){
   'use strict';
+
+  let OrbitControls=null;
+  try{
+    ({OrbitControls}=await import('./vendor/three/0.179.1/examples/jsm/controls/OrbitControls.js'));
+  }catch(_){ }
 
   function installControls(){
     const avatar=window.SvetlanaAvatar;
-    if(!avatar?.camera || !avatar?.renderer?.domElement || !window.THREE?.OrbitControls) return false;
+    if(!OrbitControls || !avatar?.camera || !avatar?.renderer?.domElement) return false;
     if(avatar.orbitControls) return true;
-    const controls=new window.THREE.OrbitControls(avatar.camera, avatar.renderer.domElement);
+    const controls=new OrbitControls(avatar.camera, avatar.renderer.domElement);
     controls.enableDamping=true;
     controls.dampingFactor=0.08;
     controls.enablePan=false;
