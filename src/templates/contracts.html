@@ -1,26 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Договоры — Мир Самозанятых{% endblock %}
+{% block title %}Документы — Мир Самозанятых{% endblock %}
 {% block content %}
-<div class="contracts-page">
-    <h2>📄 Шаблоны договоров</h2>
-    <div id="templates-list">Загрузка...</div>
-</div>
-
+<div class="contracts-page container" style="padding:40px 20px;max-width:1100px;margin:auto"><div class="section-head"><span class="eyebrow">Документы</span><h1>Договоры и акты без рутины</h1><p>Светлана и документальный модуль проекта помогают подготовить рабочий документ по шаблону и данным вашей сделки. Доступны договоры ГПД, оказания услуг, IT-аутсорсинга, NDA, лицензии и акт выполненных работ.</p></div><div id="templates-list" class="cards">Загрузка шаблонов…</div><div id="generator" class="card" style="display:none;margin-top:24px"><h2 id="generator-title"></h2><form id="generator-form"></form><button id="generate-btn" class="btn btn-primary" type="button">Сформировать PDF</button><p id="generator-status"></p></div></div>
 <script nonce="{{ csp_nonce }}">
-async function loadTemplates() {
-    try {
-        const res = await fetch('/api/contracts/templates');
-        const data = await res.json();
-        document.getElementById('templates-list').innerHTML = data.templates.map(t => `
-            <div class="contract-card">
-                <h4>${t.name}</h4>
-                <span class="badge">${t.category}</span>
-            </div>
-        `).join('');
-    } catch (err) {
-        document.getElementById('templates-list').textContent = 'Ошибка загрузки';
-    }
-}
-loadTemplates();
+const list=document.getElementById('templates-list'),gen=document.getElementById('generator'),form=document.getElementById('generator-form'),title=document.getElementById('generator-title'),status=document.getElementById('generator-status');
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadTemplates(){try{const res=await fetch('/api/contracts/templates');if(!res.ok)throw new Error('auth');const data=await res.json();list.innerHTML=(data||[]).map(t=>`<article class="card"><h3>${esc(t.name)}</h3><p>${esc(t.category)}</p><button class="btn btn-soft" onclick="openTemplate('${esc(t.category)}')" ${t.locked?'disabled':''}>${t.locked?'Pro':'Заполнить'}</button></article>`).join('')}catch(e){list.innerHTML='<div class="card"><h3>Войдите в личный кабинет</h3><p>Генерация и хранение документов доступны авторизованному пользователю.</p><a class="btn btn-primary" href="/login">Войти</a></div>'}}
+async function openTemplate(type){const res=await fetch('/api/contracts/templates/'+encodeURIComponent(type));if(!res.ok){status.textContent='Не удалось загрузить шаблон';return}const t=await res.json();title.textContent=t.name;form.innerHTML=(t.fields||[]).map(f=>`<label style="display:block;margin:12px 0"><span>${esc(f.label)}${f.required?' *':''}</span><input class="input" name="${esc(f.key)}" ${f.required?'required':''} value="${esc((t.sample_data||{})[f.key]||f.default||'')}" type="${f.type==='number'?'number':f.type==='date'?'date':'text'}"></label>`).join('');gen.style.display='block';gen.dataset.type=type;gen.scrollIntoView({behavior:'smooth'})}
+document.getElementById('generate-btn').onclick=async()=>{const variables=Object.fromEntries(new FormData(form).entries());status.textContent='Формируем документ…';const res=await fetch('/api/contracts/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template_id:gen.dataset.type,variables,sign:false})});const data=await res.json();if(!res.ok){status.textContent=data.detail||'Ошибка генерации';return}status.innerHTML='Документ сформирован. <strong>PDF готов в личном кабинете.</strong>';};loadTemplates();
 </script>
 {% endblock %}
