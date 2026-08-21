@@ -7,10 +7,9 @@ an actual local model without changing the HTTP contract.
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from app.core.database import get_db
 from app.models import User, SvetlanaChatMessage
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_optional
 from app.core.rate_limit import limiter
 from app.services.local_svetlana import answer_local, local_status
 
@@ -38,15 +37,18 @@ async def svetlana_status() -> dict:
 async def svetlana_chat(
     request: Request,
     payload: ChatRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
-    await _save_message(db, current_user.id, "user", payload.message)
+    """Answer locally. Authentication is optional so the public assistant can work before registration."""
+    if current_user:
+        await _save_message(db, current_user.id, "user", payload.message)
     content = answer_local(payload.message, payload.context)
-    await _save_message(db, current_user.id, "assistant", content)
+    if current_user:
+        await _save_message(db, current_user.id, "assistant", content)
     return {
         "response": content,
-        "user_id": current_user.id,
+        "user_id": current_user.id if current_user else None,
         "mode": "offline",
         "provider": "local",
     }
@@ -56,9 +58,11 @@ async def svetlana_chat(
 async def svetlana_history(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_optional),
 ):
-    """История диалога только текущего пользователя."""
+    """История диалога только текущего авторизованного пользователя."""
+    if not current_user:
+        return {"items": [], "total": 0, "persisted": False}
     limit = max(1, min(limit, 200))
     result = await db.execute(
         select(SvetlanaChatMessage)
