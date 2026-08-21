@@ -1,10 +1,21 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-const rawApiBaseUrl = String(import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+// The Frankfurt API is the current production backend. Keep an explicit
+// fallback so the static Render frontend never silently sends /api/* to itself
+// when VITE_API_URL is missing. Also migrate the old Oregon hostname.
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const currentApiUrl = 'https://mir-samozanyatykh-api-frankfurt.onrender.com'
+const isOldOregonApi = /mirsamozanyatykh-api\.onrender\.com/i.test(configuredApiUrl)
+const rawApiBaseUrl = configuredApiUrl && !isOldOregonApi ? configuredApiUrl : currentApiUrl
+
 // Accept both host URLs and legacy URLs ending in /api; request paths are normalized below.
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/api$/, '')
-export const apiClient = axios.create({ baseURL: API_BASE_URL, withCredentials: true, headers: { 'Content-Type': 'application/json' } })
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+})
 
 const csrfToken = () => document.cookie.split('; ').find((x) => x.startsWith('csrf_token='))?.split('=')[1] || ''
 
