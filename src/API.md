@@ -18,12 +18,9 @@ Authorization: Bearer <access_token>
 Получить токен:
 ```http
 POST /api/auth/login
-Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
 
-{
-  "email": "user@example.com",
-  "password": "secure_password"
-}
+email=user%40example.com&password=secure_password
 ```
 
 ## Endpoints
@@ -75,14 +72,16 @@ Content-Type: application/json
 ### Svetlana (AI)
 | Method | Endpoint | Описание |
 |--------|----------|----------|
-| POST | `/api/svetlana/chat` | Отправить сообщение |
+| GET | `/api/svetlana/status` | Статус локального runtime |
+| POST | `/api/svetlana/chat` | Отправить сообщение в локальный runtime |
 | GET | `/api/svetlana/history` | История чата |
 
 ### Notifications
 | Method | Endpoint | Описание |
 |--------|----------|----------|
 | GET | `/api/notifications` | Уведомления |
-| PATCH | `/api/notifications/{id}/read` | Прочитать |
+| PUT | `/api/notifications/{id}/read` | Прочитать |
+| PUT | `/api/notifications/read-all` | Прочитать все |
 | GET | `/api/notifications/unread-count` | Непрочитанные |
 
 ### Bank
@@ -130,7 +129,7 @@ Content-Type: application/json
 
 - **Auth**: 5 запросов/минуту
 - **API**: 100 запросов/минуту
-- **Svetlana**: 20 запросов/минуту
+- **Svetlana**: 30 запросов/минуту
 
 ## Webhooks
 
