@@ -3,13 +3,11 @@ from __future__ import annotations
 
 import hashlib
 import mimetypes
-import os
 import shutil
 import subprocess
-from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +18,6 @@ from app.core.config import settings
 from app.models import User
 
 router = APIRouter(prefix="/api/marketplace", tags=["marketplace"])
-
 ALLOWED = {".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"}
 MAX_FILE_BYTES = min(settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024, 10 * 1024 * 1024)
 
@@ -52,7 +49,7 @@ def _verification_status(account_type: str, inn: Optional[str]) -> str:
 
 
 def _scan_file(path: str) -> str:
-    """Fail closed for publication: use local ClamAV when available, otherwise quarantine."""
+    """Use local ClamAV when available; otherwise keep the file quarantined."""
     clamscan = shutil.which("clamscan")
     if not clamscan:
         return "quarantine"
@@ -69,7 +66,7 @@ async def list_listings(db: AsyncSession = Depends(get_db)):
         SELECT id, account_type, kind, title, description, direction, contact_email,
                verification_status, moderation_status, created_at
         FROM marketplace_listings
-        WHERE moderation_status = 'published' AND verification_status IN ('verified','pending_fns')
+        WHERE moderation_status = 'published' AND verification_status = 'verified'
         ORDER BY created_at DESC LIMIT 100
     """))).mappings().all()
     return [dict(row) for row in rows]
@@ -77,7 +74,6 @@ async def list_listings(db: AsyncSession = Depends(get_db)):
 
 @router.post("/listings", status_code=201)
 async def create_listing(
-    request: Request,
     account_type: str = Form(...),
     kind: str = Form(..., max_length=80),
     title: str = Form(..., max_length=255),
@@ -93,8 +89,7 @@ async def create_listing(
         raise HTTPException(status_code=400, detail="Неверный тип участника")
     verification = _verification_status(account_type, inn)
     if verification == "rejected_invalid_inn":
-        raise HTTPException(status_code=422, detail="Укажите корректный ИНН: для самозанятого/физлица — 12 цифр, для ИП/организации — 10 цифр")
-
+        raise HTTPException(status_code=422, detail="Укажите корректный ИНН: для самозанятого — 12 цифр, для ИП/организации — 10 цифр")
     result = await db.execute(text("""
         INSERT INTO marketplace_listings
           (user_id, account_type, kind, title, description, direction, contact_email, inn, verification_status, moderation_status)
@@ -113,7 +108,7 @@ async def create_listing(
     })
     row = result.mappings().one()
     await db.commit()
-    return {"id": row["id"], "verification_status": verification, "moderation_status": "pending", "message": "Объявление сохранено и отправлено на проверку."}
+    return {"id": row["id"], "verification_status": verification, "moderation_status": "pending", "message": "Объявление сохранено. Перед публикацией оно проходит проверку статуса и модерацию."}
 
 
 @router.post("/listings/{listing_id}/files", status_code=201)
@@ -128,23 +123,13 @@ async def upload_listing_file(
         raise HTTPException(status_code=404, detail="Объявление не найдено")
     if row["user_id"] is not None and (not current_user or row["user_id"] != current_user.id):
         raise HTTPException(status_code=403, detail="Нет доступа к файлу объявления")
-
     ext = validate_upload(file.filename, file.content_type, ALLOWED)
     data = await read_limited(file, MAX_FILE_BYTES)
     if not data:
         raise HTTPException(status_code=400, detail="Пустой файл")
-    # Basic signature checks prevent renamed executables from entering the document pipeline.
-    signatures = {
-        ".pdf": data.startswith(b"%PDF-"),
-        ".png": data.startswith(b"\x89PNG\r\n\x1a\n"),
-        ".jpg": data.startswith(b"\xff\xd8\xff"),
-        ".jpeg": data.startswith(b"\xff\xd8\xff"),
-        ".docx": data.startswith(b"PK\x03\x04"),
-        ".doc": data.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"),
-    }
+    signatures = {".pdf": data.startswith(b"%PDF-"), ".png": data.startswith(b"\x89PNG\r\n\x1a\n"), ".jpg": data.startswith(b"\xff\xd8\xff"), ".jpeg": data.startswith(b"\xff\xd8\xff"), ".docx": data.startswith(b"PK\x03\x04"), ".doc": data.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1")}
     if not signatures.get(ext, False):
         raise HTTPException(status_code=400, detail="Содержимое файла не соответствует расширению")
-
     filename = safe_filename(file.filename)
     stored = private_storage_path("marketplace", filename, current_user.id if current_user else 0)
     path = ensure_within_private_storage(stored)
@@ -153,19 +138,10 @@ async def upload_listing_file(
     if scan_status == "infected":
         path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail="Файл отклонён антивирусной проверкой")
-
     sha256 = hashlib.sha256(data).hexdigest()
     await db.execute(text("""
         INSERT INTO marketplace_files (listing_id, original_name, stored_path, content_type, size_bytes, sha256, scan_status)
         VALUES (:listing_id, :original_name, :stored_path, :content_type, :size_bytes, :sha256, :scan_status)
-    """), {
-        "listing_id": listing_id,
-        "original_name": filename,
-        "stored_path": str(path),
-        "content_type": file.content_type or mimetypes.guess_type(filename)[0],
-        "size_bytes": len(data),
-        "sha256": sha256,
-        "scan_status": scan_status,
-    })
+    """), {"listing_id": listing_id, "original_name": filename, "stored_path": str(path), "content_type": file.content_type or mimetypes.guess_type(filename)[0], "size_bytes": len(data), "sha256": sha256, "scan_status": scan_status})
     await db.commit()
     return {"message": "Файл принят в защищённое хранилище", "scan_status": scan_status, "sha256": sha256}
