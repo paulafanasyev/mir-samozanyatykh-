@@ -1,24 +1,26 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ShieldCheck, Sparkles, FileText, Users, Download, CheckCircle2, BarChart3, Receipt, Headphones } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Sparkles, FileText, Users, Download, CheckCircle2, BarChart3, Receipt } from 'lucide-react'
 import SvetlanaAvatar from '../components/SvetlanaAvatar'
 
 export default function Home() {
   return <div className="home-page overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(30,41,59,.08)]">
-    <section className="home-hero relative overflow-hidden px-6 pb-12 pt-8 sm:px-10 lg:px-14 lg:pb-16 lg:pt-12">
+    <section className="home-hero relative overflow-hidden px-4 pb-10 pt-6 sm:px-8 lg:px-12 lg:pb-14 lg:pt-10">
       <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-orange-100/80 blur-3xl"/><div className="absolute left-1/2 top-36 h-72 w-72 rounded-full bg-amber-50 blur-3xl"/>
-      <div className="relative grid items-center gap-10 xl:grid-cols-[1fr_430px]">
-        <div>
-          <div className="mb-5 flex items-center gap-3"><img src="/static/logo-mir-samozanyatykh.png" alt="Мир Самозанятых" className="h-12 w-12 object-contain"/><div><div className="text-xs font-black uppercase tracking-[.2em] text-orange-600">Мир Самозанятых</div><div className="text-xs text-slate-400">один аккаунт · сайт · приложение</div></div></div>
-          <h1 className="max-w-3xl text-4xl font-black leading-[1.02] tracking-[-.045em] text-slate-950 sm:text-6xl">Всё для вашего дела.<br/><span className="brand-text">Спокойно. Умно. В одном месте.</span></h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">Доходы, клиенты, чеки, договоры и документы — в одном рабочем пространстве. А <b className="text-slate-800">Светлана</b> помогает разбираться с задачами и не терять важное.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link to="/register" className="btn-brand"><span>Начать бесплатно</span><ArrowRight className="h-4 w-4"/></Link><Link to="/svetlana" className="btn-secondary"><Sparkles className="h-4 w-4 text-orange-500"/>Познакомиться со Светланой</Link></div>
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-slate-500"><span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500"/>Единый аккаунт</span><span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-500"/>Защищённые данные</span><span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-orange-500"/>Светлана внутри</span></div>
+      <div className="relative grid min-h-[620px] grid-cols-[minmax(0,1fr)_minmax(170px,46%)] items-center gap-3 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_48%] lg:gap-10">
+        <div className="relative z-10 min-w-0">
+          <div className="mb-5 flex items-center gap-3"><img src="https://mir-samozanyatykh-api-frankfurt.onrender.com/static/logo-mir-samozanyatykh.png" alt="Мир Самозанятых" className="h-11 w-11 shrink-0 object-contain sm:h-12 sm:w-12"/><div><div className="text-[10px] font-black uppercase tracking-[.16em] text-orange-600 sm:text-xs sm:tracking-[.2em]">Мир Самозанятых</div><div className="text-[10px] text-slate-400 sm:text-xs">один аккаунт · сайт · приложение</div></div></div>
+          <h1 className="max-w-3xl text-[clamp(1.8rem,4vw,3.8rem)] font-black leading-[1.02] tracking-[-.045em] text-slate-950">Всё для вашего дела.<br/><span className="brand-text">Спокойно. Умно. В одном месте.</span></h1>
+          <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base lg:text-lg">Доходы, клиенты, чеки, договоры и документы — в одном рабочем пространстве. А <b className="text-slate-800">Светлана</b> помогает разбираться с задачами и не терять важное.</p>
+          <div className="mt-7 flex flex-wrap gap-2 sm:gap-3"><Link to="/register" className="btn-brand"><span>Начать бесплатно</span><ArrowRight className="h-4 w-4"/></Link><Link to="/svetlana" className="btn-secondary"><Sparkles className="h-4 w-4 text-orange-500"/>Светлана</Link></div>
+          <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500 sm:flex"><span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500"/>Единый аккаунт</span><span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-500"/>Защищённые данные</span><span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-orange-500"/>Светлана внутри</span></div>
         </div>
-        <div className="svetlana-hero-card relative min-h-[430px] overflow-hidden rounded-[30px] border border-slate-200/80 bg-[#171a22] shadow-2xl shadow-slate-900/15">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_25%,rgba(255,184,77,.24),transparent_38%),linear-gradient(145deg,#11141b,#24211b)]"/>
-          <div className="absolute left-5 top-5 z-10 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white/80">Светлана · онлайн</div>
-          <img src="/static/svetlana/base.png" alt="Светлана — ИИ-ассистент" className="absolute bottom-0 left-1/2 h-[92%] -translate-x-1/2 object-contain" />
-          <div className="absolute bottom-5 left-5 right-5 z-10 rounded-2xl border border-white/15 bg-white/95 p-4 shadow-xl"><div className="flex items-center gap-3"><SvetlanaAvatar size="md"/><div className="min-w-0 flex-1"><div className="font-black text-slate-950">Светлана</div><div className="text-xs text-slate-500">Ваш ИИ-ассистент · готова помочь</div></div><Link to="/svetlana" className="rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white hover:bg-orange-600">Открыть</Link></div></div>
+        <div className="relative z-10 flex h-full min-h-[520px] items-stretch justify-end">
+          <div className="svetlana-hero-card relative h-full min-h-[520px] w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#171a22] shadow-2xl shadow-slate-900/20 lg:min-h-[620px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_20%,rgba(255,184,77,.26),transparent_38%),linear-gradient(145deg,#11141b,#24211b)]"/>
+            <div className="absolute left-3 top-3 z-20 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[9px] font-bold text-white/80 backdrop-blur sm:left-5 sm:top-5 sm:px-3 sm:py-1.5 sm:text-[11px]">Светлана · локальный 3D</div>
+            <div className="absolute inset-0 z-10 pt-10 sm:pt-12"><SvetlanaAvatar size="lg" interactive className="!h-full !min-h-[520px] !rounded-none !border-0 !bg-transparent !shadow-none lg:!min-h-[620px]" /></div>
+            <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-20 rounded-2xl border border-white/10 bg-black/35 p-3 text-white backdrop-blur-md sm:bottom-5 sm:left-5 sm:right-5 sm:p-4"><div className="font-black text-sm sm:text-base">Светлана</div><div className="mt-0.5 text-[10px] text-white/65 sm:text-xs">Ваш ИИ-ассистент · работает локально</div></div>
+          </div>
         </div>
       </div>
     </section>
