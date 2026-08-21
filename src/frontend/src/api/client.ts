@@ -11,10 +11,14 @@ const rawApiBaseUrl = configuredApiUrl && !isOldOregonApi ? configuredApiUrl : c
 
 // Accept both host URLs and legacy URLs ending in /api; request paths are normalized below.
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/api$/, '')
+
+// Do not force application/json globally. Auth registration/login use FastAPI
+// Form(...) parameters and therefore need application/x-www-form-urlencoded;
+// Axios will select the appropriate content type for URLSearchParams/FormData.
+// JSON endpoints continue to receive application/json automatically.
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 const csrfToken = () => document.cookie.split('; ').find((x) => x.startsWith('csrf_token='))?.split('=')[1] || ''
