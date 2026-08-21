@@ -32,6 +32,7 @@ class WebhookCreate(BaseModel):
 @router.post("/")
 @limiter.limit("10/minute")
 async def create_webhook(
+    request: Request,
     webhook_in: WebhookCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -74,6 +75,7 @@ async def list_webhooks(
 @router.post("/{webhook_id}/test")
 @limiter.limit("5/minute")
 async def test_webhook(
+    request: Request,
     webhook_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
