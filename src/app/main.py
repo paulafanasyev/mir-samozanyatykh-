@@ -12,8 +12,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
@@ -24,7 +23,6 @@ from app.core.rate_limit import limiter
 from app.core.upload_limit import UploadSizeLimitMiddleware
 from app.api.metrics import record_request
 
-# Import routers
 from app.api import auth, users, sales, contracts, crm, svetlana, websocket
 from app.api import subscriptions, flutter, email_campaigns, analytics
 from app.api import import_export, search, calendar, notifications, webrtc
@@ -36,7 +34,6 @@ from app.html_routes import router as html_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan events: startup and shutdown"""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     if settings.ENVIRONMENT == "production":
         if len(settings.SECRET_KEY) < 32:
@@ -63,8 +60,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ============ SECURITY MIDDLEWARE ============
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL, f"https://{settings.DOMAIN}"],
@@ -74,27 +69,28 @@ app.add_middleware(
     max_age=600,
 )
 
-# Trusted Hosts
-# Render terminates TLS at its edge and forwards the original public Host header.
-# RENDER_EXTERNAL_HOSTNAME is supplied by Render and is therefore safer than
-# accepting arbitrary Host values. Keep the configured DOMAIN as an additional
-# explicit/custom-domain allowlist entry.
+# Render's public hostname is fixed for this service. Keep it explicitly in
+# the allowlist as a fallback in case RENDER_EXTERNAL_HOSTNAME is unavailable
+# during health checks. Never accept an arbitrary Host header.
+_known_render_host = "mir-samozanyatykh-api-frankfurt.onrender.com"
 _allowed_hosts = []
 for _host in (
     settings.DOMAIN,
     os.getenv("RENDER_EXTERNAL_HOSTNAME", ""),
+    _known_render_host,
 ):
     _host = _host.strip().lower()
+    if _host.startswith("https://"):
+        _host = _host[8:]
+    elif _host.startswith("http://"):
+        _host = _host[7:]
+    _host = _host.rstrip("/")
     if _host and _host not in _allowed_hosts:
         _allowed_hosts.append(_host)
 if settings.ENVIRONMENT != "production":
     _allowed_hosts.extend(["localhost", "127.0.0.1"])
 
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=_allowed_hosts,
-)
-
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 app.add_middleware(UploadSizeLimitMiddleware)
 
 
@@ -112,10 +108,8 @@ async def csrf_protection(request: Request, call_next):
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    """Add security headers to every response"""
     nonce = generate_csp_nonce()
     request.state.csp_nonce = nonce
-
     start_time = time.time()
     response = await call_next(request)
     duration = (time.time() - start_time) * 1000
@@ -123,43 +117,29 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = (
-        "camera=(), microphone=(), geolocation=(), "
-        "payment=(), usb=(), magnetometer=(), gyroscope=()"
-    )
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
     if settings.ENVIRONMENT == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
-
     csp = (
-        f"default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}'; "
-        f"style-src 'self' 'nonce-{nonce}'; "
-        f"font-src 'self'; "
-        f"img-src 'self' data: https:; "
+        f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; "
+        f"font-src 'self'; img-src 'self' data: https:; "
         f"connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru; "
-        f"frame-ancestors 'none'; "
-        f"base-uri 'self'; "
-        f"form-action 'self';"
+        f"frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     )
     response.headers["Content-Security-Policy"] = csp
     response.headers["X-Response-Time"] = f"{duration:.2f}ms"
-
     return response
 
 
 @app.middleware("http")
 async def request_logging(request: Request, call_next):
-    """Log all requests"""
     start_time = time.time()
-
     try:
         response = await call_next(request)
         duration = (time.time() - start_time) * 1000
         record_request(response.status_code, duration / 1000.0)
-
         logger.info(
-            f"{request.method} {request.url.path} {response.status_code} "
-            f"{duration:.2f}ms {request.client.host}",
+            f"{request.method} {request.url.path} {response.status_code} {duration:.2f}ms {request.client.host}",
             extra={
                 "method": request.method,
                 "path": request.url.path,
@@ -167,10 +147,9 @@ async def request_logging(request: Request, call_next):
                 "duration_ms": round(duration, 2),
                 "ip_address": request.client.host,
                 "user_agent": request.headers.get("user-agent", "")[:100],
-            }
+            },
         )
         return response
-
     except Exception as e:
         duration = (time.time() - start_time) * 1000
         logger.error(
@@ -180,12 +159,10 @@ async def request_logging(request: Request, call_next):
                 "path": request.url.path,
                 "error_type": type(e).__name__,
                 "ip_address": request.client.host,
-            }
+            },
         )
         raise
 
-
-# ============ ROUTERS ============
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -228,7 +205,6 @@ app.include_router(html_router)
 @app.get("/")
 @limiter.limit("10/minute")
 async def root(request: Request):
-    """Root endpoint"""
     return {
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
