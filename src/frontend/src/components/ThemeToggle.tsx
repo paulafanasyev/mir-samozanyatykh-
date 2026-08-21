@@ -1,21 +1,3 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
-
-export default function ThemeToggle() {
-  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-    localStorage.setItem('ms-theme', dark ? 'dark' : 'light')
-  }, [dark])
-  return (
-    <button
-      type="button"
-      onClick={() => setDark(v => !v)}
-      aria-label={dark ? 'Включить светлую тему' : 'Включить тёмную тему'}
-      title={dark ? 'Светлая тема' : 'Тёмная тема'}
-      className="theme-switch"
-    >
-      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-    </button>
-  )
-}
+export default function ThemeToggle(){const[theme,setTheme]=useState<'light'|'dark'>(()=>{const saved=localStorage.getItem('mir-theme')||localStorage.getItem('ms-theme');return saved==='dark'?'dark':'light'});useEffect(()=>{document.documentElement.dataset.theme=theme;localStorage.setItem('mir-theme',theme);localStorage.setItem('ms-theme',theme)},[theme]);return <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white/80 p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900/80" aria-label="Выбор темы"><button type="button" onClick={()=>setTheme('light')} aria-label="Светлая тема" title="Светлая тема" className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold transition ${theme==='light'?'bg-orange-50 text-orange-600':'text-slate-400 hover:text-slate-700'}`}><Sun className="h-4 w-4"/>Светлая</button><button type="button" onClick={()=>setTheme('dark')} aria-label="Тёмная тема" title="Тёмная тема" className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold transition ${theme==='dark'?'bg-slate-800 text-amber-300':'text-slate-400 hover:text-slate-700'}`}><Moon className="h-4 w-4"/>Тёмная</button></div>}
