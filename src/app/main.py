@@ -43,8 +43,6 @@ async def lifespan(app: FastAPI):
             raise RuntimeError("SECRET_KEY must be at least 32 characters in production")
         if not settings.BANK_ENCRYPTION_KEY:
             raise RuntimeError("BANK_ENCRYPTION_KEY is required in production")
-    # Production schema is managed exclusively by Alembic in startup.sh.
-    # create_all remains available for local development/tests only.
     if settings.ENVIRONMENT != "production":
         await init_db()
     yield
@@ -62,13 +60,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ============ SECURITY MIDDLEWARE ============
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL, f"https://{settings.DOMAIN}"],
@@ -79,25 +75,32 @@ app.add_middleware(
 )
 
 # Trusted Hosts
-# Localhost is permitted only outside production; production must accept
-# requests addressed to the configured public domain only.
-_allowed_hosts = [settings.DOMAIN, f"*.{settings.DOMAIN}"]
+# Render terminates TLS at its edge and forwards the original public Host header.
+# RENDER_EXTERNAL_HOSTNAME is supplied by Render and is therefore safer than
+# accepting arbitrary Host values. Keep the configured DOMAIN as an additional
+# explicit/custom-domain allowlist entry.
+_allowed_hosts = []
+for _host in (
+    settings.DOMAIN,
+    os.getenv("RENDER_EXTERNAL_HOSTNAME", ""),
+):
+    _host = _host.strip().lower()
+    if _host and _host not in _allowed_hosts:
+        _allowed_hosts.append(_host)
 if settings.ENVIRONMENT != "production":
     _allowed_hosts.extend(["localhost", "127.0.0.1"])
+
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=_allowed_hosts,
 )
 
-# Upload size limit
 app.add_middleware(UploadSizeLimitMiddleware)
 
 
 @app.middleware("http")
 async def csrf_protection(request: Request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path == "/api/auth/refresh":
-        # Browser refresh uses a cookie and therefore requires double-submit CSRF.
-        # Native mobile clients send the refresh token in the request body and do not use the browser cookie.
         if request.headers.get("X-Client-Type", "").lower() not in {"mobile", "flutter"}:
             import hmac
             csrf_cookie = request.cookies.get("csrf_token")
@@ -117,7 +120,6 @@ async def security_headers(request: Request, call_next):
     response = await call_next(request)
     duration = (time.time() - start_time) * 1000
 
-    # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -128,7 +130,6 @@ async def security_headers(request: Request, call_next):
     if settings.ENVIRONMENT == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
-    # CSP with nonce
     csp = (
         f"default-src 'self'; "
         f"script-src 'self' 'nonce-{nonce}'; "
@@ -141,8 +142,6 @@ async def security_headers(request: Request, call_next):
         f"form-action 'self';"
     )
     response.headers["Content-Security-Policy"] = csp
-
-    # Timing
     response.headers["X-Response-Time"] = f"{duration:.2f}ms"
 
     return response
