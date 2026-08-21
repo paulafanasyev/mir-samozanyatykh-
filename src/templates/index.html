@@ -1,9 +1,37 @@
 {% extends "site_base.html" %}
 {% block title %}Мир Самозанятых{% endblock %}
-{% block extra_head %}<style nonce="{{ csp_nonce }}">.hero-stage{display:flex;align-items:flex-end;justify-content:center;perspective:1200px;touch-action:none}.hero-stage .sv-hero-image{display:block;width:100%;height:100%;padding:42px 18px 0;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 24px 35px rgba(0,0,0,.28));animation:svetlanaFloat 4s ease-in-out infinite;user-select:none;-webkit-user-drag:none;transform-style:preserve-3d;cursor:grab}.hero-stage.dragging .sv-hero-image{cursor:grabbing;animation:none}@keyframes svetlanaFloat{0%,100%{transform:translateY(0) rotateY(var(--sv-y,0deg)) rotateX(var(--sv-x,0deg))}50%{transform:translateY(-6px) rotateY(var(--sv-y,0deg)) rotateX(var(--sv-x,0deg))}}.sv-rotate-hint{position:absolute;right:18px;bottom:18px;z-index:3;padding:8px 11px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:11px;font-weight:800;backdrop-filter:blur(10px)}@media(max-width:900px){.hero-stage .sv-hero-image{padding:42px 8px 0}}@media(max-width:620px){.hero-stage .sv-hero-image{padding:38px 2px 0}.sv-rotate-hint{right:8px;bottom:8px;font-size:9px}}</style>{% endblock %}
+{% block extra_head %}
+<style nonce="{{ csp_nonce }}">
+.hero-stage{position:relative;min-height:650px;border-radius:34px;overflow:hidden;background:#10131a;box-shadow:0 30px 80px rgba(15,23,42,.18)}
+.sv-3d-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#10131a}
+.sv-hero-overlay{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.10),transparent 24%,transparent 78%,rgba(0,0,0,.22)}
+.sv-hero-label{position:absolute;left:18px;top:18px;z-index:3;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:11px;font-weight:800;backdrop-filter:blur(10px)}
+.sv-hero-copy{position:absolute;left:18px;bottom:18px;z-index:3;max-width:330px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.38);color:#fff;font-size:11px;line-height:1.5;backdrop-filter:blur(10px)}
+@media(max-width:900px){.hero-grid{grid-template-columns:minmax(0,1fr) 50%;min-height:560px;gap:12px}.hero-stage{min-height:560px;border-radius:24px}.sv-hero-copy{left:10px;right:10px;bottom:10px;max-width:none;font-size:9px}.sv-hero-label{left:10px;top:10px;font-size:9px;padding:6px 8px}}
+@media(max-width:620px){.hero-grid{grid-template-columns:minmax(0,1fr) 50%;min-height:520px}.hero-stage{min-height:520px}.sv-hero-copy{display:none}.sv-hero-label{font-size:8px}}
+</style>
+{% endblock %}
 {% block content %}
-<section class="hero"><div class="container hero-grid"><div class="hero-copy"><span class="eyebrow">✦ Мир Самозанятых</span><h1>Всё для вашего дела.<br><span class="gradient">Спокойно. Умно. В одном месте.</span></h1><p>Доходы, клиенты, чеки, документы и полезные сервисы — в одной платформе. Светлана помогает прямо на главной.</p><div class="actions"><a class="btn btn-primary" href="/register">Начать бесплатно →</a><a class="btn btn-soft" href="/calculator">Рассчитать НПД</a></div></div><div class="hero-stage" id="svetlanaStage"><div class="label">Светлана · локальный ассистент · OFFLINE</div><img class="sv-hero-image" id="svetlanaHeroImage" src="/static/svetlana/base.png" alt="Светлана — виртуальный помощник «Мира Самозанятых»" loading="eager" decoding="async"><div class="sv-rotate-hint">↔ Потяните Светлану мышью или пальцем</div></div></div></section>
-<section class="section"><div class="container"><div class="section-head"><h2>Что здесь можно делать</h2><p>Реальные задачи самозанятого в одном месте</p></div><div class="cards"><article class="card"><h3>🤖 Светлана</h3><p>Локальный помощник по НПД, документам и работе на платформе.</p><a class="btn btn-soft" href="/svetlana">Открыть</a></article><article class="card"><h3>🧮 Калькулятор</h3><p>Ориентировочный расчёт НПД.</p><a class="btn btn-soft" href="/calculator">Посчитать</a></article><article class="card"><h3>🛒 Маркетплейс</h3><p>Услуги, вакансии, проекты и партнёрства.</p><a class="btn btn-soft" href="/marketplace">Перейти</a></article></div></div></section>
-<section class="section" style="background:#fff7ed"><div class="container"><div class="section-head"><h2>Личный кабинет</h2><p>После авторизации открывается ваше рабочее пространство.</p></div><div class="grid-2"><div class="card"><h3>Финансы и работа</h3><p>Доходы, счета, клиенты, сделки, задачи, документы, бухгалтерия, чеки и отчёты.</p></div><div class="card"><h3>Профиль и Светлана</h3><p>Настройки, уведомления, интеграции и история диалогов.</p></div></div></div></section>
-<script nonce="{{ csp_nonce }}">(()=>{const stage=document.getElementById('svetlanaStage'),img=document.getElementById('svetlanaHeroImage');if(!stage||!img)return;let down=false,lastX=0,lastY=0,ry=0,rx=0;const apply=()=>{img.style.setProperty('--sv-y',ry+'deg');img.style.setProperty('--sv-x',rx+'deg')};stage.addEventListener('pointerdown',e=>{down=true;lastX=e.clientX;lastY=e.clientY;stage.classList.add('dragging');stage.setPointerCapture?.(e.pointerId)});stage.addEventListener('pointermove',e=>{if(!down)return;ry+=((e.clientX-lastX)*0.45);rx=Math.max(-12,Math.min(12,rx-((e.clientY-lastY)*0.18)));lastX=e.clientX;lastY=e.clientY;apply()});stage.addEventListener('pointerup',()=>{down=false;stage.classList.remove('dragging')});stage.addEventListener('pointercancel',()=>{down=false;stage.classList.remove('dragging')});apply()})();</script>
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">✦ Мир Самозанятых</span>
+      <h1>Всё для вашего дела.<br><span class="gradient">Спокойно. Умно. В одном месте.</span></h1>
+      <p>Автоматизация, клиенты, документы, CRM, календарь, обучение, возможности и локальный помощник Светлана — в одной рабочей среде.</p>
+      <div class="actions"><a class="btn btn-primary" href="/register">Начать бесплатно →</a><a class="btn btn-soft" href="/calculator">Рассчитать НПД</a></div>
+    </div>
+    <div class="hero-stage" id="svetlanaStage">
+      <div class="sv-hero-label">Светлана · собственная 3D-модель · OFFLINE</div>
+      <iframe class="sv-3d-frame" src="/static/svetlana3d/index.html" title="Светлана — локальный 3D ИИ-помощник" allow="autoplay" loading="eager"></iframe>
+      <div class="sv-hero-overlay"></div>
+      <div class="sv-hero-copy">Светлана работает локально. Вопросы не отправляются во внешний AI. 3D-модель загружена из репозитория проекта.</div>
+    </div>
+  </div>
+</section>
+<section class="section"><div class="container"><div class="section-head"><h2>Что здесь можно делать</h2><p>Рабочие задачи самозанятого — в одном месте</p></div><div class="cards">
+  <article class="card"><h3>🤖 Светлана</h3><p>Собственный офлайн-помощник с локальной базой знаний и ссылками на официальные источники.</p><a class="btn btn-soft" href="/svetlana">Открыть</a></article>
+  <article class="card"><h3>📄 Документы</h3><p>Договоры и акты из структурированных данных сделки с подготовкой PDF.</p><a class="btn btn-soft" href="/contracts">Создать</a></article>
+  <article class="card"><h3>👥 CRM и календарь</h3><p>Клиенты, сделки, задачи, встречи и контроль рабочих сроков.</p><a class="btn btn-soft" href="/crm">Работать</a></article>
+</div></div></section>
+<section class="section" style="background:#fff7ed"><div class="container"><div class="section-head"><h2>Личный кабинет</h2><p>Он открывается после авторизации и становится вашим рабочим пространством.</p></div><div class="grid-2"><div class="card"><h3>Финансы и работа</h3><p>Доходы, сделки, клиенты, задачи, документы, календарь, CRM и рабочие показатели.</p></div><div class="card"><h3>Светлана и знания</h3><p>Локальная помощь по НПД, документам, поддержке и развитию проекта без отправки вопроса во внешний AI.</p></div></div></div></section>
 {% endblock %}
