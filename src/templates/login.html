@@ -1,32 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Вход — Мир Самозанятых{% endblock %}
 {% block content %}
-<div class="auth-container">
-    <h2>Вход в систему</h2>
-    <form id="login-form">
-        <input type="email" name="email" placeholder="Email" required maxlength="255">
-        <input type="password" autocomplete="current-password" name="password" placeholder="Пароль" required maxlength="128">
-        <button type="submit" class="btn-primary">Войти</button>
-    </form>
-    <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
-</div>
-
+<section class="section" style="padding-top:110px;min-height:calc(100vh - 180px);display:flex;align-items:center;">
+  <div class="container" style="max-width:980px;width:100%;">
+    <div style="display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:stretch;">
+      <div class="glass-card" style="padding:38px;background:linear-gradient(145deg,#0f172a,#292524);color:#fff;display:flex;flex-direction:column;justify-content:center;">
+        <span style="color:#fdba74;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:12px">Мир Самозанятых</span>
+        <h1 style="font-size:clamp(32px,5vw,52px);line-height:1.04;margin:12px 0">Ваше рабочее пространство — в одном месте.</h1>
+        <p style="color:#cbd5e1;line-height:1.7">Клиенты, документы, CRM, календарь, финансы и Светлана — собственный локальный помощник проекта.</p>
+        <div style="margin-top:24px;padding:14px 16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.06)"><strong>После входа</strong><div style="margin-top:5px;color:#94a3b8;font-size:13px">откроется Личный кабинет с рабочими разделами.</div></div>
+      </div>
+      <div class="glass-card" style="padding:34px;">
+        <h2 style="margin-top:0">Вход</h2>
+        <p style="color:var(--neutral-500)">Войдите в свой аккаунт.</p>
+        <form id="login-form" style="display:grid;gap:14px">
+          <label class="form-label">Email<input class="glass-input" type="email" name="email" placeholder="you@example.com" required maxlength="255" autocomplete="email"></label>
+          <label class="form-label">Пароль<input class="glass-input" type="password" autocomplete="current-password" name="password" placeholder="Ваш пароль" required maxlength="128"></label>
+          <div id="twofa" style="display:none"><label class="form-label">Код 2FA<input class="glass-input" id="twofa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label></div>
+          <div id="login-status" role="status" aria-live="polite" style="display:none;padding:12px;border-radius:12px"></div>
+          <button id="login-button" type="submit" class="btn btn-primary">Войти</button>
+        </form>
+        <p style="margin-top:18px"><a href="/reset-password">Забыли пароль?</a></p>
+        <p style="color:var(--neutral-500)">Нет аккаунта? <a href="/register" style="font-weight:700">Зарегистрироваться</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+<style>@media(max-width:760px){.container>div[style*="grid-template-columns"]{grid-template-columns:1fr!important}.container>div[style*="grid-template-columns"]>div:first-child{display:none}}</style>
 <script nonce="{{ csp_nonce }}">
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = new FormData(e.target);
-    try {
-        const res = await fetch('/api/auth/login', { method: 'POST', body: form });
-        const data = await res.json();
-        if (res.ok) {
-            MirAuth.setToken(data.access_token);
-            window.location.href = '/dashboard';
-        } else {
-            alert(data.detail || 'Ошибка входа');
-        }
-    } catch (err) {
-        alert('Ошибка сети');
-    }
-});
+const form=document.getElementById('login-form'),statusBox=document.getElementById('login-status'),button=document.getElementById('login-button'),twofa=document.getElementById('twofa'),code=document.getElementById('twofa-code');let tempToken='';
+function status(text,error=false){statusBox.style.display='block';statusBox.style.background=error?'#fef2f2':'#ecfdf5';statusBox.style.color=error?'#b91c1c':'#047857';statusBox.textContent=text;}
+form.addEventListener('submit',async e=>{e.preventDefault();button.disabled=true;button.textContent='Входим…';try{if(twofa.style.display==='block'){const body=new FormData();body.append('temp_token',tempToken);body.append('code',code.value);const r=await fetch('/api/auth/login/2fa',{method:'POST',body});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||'Неверный код 2FA');MirAuth.setToken(d.access_token);window.location.href='/dashboard';return;}const r=await fetch('/api/auth/login',{method:'POST',body:new FormData(form)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||'Ошибка входа');if(d.requires_2fa){tempToken=d.temp_token;twofa.style.display='block';button.textContent='Подтвердить вход';status('Введите код двухфакторной аутентификации.');return;}MirAuth.setToken(d.access_token);window.location.href='/dashboard';}catch(err){status(err.message||'Ошибка входа',true);}finally{button.disabled=false;if(twofa.style.display!=='block')button.textContent='Войти';}});
 </script>
 {% endblock %}
