@@ -1,8 +1,9 @@
 """Offline Svetlana runtime backed by the versioned local knowledge base.
 
-This module intentionally performs no network I/O. It is a useful working
-offline assistant today and keeps a stable seam for a real local LLM loader
-when an executable model is added to this repository.
+This module intentionally performs no network I/O. It is a working offline
+assistant backed by the project's versioned Svetlana knowledge base. A real
+embedded LLM can later be added behind the same function without introducing
+cloud-provider dependencies into the API contract.
 """
 from __future__ import annotations
 
@@ -83,6 +84,6 @@ def local_status() -> dict[str, Any]:
         "network_required": False,
         "knowledge_base": KNOWLEDGE_PATH.name,
         "knowledge_topics": len(topics),
-        "llm_runtime": "not_installed",
-        "message": "Локальный runtime активен; версия с настоящей LLM подключается через этот же модуль после добавления модели в репозиторий.",
+        "llm_runtime": "knowledge_base",
+        "message": "Светлана работает полностью локально на версионированной базе знаний. Внешний AI-провайдер для этого endpoint не используется.",
     }
