@@ -1,0 +1,31 @@
+name: AI Security Regression
+
+on:
+  push:
+    paths:
+      - 'src/app/services/agent_guard.py'
+      - 'src/app/api/agent_guard.py'
+      - 'src/tests/test_agent_guard.py'
+      - 'src/app/main.py'
+      - 'src/requirements.txt'
+  pull_request:
+    paths:
+      - 'src/app/services/agent_guard.py'
+      - 'src/app/api/agent_guard.py'
+      - 'src/tests/test_agent_guard.py'
+      - 'src/app/main.py'
+      - 'src/requirements.txt'
+
+jobs:
+  agent-security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: python -m pytest -q tests/test_agent_guard.py
