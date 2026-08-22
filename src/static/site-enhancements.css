@@ -1,0 +1,52 @@
+/* Мир Самозанятых — responsive repair layer */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+img,svg,video,iframe{max-width:100%}
+.container{width:min(1200px,calc(100% - 32px));margin-inline:auto}
+main{width:100%;overflow-x:clip}
+.section{width:100%;overflow:clip}
+.navbar .container{min-width:0;gap:12px}
+.navbar-brand{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-links{min-width:0}
+.card,.notice,.section-head,.svetlana-content{min-width:0;overflow-wrap:anywhere}
+.grid-2,.grid-3,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cards{display:grid}
+.form input,.form textarea,.form select,.form button{max-width:100%;box-sizing:border-box}
+pre,code{max-width:100%;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+table{max-width:100%;display:block;overflow-x:auto}
+#svetlanaChat{width:min(420px,calc(100vw - 24px))!important;right:12px!important;bottom:12px!important}
+#svetlanaWidget{right:12px!important;bottom:12px!important}
+
+@media (max-width:900px){
+  .container{width:min(100% - 24px,760px)}
+  .grid-2,.grid-3,.cards{grid-template-columns:1fr}
+  .navbar .container{padding-inline:0}
+  .nav-links{max-width:100vw}
+  .section{padding-block:32px}
+}
+
+@media (max-width:600px){
+  .container{width:calc(100% - 20px)}
+  main{padding-top:68px!important}
+  .section{padding:24px 0}
+  .section-head h1{font-size:clamp(1.8rem,9vw,2.6rem);line-height:1.1}
+  .section-head p{font-size:.95rem}
+  .card{padding:16px!important;border-radius:18px!important}
+  .footer{padding-inline:12px}
+  .footer-grid{grid-template-columns:1fr!important;gap:24px}
+  .brand-identity{max-width:calc(100vw - 70px);overflow:hidden}
+  .brand-identity span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #svetlanaChat{height:min(720px,calc(100vh - 24px))!important;max-height:calc(100vh - 24px)!important;border-radius:20px!important}
+  #svetlanaQuick{overflow-x:auto}
+}
+
+@media (max-width:420px){
+  .container{width:calc(100% - 16px)}
+  .btn{max-width:100%;white-space:normal}
+  .sv-chat-input{grid-template-columns:1fr!important}
+  .sv-chat-input .btn{width:100%!important}
+}
+
+/* Clear visual hierarchy for the new Svetlana tab. */
+#navLinks a[href="/svetlana"]{font-weight:800}
+#navLinks a[href="/svetlana"].active{color:var(--accent-600);background:var(--accent-50)}
+[data-theme="dark"] #navLinks a[href="/svetlana"].active{background:rgba(255,167,38,.14);color:var(--accent-300)}
