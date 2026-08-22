@@ -66,7 +66,7 @@ app.add_middleware(UploadSizeLimitMiddleware)
 
 @app.middleware("http")
 async def csrf_protection(request: Request, call_next):
-    if request.method in {"POST","PUT","PATCH","DELETE"} and request.url.path == "/api/auth/refresh" and request.headers.get("X-Client-Type", "").lower() not in {"mobile","flutter"}:
+    if request.method in {"POST","PUT","PATCH","DELETE"} and request.url.path == "/api/auth/refresh" and request.headers.get("X-Client-Type", "").lower() not in {"mobile", "flutter"}:
         import hmac
         csrf_cookie=request.cookies.get("csrf_token"); csrf_header=request.headers.get("X-CSRF-Token")
         if not csrf_cookie or not csrf_header or not hmac.compare_digest(csrf_cookie,csrf_header): return JSONResponse(status_code=403,content={"detail":"CSRF token required"})
@@ -75,12 +75,18 @@ async def csrf_protection(request: Request, call_next):
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     nonce=generate_csp_nonce(); request.state.csp_nonce=nonce; start_time=time.time(); response=await call_next(request); duration=(time.time()-start_time)*1000
-    response.headers["X-Content-Type-Options"]="nosniff"; response.headers["X-Frame-Options"]="SAMEORIGIN"; response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
+    is_svetlana_runtime=request.url.path.startswith("/svetlana-runtime/")
+    if not is_svetlana_runtime:
+        response.headers["X-Frame-Options"]="SAMEORIGIN"
+    response.headers["X-Content-Type-Options"]="nosniff"; response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"]="camera=(), microphone=(self), geolocation=(), payment=(), usb=(), magnetometer=()"
     if settings.ENVIRONMENT=="production": response.headers["Strict-Transport-Security"]="max-age=31536000; includeSubDomains; preload"
-    response.headers["Content-Security-Policy"]=(f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru https://opendata.trudvsem.ru; frame-src 'self'; media-src 'self' blob: data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://{settings.DOMAIN};")
+    frame_ancestors="'self'"
+    if is_svetlana_runtime and settings.FRONTEND_URL:
+        frame_ancestors += f" {settings.FRONTEND_URL}"
+    response.headers["Content-Security-Policy"]=(f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru https://opendata.trudvsem.ru; frame-src 'self'; media-src 'self' blob: data:; frame-ancestors {frame_ancestors}; base-uri 'self'; form-action 'self' https://{settings.DOMAIN};")
     response.headers["X-Response-Time"]=f"{duration:.2f}ms"
-    if request.url.path.startswith("/static/svetlana/") or request.url.path.startswith("/static/svetlana3d/") or request.url.path.startswith("/svetlana-runtime/"): response.headers["Cache-Control"]="public, max-age=31536000, immutable"
+    if request.url.path.startswith("/static/svetlana/") or request.url.path.startswith("/static/svetlana3d/") or is_svetlana_runtime: response.headers["Cache-Control"]="public, max-age=31536000, immutable"
     elif request.url.path.startswith("/static/"): response.headers["Cache-Control"]="public, max-age=604800"
     return response
 
