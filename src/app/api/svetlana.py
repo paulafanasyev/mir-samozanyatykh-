@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from app.core.rate_limit import limiter
 from app.services.local_svetlana import answer_local, local_status
 from app.services.agent_guard import inspect
+from app.services.agent_tools import policy_for
 from app.services.ai_router import chat_online, online_status
 from app.core.config import settings
 
@@ -34,8 +35,13 @@ def _log_chat(message:str,response:str,context:str|None=None)->None:
     except Exception: pass
 
 def _actions(content:str)->list[dict]:
-    allowed={"/dashboard","/contracts","/calendar","/tasks","/clients","/deals","/invoices","/accounting","/receipt-check","/integrations","/docs","/notifications","/profile","/svetlana","/jobs","/marketplace","/calculator"}
-    return [{"type":"navigate","path":path} for path in re.findall(r"NAVIGATE:(/[-\w]+)",content) if path in allowed]
+    # Model output is data, never an authorization source. Only explicitly
+    # allowlisted, non-side-effecting navigation is exposed to the client.
+    actions=[]
+    for path in re.findall(r"NAVIGATE:(/[-\w]+)",content):
+        if path in {"/dashboard","/contracts","/calendar","/tasks","/clients","/deals","/invoices","/accounting","/receipt-check","/integrations","/docs","/notifications","/profile","/svetlana","/jobs","/marketplace","/calculator"} and policy_for("navigate"):
+            actions.append({"type":"navigate","path":path})
+    return actions
 
 @router.get("/status")
 async def svetlana_status()->dict:
