@@ -1,5 +1,59 @@
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '../api/client'
-type Props={size?:'sm'|'md'|'lg';interactive?:boolean;className?:string}
-export default function SvetlanaAvatar({size='md',className=''}:Props){const dims=size==='lg'?'h-[min(72vh,720px)] min-h-[420px] w-full':size==='sm'?'h-12 w-12':'h-24 w-24';const iframeRef=useRef<HTMLIFrameElement|null>(null);const[modelLoaded,setModelLoaded]=useState(false);const[portraitFailed,setPortraitFailed]=useState(false);const portraitUrl=`${API_BASE_URL}/static/svetlana/base.png`;useEffect(()=>{const onMessage=(event:MessageEvent)=>{if(event.origin!==window.location.origin)return;if(event.data?.type==='svetlana.ready')setModelLoaded(true)};window.addEventListener('message',onMessage);return()=>window.removeEventListener('message',onMessage)},[]);return <div className={`${dims} ${className} relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg`} aria-label="Светлана"><img src={portraitFailed?`${API_BASE_URL}/static/svetlana/face.png`:portraitUrl} onError={()=>setPortraitFailed(true)} alt="Светлана — ИИ-помощник" className="absolute inset-0 h-full w-full object-contain object-bottom" loading={size==='lg'?'eager':'lazy'}/><iframe ref={iframeRef} title="Анимированная Светлана" src="/svetlana/index.html" onLoad={()=>{setModelLoaded(true);iframeRef.current?.contentWindow?.postMessage({type:'svetlana.command',payload:{type:'avatar.emotion',name:'smile',duration:1200}},window.location.origin)}} className={`absolute inset-0 h-full w-full border-0 bg-transparent transition-opacity duration-300 ${modelLoaded?'opacity-100':'opacity-0'}`} allow="microphone; autoplay; speech-synthesis" loading={size==='lg'?'eager':'lazy'} sandbox="allow-scripts allow-same-origin"/><div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5"/><span className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow" title="Светлана доступна"/></div>}
-export function commandSvetlana(iframe:HTMLIFrameElement|null,payload:Record<string,unknown>){if(!iframe?.contentWindow)return;iframe.contentWindow.postMessage({type:'svetlana.command',payload},window.location.origin)}
+
+type Props = { size?: 'sm' | 'md' | 'lg'; interactive?: boolean; className?: string }
+
+export default function SvetlanaAvatar({ size = 'md', className = '' }: Props) {
+  const dims = size === 'lg' ? 'h-[min(72vh,720px)] min-h-[420px] w-full' : size === 'sm' ? 'h-12 w-12' : 'h-24 w-24'
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [modelLoaded, setModelLoaded] = useState(false)
+  const [portraitFailed, setPortraitFailed] = useState(false)
+  const runtimeUrl = `${API_BASE_URL}/svetlana-runtime/index.html`
+  const portraitUrl = `${API_BASE_URL}/static/svetlana/base.png`
+
+  useEffect(() => {
+    const runtimeOrigin = new URL(API_BASE_URL).origin
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== runtimeOrigin) return
+      if (event.data?.type === 'svetlana.ready') setModelLoaded(true)
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  const sendSmile = () => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: 'svetlana.command', payload: { type: 'avatar.emotion', name: 'smile', duration: 1200 } },
+      new URL(API_BASE_URL).origin,
+    )
+  }
+
+  return (
+    <div className={`${dims} ${className} relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg`} aria-label="Светлана">
+      <img
+        src={portraitFailed ? `${API_BASE_URL}/static/svetlana/face.png` : portraitUrl}
+        onError={() => setPortraitFailed(true)}
+        alt="Светлана — ИИ-помощник"
+        className="absolute inset-0 h-full w-full object-contain object-bottom"
+        loading={size === 'lg' ? 'eager' : 'lazy'}
+      />
+      <iframe
+        ref={iframeRef}
+        title="Анимированная Светлана"
+        src={runtimeUrl}
+        onLoad={sendSmile}
+        className={`absolute inset-0 h-full w-full border-0 bg-transparent transition-opacity duration-300 ${modelLoaded ? 'opacity-100' : 'opacity-0'}`}
+        allow="microphone; autoplay; speech-synthesis"
+        loading={size === 'lg' ? 'eager' : 'lazy'}
+        sandbox="allow-scripts allow-same-origin"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5" />
+      <span className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow" title="Светлана доступна" />
+    </div>
+  )
+}
+
+export function commandSvetlana(iframe: HTMLIFrameElement | null, payload: Record<string, unknown>) {
+  if (!iframe?.contentWindow) return
+  iframe.contentWindow.postMessage({ type: 'svetlana.command', payload }, new URL(API_BASE_URL).origin)
+}
