@@ -8,6 +8,24 @@
   function csrfToken() { const part=document.cookie.split('; ').find((x)=>x.startsWith('csrf_token=')); return part?decodeURIComponent(part.split('=').slice(1).join('=')):''; }
   async function refresh(){ if(!refreshPromise){ refreshPromise=fetch('/api/auth/refresh',{method:'POST',credentials:'include',headers:{'X-CSRF-Token':csrfToken()}}).then(async response=>{if(!response.ok)return null;const data=await response.json();accessToken=data.access_token||null;return accessToken;}).catch(()=>null).finally(()=>{refreshPromise=null}); } return refreshPromise; }
   window.MirAuth={setToken(token){accessToken=token||null;},clear(){accessToken=null;},async getToken(){if(accessToken)return accessToken;return refresh();}};
-  // Блог пока не запущен как продуктовый раздел — не показываем пустую вкладку пользователю.
-  document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('a[href="/blog"]').forEach(a=>{const li=a.closest('li');if(li)li.remove();else a.remove();});});
+
+  // Global UI fixes and navigation are injected from the same-origin static bundle.
+  const style=document.createElement('link');
+  style.rel='stylesheet';
+  style.href='/static/site-enhancements.css?v=20260822';
+  document.head.appendChild(style);
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    const nav=document.getElementById('navLinks');
+    if(nav && !nav.querySelector('a[href="/svetlana"]')){
+      const li=document.createElement('li');
+      const a=document.createElement('a');
+      a.href='/svetlana';
+      a.textContent='✨ Светлана';
+      if(location.pathname==='/svetlana') a.classList.add('active');
+      const blog=nav.querySelector('a[href="/blog"]')?.closest('li');
+      if(blog) nav.insertBefore(li,blog); else nav.appendChild(li);
+      li.appendChild(a);
+    }
+  });
 })();
