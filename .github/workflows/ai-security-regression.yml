@@ -3,24 +3,10 @@ name: AI Security Regression
 on:
   push:
     branches: [main]
-    paths:
-      - "src/app/services/agent_guard.py"
-      - "src/app/services/agent_tools.py"
-      - "src/app/api/agent_guard.py"
-      - "src/app/api/svetlana.py"
-      - "src/app/services/ai_router.py"
-      - "tests/security/**"
-      - ".github/workflows/ai-security-regression.yml"
   pull_request:
-    paths:
-      - "src/app/services/agent_guard.py"
-      - "src/app/services/agent_tools.py"
-      - "src/app/api/agent_guard.py"
-      - "src/app/api/svetlana.py"
-      - "src/app/services/ai_router.py"
-      - "tests/security/**"
-      - ".github/workflows/ai-security-regression.yml"
   workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
 
 permissions:
   contents: read
@@ -32,7 +18,7 @@ concurrency:
 jobs:
   regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,5 +26,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run dependency-free security regression
+      - name: Compile security modules
+        run: |
+          python -m py_compile src/app/services/agent_guard.py
+          python -m py_compile src/app/services/agent_tools.py
+          python -m py_compile src/app/services/ai_router.py
+          python -m py_compile src/app/api/agent_guard.py
+          python -m py_compile src/app/api/svetlana.py
+      - name: Run guard regression
         run: python tests/security/test_agent_guard_standalone.py
+      - name: Run tool-policy regression
+        run: python tests/security/test_tool_policy_extra.py
