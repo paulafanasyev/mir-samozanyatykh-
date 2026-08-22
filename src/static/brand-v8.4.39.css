@@ -19,10 +19,56 @@ body { background:#f7f7f5 !important; }
 .footer-grid > div:first-child h4 { font-size:0; }
 .footer-grid > div:first-child h4::after { content:"Мир Самозанятых"; font-size:1rem; }
 
-/* Blog is not part of the finished product navigation yet. */
 a[href="/blog"] { display:none !important; }
 
-/* Mobile: do not squeeze the desktop navbar into a phone screen. */
+/* Global responsive fixes. */
+html, body { max-width:100%; overflow-x:hidden; }
+img, svg, iframe { max-width:100%; }
+
+/* The server-rendered home page must have its own layout layer: app_v7.0.css has no
+   hero/section grid rules, which previously left the homepage in an almost unstyled state. */
+.home-page { width:100%; }
+.home-page .hero { min-height:auto; padding:48px 0 28px; display:block; overflow:visible; }
+.home-page .hero-grid { width:min(1180px,calc(100% - 40px)); margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,500px); align-items:center; gap:42px; }
+.home-page .hero-copy { min-width:0; }
+.home-page .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid #fed7aa; border-radius:999px; background:#fff7ed; color:#c2410c; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.home-page .hero-copy h1 { margin-top:18px; max-width:760px; font-size:clamp(2.25rem,5vw,4.5rem); line-height:1.03; letter-spacing:-.045em; color:#0f172a; }
+.home-page .hero-copy h1 .gradient { background:linear-gradient(135deg,#0f172a 10%,#f97316 70%,#f59e0b); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.home-page .hero-copy > p { margin-top:20px; max-width:680px; font-size:16px; line-height:1.75; color:#64748b; }
+.home-page .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+.home-page .actions .btn { min-height:44px; }
+.home-page .hero-stage { position:relative; width:100%; min-height:440px; border-radius:30px; overflow:hidden; background:#171a22; border:1px solid rgba(15,23,42,.12); box-shadow:0 24px 70px rgba(15,23,42,.18); }
+.home-page .sv-3d-frame { position:absolute; inset:0; width:100%; height:100%; border:0; background:#171a22; z-index:1; }
+.home-page .sv-hero-fallback { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 28%,rgba(255,184,77,.22),transparent 38%),linear-gradient(145deg,#11141b,#24211b); transition:opacity .25s ease,visibility .25s ease; }
+.home-page .sv-hero-fallback.is-hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.home-page .sv-hero-fallback img { width:min(250px,62%); height:min(300px,62%); object-fit:contain; border-radius:28px; filter:drop-shadow(0 24px 45px rgba(0,0,0,.35)); }
+.home-page .sv-hero-fallback strong { margin-top:12px; color:#fff; font-size:20px; }
+.home-page .sv-hero-fallback span { margin-top:4px; color:rgba(255,255,255,.68); font-size:12px; text-align:center; }
+.home-page .sv-hero-label { left:16px; top:16px; z-index:4; }
+.home-page .sv-hero-copy { left:16px; right:16px; bottom:16px; z-index:4; max-width:none; text-align:left; }
+.home-page .section { padding:34px 0; }
+.home-page .section .container { width:min(1180px,calc(100% - 40px)); margin:0 auto; }
+.home-page .section-head { margin-bottom:18px; }
+.home-page .section-head h2 { font-size:clamp(1.65rem,3vw,2.4rem); color:#0f172a; }
+.home-page .section-head p { margin-top:6px; color:#64748b; }
+.home-page .cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.home-page .card { min-width:0; }
+.home-page .card h3 { font-size:18px; color:#0f172a; }
+.home-page .card p { margin-top:8px; color:#64748b; }
+.home-page .cabinet-preview { max-height:430px; object-fit:contain; object-position:top center; }
+
+/* Keep the floating Svetlana button visible and use an asset that actually exists in the repo. */
+#svetlanaWidget { right:18px !important; bottom:18px !important; }
+#svetlanaWidget img { content:url('/static/svetlana/face.png'); }
+#svetlanaWidget > button { border:3px solid rgba(255,255,255,.85) !important; overflow:hidden !important; }
+
+@media (max-width:900px) {
+  .home-page .hero-grid { grid-template-columns:1fr; gap:24px; }
+  .home-page .hero-copy h1 { max-width:900px; }
+  .home-page .hero-stage { min-height:400px; }
+  .home-page .cards { grid-template-columns:1fr; }
+}
+
 @media (max-width:760px) {
   .brand-identity { left:8px; top:8px; padding:6px 8px; gap:7px; border-radius:12px; }
   .brand-identity img { width:28px; height:28px; }
@@ -37,6 +83,20 @@ a[href="/blog"] { display:none !important; }
   .nav-links.open a { justify-content:flex-start; width:100%; }
   [data-theme="dark"] .nav-links.open { background:#1e293b; border-color:#334155; }
   main { padding-top:12px !important; }
-  .footer-grid { grid-template-columns:1fr !important; }
-  .footer-grid > div:first-child h4::before { width:44px; height:44px; flex-basis:44px; }
+  .home-page .hero { padding:28px 0 16px; }
+  .home-page .hero-grid, .home-page .section .container { width:min(100% - 24px,680px); }
+  .home-page .hero-copy h1 { margin-top:14px; font-size:clamp(2rem,9vw,3rem); line-height:1.05; }
+  .home-page .hero-copy > p { margin-top:14px; font-size:14px; line-height:1.6; }
+  .home-page .actions { margin-top:18px; }
+  .home-page .actions .btn { width:100%; }
+  .home-page .hero-stage { min-height:340px; border-radius:22px; }
+  .home-page .sv-hero-fallback img { width:min(210px,68%); height:210px; }
+  .home-page .sv-hero-copy { display:none; }
+  .home-page .sv-hero-label { left:10px; top:10px; font-size:9px; padding:6px 8px; }
+  .home-page .section { padding:24px 0; }
+  .home-page .card { padding:18px; }
+  .footer { margin-top:0; }
+  .footer-grid { grid-template-columns:1fr !important; gap:20px !important; padding-left:18px !important; padding-right:18px !important; }
+  .footer-bottom { padding-left:18px !important; padding-right:18px !important; }
+  #svetlanaWidget { right:12px !important; bottom:12px !important; }
 }
