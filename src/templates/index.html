@@ -3,6 +3,7 @@
 {% block extra_head %}
 <style nonce="{{ csp_nonce }}">
   .home-page .hero-stage{min-height:440px}
+  .home-page .sv-fallback-open{margin-top:14px;position:relative;z-index:3}
   @media(max-width:760px){.home-page .hero-stage{min-height:340px}.home-page .sv-hero-copy{display:none}}
 </style>
 {% endblock %}
@@ -25,7 +26,7 @@
           <img src="/static/svetlana/face.png" alt="Светлана">
           <strong>Светлана</strong>
           <span>ИИ-помощник «Мира Самозанятых»</span>
-          <a class="btn btn-primary" href="/svetlana" style="margin-top:14px;position:relative;z-index:3;">Открыть Светлану →</a>
+          <a class="btn btn-primary sv-fallback-open" href="/svetlana">Открыть Светлану →</a>
         </div>
         <div class="sv-hero-label">Светлана · ИИ-помощник</div>
         <iframe class="sv-3d-frame" src="/svetlana-runtime/index.html" title="Светлана — локальный 3D ИИ-помощник" allow="autoplay; fullscreen; microphone; speech-synthesis" loading="eager" referrerpolicy="same-origin"></iframe>
@@ -67,8 +68,9 @@
 <script nonce="{{ csp_nonce }}">
 (function(){
   var fallback=document.getElementById('svetlanaFallback');
+  var frame=document.querySelector('#svetlanaStage iframe');
   window.addEventListener('message',function(event){
-    if(!fallback || event.source !== document.querySelector('#svetlanaStage iframe')?.contentWindow) return;
+    if(!fallback || !frame || event.source !== frame.contentWindow) return;
     if(event.data && event.data.type === 'svetlana.ready') fallback.classList.add('is-hidden');
     if(event.data && event.data.type === 'svetlana.error') fallback.classList.remove('is-hidden');
   });
