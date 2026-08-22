@@ -1,9 +1,42 @@
-/* Brand layer v8.4.39: logo + warm orange/gold system. */
+/* Brand layer v8.4.40: real project logo + responsive navigation + classic dark-blue theme. */
 :root { --brand-orange:#f97316; --brand-gold:#f6b73c; --brand-ink:#171a22; }
 body { background:#f7f7f5 !important; }
 .brand-identity { position:fixed; left:18px; top:18px; z-index:900; display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid #ece7df; border-radius:16px; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); color:#171a22; font-weight:800; text-decoration:none; box-shadow:0 10px 30px rgba(23,26,34,.07); }
 .brand-identity img { width:34px; height:34px; object-fit:contain; }
 .brand-identity span { font-size:14px; }
-[data-theme="dark"] body { background:#0d1016 !important; color:#f8fafc; }
-[data-theme="dark"] .brand-identity { background:#151922; border-color:#272d39; color:#f8fafc; box-shadow:none; }
+[data-theme="dark"] body { background:#0f172a !important; color:#f8fafc; }
+[data-theme="dark"] .brand-identity { background:#1e293b; border-color:#334155; color:#f8fafc; box-shadow:none; }
+[data-theme="dark"] .navbar { background:#0f172a; border-color:#1e293b; }
+[data-theme="dark"] .footer { background:#020617; }
 .btn-primary, .hero-cta .btn-primary { background:linear-gradient(135deg,#f97316,#f59e0b) !important; border-color:transparent !important; }
+
+/* The project logo is the only brand mark in navigation/footer; never render the generic house icon. */
+.navbar-brand .logo-icon { width:34px !important; height:34px !important; display:block !important; flex:0 0 34px !important; background:url('/static/logo-mir-samozanyatykh.png') center/contain no-repeat !important; }
+.navbar-brand .logo-icon svg { display:none !important; }
+.footer-grid > div:first-child h4 { position:relative; }
+.footer-grid > div:first-child h4 > svg { display:none !important; }
+.footer-grid > div:first-child h4::before { content:""; display:inline-block; width:38px; height:38px; flex:0 0 38px; background:url('/static/logo-mir-samozanyatykh.png') center/contain no-repeat; }
+.footer-grid > div:first-child h4 { font-size:0; }
+.footer-grid > div:first-child h4::after { content:"Мир Самозанятых"; font-size:1rem; }
+
+/* Blog is not part of the finished product navigation yet. */
+a[href="/blog"] { display:none !important; }
+
+/* Mobile: do not squeeze the desktop navbar into a phone screen. */
+@media (max-width:760px) {
+  .brand-identity { left:8px; top:8px; padding:6px 8px; gap:7px; border-radius:12px; }
+  .brand-identity img { width:28px; height:28px; }
+  .brand-identity span { font-size:12px; }
+  .navbar { margin-top:52px; }
+  .navbar .container { min-width:0 !important; width:100% !important; padding:0 10px !important; }
+  .navbar-brand { min-width:0; max-width:calc(100% - 48px); font-size:13px !important; }
+  .navbar-brand .logo-icon { width:28px !important; height:28px !important; flex-basis:28px !important; }
+  .mobile-menu-btn { display:flex !important; align-items:center; justify-content:center; flex:0 0 40px; }
+  .nav-links { display:none !important; }
+  .nav-links.open { display:flex !important; position:absolute; left:10px; right:10px; top:100%; z-index:1000; flex-direction:column; align-items:stretch; padding:10px; background:var(--surface-primary,#fff); border:1px solid var(--border-primary,#e2e8f0); border-radius:14px; box-shadow:0 18px 45px rgba(15,23,42,.18); }
+  .nav-links.open a { justify-content:flex-start; width:100%; }
+  [data-theme="dark"] .nav-links.open { background:#1e293b; border-color:#334155; }
+  main { padding-top:12px !important; }
+  .footer-grid { grid-template-columns:1fr !important; }
+  .footer-grid > div:first-child h4::before { width:44px; height:44px; flex-basis:44px; }
+}
