@@ -1,0 +1,44 @@
+name: AI Security Regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/app/services/agent_guard.py"
+      - "src/app/services/agent_tools.py"
+      - "src/app/api/agent_guard.py"
+      - "src/app/api/svetlana.py"
+      - "src/app/services/ai_router.py"
+      - "tests/security/**"
+      - ".github/workflows/ai-security-regression.yml"
+  pull_request:
+    paths:
+      - "src/app/services/agent_guard.py"
+      - "src/app/services/agent_tools.py"
+      - "src/app/api/agent_guard.py"
+      - "src/app/api/svetlana.py"
+      - "src/app/services/ai_router.py"
+      - "tests/security/**"
+      - ".github/workflows/ai-security-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency-free security regression
+        run: python tests/security/test_agent_guard_standalone.py
