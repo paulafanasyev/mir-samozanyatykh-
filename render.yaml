@@ -99,6 +99,27 @@ services:
         source: /*
         destination: /index.html
 
+  # Render cron schedules are UTC. 05:00 and 16:00 UTC = 12:00 and 23:00 UTC+7.
+  - type: cron
+    name: svetlana-dialog-analysis
+    runtime: python
+    rootDir: src
+    buildCommand: pip install -r requirements.txt
+    startCommand: python tools/svetlana_report.py
+    schedule: "0 5,16 * * *"
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mir-samozanyatykh-redis
+          property: connectionString
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL_DEFAULT
+        value: anthropic/claude-3.5-sonnet
+
   - type: keyvalue
     name: mir-samozanyatykh-redis
     plan: starter
