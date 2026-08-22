@@ -43,11 +43,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, description="Platform for self-employed. ANO TsPS INN 9724016805", docs_url="/docs" if settings.DEBUG else None, redoc_url="/redoc" if settings.DEBUG else None, openapi_url="/openapi.json" if settings.DEBUG else None, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# Светлана v13: раздаём настоящий 3D runtime отдельно от API и личной страницы.
-# Путь вычисляется относительно src/app, поэтому не зависит от текущего WORKDIR Render.
-_svetlana_runtime = Path(__file__).resolve().parents[1] / "frontend" / "public" / "svetlana"
+# Светлана v13: production Dockerfile копирует runtime в /app/static/svetlana3d.
+# Не ссылаемся на frontend/public — этот каталог не копируется в production image.
+_svetlana_runtime = Path("static/svetlana3d").resolve()
 if _svetlana_runtime.is_dir():
     app.mount("/svetlana-runtime", StaticFiles(directory=str(_svetlana_runtime), html=True), name="svetlana-runtime")
+else:
+    logger.error("Svetlana runtime is missing: %s", _svetlana_runtime)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(CORSMiddleware, allow_origins=[settings.FRONTEND_URL, f"https://{settings.DOMAIN}"], allow_credentials=True, allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"], allow_headers=["Authorization","Content-Type","X-CSRF-Token","X-Client-Type","Idempotency-Key","Accept"], max_age=600)
@@ -78,7 +80,7 @@ async def security_headers(request: Request, call_next):
     if settings.ENVIRONMENT=="production": response.headers["Strict-Transport-Security"]="max-age=31536000; includeSubDomains; preload"
     response.headers["Content-Security-Policy"]=(f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru https://opendata.trudvsem.ru; frame-src 'self'; media-src 'self' blob: data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://{settings.DOMAIN};")
     response.headers["X-Response-Time"]=f"{duration:.2f}ms"
-    if request.url.path.startswith("/static/svetlana/") or request.url.path.startswith("/svetlana-runtime/"): response.headers["Cache-Control"]="public, max-age=31536000, immutable"
+    if request.url.path.startswith("/static/svetlana/") or request.url.path.startswith("/static/svetlana3d/") or request.url.path.startswith("/svetlana-runtime/"): response.headers["Cache-Control"]="public, max-age=31536000, immutable"
     elif request.url.path.startswith("/static/"): response.headers["Cache-Control"]="public, max-age=604800"
     return response
 
