@@ -2,7 +2,6 @@
 Main FastAPI application - Security Hardened v8.4.4
 ANO TsPS INN 9724016805
 """
-
 import os
 import time
 from contextlib import asynccontextmanager
@@ -27,7 +26,7 @@ from app.api import import_export, search, calendar, notifications, webrtc
 from app.api import ai_analytics, white_label, mfa, telegram_bot, api_keys
 from app.api import webhooks, whatsapp, reports, backups, health, admin
 from app.api import referrals, tasks, export, import_data, accounting, fns, bank, metrics
-from app.api import account_profiles, marketplace, jobs
+from app.api import account_profiles, marketplace, jobs, ai_security
 from app.html_routes import router as html_router
 
 @asynccontextmanager
@@ -43,13 +42,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, description="Platform for self-employed. ANO TsPS INN 9724016805", docs_url="/docs" if settings.DEBUG else None, redoc_url="/redoc" if settings.DEBUG else None, openapi_url="/openapi.json" if settings.DEBUG else None, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# Светлана v13: production Dockerfile копирует runtime в /app/static/svetlana3d.
-# Не ссылаемся на frontend/public — этот каталог не копируется в production image.
 _svetlana_runtime = Path("static/svetlana3d").resolve()
-if _svetlana_runtime.is_dir():
-    app.mount("/svetlana-runtime", StaticFiles(directory=str(_svetlana_runtime), html=True), name="svetlana-runtime")
-else:
-    logger.error("Svetlana runtime is missing: %s", _svetlana_runtime)
+if _svetlana_runtime.is_dir(): app.mount("/svetlana-runtime", StaticFiles(directory=str(_svetlana_runtime), html=True), name="svetlana-runtime")
+else: logger.error("Svetlana runtime is missing: %s", _svetlana_runtime)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(CORSMiddleware, allow_origins=[settings.FRONTEND_URL, f"https://{settings.DOMAIN}"], allow_credentials=True, allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"], allow_headers=["Authorization","Content-Type","X-CSRF-Token","X-Client-Type","Idempotency-Key","Accept"], max_age=600)
@@ -76,14 +71,12 @@ async def csrf_protection(request: Request, call_next):
 async def security_headers(request: Request, call_next):
     nonce=generate_csp_nonce(); request.state.csp_nonce=nonce; start_time=time.time(); response=await call_next(request); duration=(time.time()-start_time)*1000
     is_svetlana_runtime=request.url.path.startswith("/svetlana-runtime/")
-    if not is_svetlana_runtime:
-        response.headers["X-Frame-Options"]="SAMEORIGIN"
+    if not is_svetlana_runtime: response.headers["X-Frame-Options"]="SAMEORIGIN"
     response.headers["X-Content-Type-Options"]="nosniff"; response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"]="camera=(), microphone=(self), geolocation=(), payment=(), usb=(), magnetometer=()"
     if settings.ENVIRONMENT=="production": response.headers["Strict-Transport-Security"]="max-age=31536000; includeSubDomains; preload"
     frame_ancestors="'self'"
-    if is_svetlana_runtime and settings.FRONTEND_URL:
-        frame_ancestors += f" {settings.FRONTEND_URL}"
+    if is_svetlana_runtime and settings.FRONTEND_URL: frame_ancestors += f" {settings.FRONTEND_URL}"
     response.headers["Content-Security-Policy"]=(f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://api.openrouter.ai https://api.yookassa.ru https://opendata.trudvsem.ru; frame-src 'self'; media-src 'self' blob: data:; frame-ancestors {frame_ancestors}; base-uri 'self'; form-action 'self' https://{settings.DOMAIN};")
     response.headers["X-Response-Time"]=f"{duration:.2f}ms"
     if request.url.path.startswith("/static/svetlana/") or request.url.path.startswith("/static/svetlana3d/") or is_svetlana_runtime: response.headers["Cache-Control"]="public, max-age=31536000, immutable"
@@ -100,7 +93,7 @@ async def request_logging(request: Request, call_next):
     except Exception as e:
         duration=(time.time()-start_time)*1000; logger.error(f"{request.method} {request.url.path} ERROR {duration:.2f}ms",extra={"method":request.method,"path":request.url.path,"error_type":type(e).__name__,"ip_address":request.client.host}); raise
 
-app.include_router(account_profiles.router); app.include_router(auth.router); app.include_router(users.router); app.include_router(sales.router); app.include_router(contracts.router); app.include_router(crm.router); app.include_router(svetlana.router); app.include_router(jobs.router); app.include_router(websocket.router); app.include_router(subscriptions.router); app.include_router(flutter.router); app.include_router(email_campaigns.router); app.include_router(analytics.router); app.include_router(import_export.router); app.include_router(search.router); app.include_router(calendar.router); app.include_router(notifications.router); app.include_router(webrtc.router); app.include_router(ai_analytics.router); app.include_router(white_label.router); app.include_router(mfa.router); app.include_router(telegram_bot.router); app.include_router(api_keys.router); app.include_router(webhooks.router); app.include_router(whatsapp.router); app.include_router(reports.router); app.include_router(backups.router); app.include_router(health.router); app.include_router(admin.router); app.include_router(referrals.router); app.include_router(tasks.router); app.include_router(export.router); app.include_router(import_data.router); app.include_router(accounting.router); app.include_router(fns.router); app.include_router(bank.router); app.include_router(metrics.router); app.include_router(marketplace.router); app.include_router(html_router)
+app.include_router(account_profiles.router); app.include_router(auth.router); app.include_router(users.router); app.include_router(sales.router); app.include_router(contracts.router); app.include_router(crm.router); app.include_router(svetlana.router); app.include_router(jobs.router); app.include_router(websocket.router); app.include_router(subscriptions.router); app.include_router(flutter.router); app.include_router(email_campaigns.router); app.include_router(analytics.router); app.include_router(import_export.router); app.include_router(search.router); app.include_router(calendar.router); app.include_router(notifications.router); app.include_router(webrtc.router); app.include_router(ai_analytics.router); app.include_router(white_label.router); app.include_router(mfa.router); app.include_router(telegram_bot.router); app.include_router(api_keys.router); app.include_router(webhooks.router); app.include_router(whatsapp.router); app.include_router(reports.router); app.include_router(backups.router); app.include_router(health.router); app.include_router(admin.router); app.include_router(referrals.router); app.include_router(tasks.router); app.include_router(export.router); app.include_router(import_data.router); app.include_router(accounting.router); app.include_router(fns.router); app.include_router(bank.router); app.include_router(metrics.router); app.include_router(marketplace.router); app.include_router(ai_security.router); app.include_router(html_router)
 
 @app.get("/")
 @limiter.limit("10/minute")
