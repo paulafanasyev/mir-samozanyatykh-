@@ -1,16 +1,14 @@
-"""Работа России: только предложения, в которых явно встречается самозанятость/НПД/ГПХ."""
+"""Работа России: live open-data feed, filtered for self-employment/NPD/contract work."""
 
 import asyncio
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, Query
-
-from app.core.auth import get_current_user
-from app.models import User
+from fastapi import APIRouter, Query
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
-TRUDVSEM_API = "https://opendata.trudvsem.ru/api/v1/vacancies"
+# The official open-data documentation currently describes this API over HTTP.
+TRUDVSEM_API = "http://opendata.trudvsem.ru/api/v1/vacancies"
 SEARCH_TERMS = ("самозанят", "нпд", "налог на профессиональный доход", "гпх", "гражданско-правов")
 
 
@@ -45,16 +43,15 @@ async def self_employed_jobs(
     q: str = Query("самозанятый", min_length=2, max_length=120),
     region: Optional[str] = Query(None, max_length=120),
     limit: int = Query(20, ge=1, le=50),
-    current_user: User = Depends(get_current_user),
 ):
-    """Возвращает только объявления, где источник явно указывает самозанятость/НПД/ГПХ."""
+    """Public live feed from the official open-data portal; no user account is required."""
     queries = [q, "самозанятый", "НПД", "ГПХ"]
     if region:
         queries = [f"{x} {region}" for x in queries]
 
     async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
         async def fetch(text: str):
-            r = await client.get(TRUDVSEM_API, params={"text": text, "limit": 50, "offset": 0}, headers={"Accept": "application/json"})
+            r = await client.get(TRUDVSEM_API, params={"text": text, "limit": 100, "offset": 0}, headers={"Accept": "application/json"})
             r.raise_for_status()
             return r.json()
         results = await asyncio.gather(*(fetch(x) for x in queries), return_exceptions=True)
