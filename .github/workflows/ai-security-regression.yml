@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONPATH: ${{ github.workspace }}/src
+
 concurrency:
   group: ai-security-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
