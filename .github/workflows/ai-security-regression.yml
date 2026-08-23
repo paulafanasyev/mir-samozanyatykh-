@@ -29,11 +29,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install security-test dependencies
+      - name: Install runtime dependencies required by security contracts
         run: |
-          python -m pip install --disable-pip-version-check --no-input \
-            "pydantic-settings>=2,<3" \
-            "python-dotenv>=1,<2"
+          python -m pip install --disable-pip-version-check --no-input -r src/requirements.txt
       - name: Compile security modules
         run: |
           python -m py_compile src/app/services/agent_guard.py
