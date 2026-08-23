@@ -41,3 +41,5 @@ jobs:
         run: python tests/security/test_tool_policy_contract.py
       - name: Run role-policy contract
         run: python tests/security/test_role_policy_contract.py
+      - name: Run admin-allowlist contract
+        run: python tests/security/test_admin_allowlist_contract.py
