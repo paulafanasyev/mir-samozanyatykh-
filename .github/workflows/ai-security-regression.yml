@@ -37,3 +37,5 @@ jobs:
         run: python tests/security/test_agent_guard_standalone.py
       - name: Run tool-policy regression
         run: python tests/security/test_tool_policy_extra.py
+      - name: Run tool-policy contract
+        run: python tests/security/test_tool_policy_contract.py
