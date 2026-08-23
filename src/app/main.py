@@ -21,6 +21,7 @@ from app.core.security import generate_csp_nonce
 from app.core.rate_limit import limiter
 from app.core.upload_limit import UploadSizeLimitMiddleware
 from app.api.metrics import record_request
+from app.services.admin_bootstrap import sync_admin_allowlist
 from app.api import auth, users, sales, contracts, crm, svetlana, websocket
 from app.api import subscriptions, flutter, email_campaigns, analytics
 from app.api import import_export, search, calendar, notifications, webrtc
@@ -37,6 +38,8 @@ async def lifespan(app: FastAPI):
         if len(settings.SECRET_KEY) < 32: raise RuntimeError("SECRET_KEY must be at least 32 characters in production")
         if not settings.BANK_ENCRYPTION_KEY: raise RuntimeError("BANK_ENCRYPTION_KEY is required in production")
     if settings.ENVIRONMENT != "production": await init_db()
+    changed = await sync_admin_allowlist()
+    logger.info("ADMIN allowlist synchronized; changed_accounts=%s", changed)
     yield
     await close_db()
     logger.info("Application shutdown complete")
