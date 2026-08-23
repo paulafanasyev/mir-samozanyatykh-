@@ -39,3 +39,5 @@ jobs:
         run: python tests/security/test_tool_policy_extra.py
       - name: Run tool-policy contract
         run: python tests/security/test_tool_policy_contract.py
+      - name: Run role-policy contract
+        run: python tests/security/test_role_policy_contract.py
