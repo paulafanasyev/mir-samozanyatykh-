@@ -3,6 +3,9 @@
 from pathlib import Path
 import sys
 
+# Этот тест запускается напрямую из GitHub Actions:
+# python tests/security/test_admin_allowlist_contract.py
+# Поэтому корень репозитория должен быть в sys.path до импорта app.
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
