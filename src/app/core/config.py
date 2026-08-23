@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     LOG_FILE: str = "./logs/app.log"
     LOG_FORMAT: str = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
+    # Явный allowlist человеческих ADMIN-аккаунтов. Пароли здесь никогда не хранятся.
+    ADMIN_EMAILS: str = "xongphavietnam@gmail.com,it-laboratory@bk.ru"
+
     SVETLANA_LOCAL_MODEL_PATH: str = "data/models/svetlana.gguf"
     SVETLANA_KNOWLEDGE_PATH: str = "src/static/svetlana_knowledge_v3.json"
 
