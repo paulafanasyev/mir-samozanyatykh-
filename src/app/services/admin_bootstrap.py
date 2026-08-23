@@ -3,7 +3,7 @@
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal
+from app.core.database import async_session
 from app.models import User
 
 
@@ -24,7 +24,7 @@ async def sync_admin_allowlist() -> int:
     if not allowed:
         raise RuntimeError("ADMIN_EMAILS не должен быть пустым")
 
-    async with AsyncSessionLocal() as db:
+    async with async_session() as db:
         result = await db.execute(select(User))
         users = result.scalars().all()
         changed = 0
