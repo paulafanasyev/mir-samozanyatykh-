@@ -6,15 +6,15 @@ minimal CI environments without pytest or application dependencies.
 from pathlib import Path
 import sys
 
-# The test is executed as ``python tests/security/test_tool_policy_contract.py``.
-# In that mode Python puts tests/security on sys.path, not the repository root,
-# so the top-level ``src`` package is otherwise not importable. Resolve the repo
-# root from this file instead of relying on the runner's environment.
+# The test is executed directly from GitHub Actions. The application uses a
+# src-layout, so <repo>/src must be importable before importing app.
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+SRC_ROOT = REPO_ROOT / "src"
+for path in (REPO_ROOT, SRC_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
-from src.app.services.agent_tools import TOOL_POLICIES, is_allowed, policy_for
+from app.services.agent_tools import TOOL_POLICIES, is_allowed, policy_for
 
 
 def main() -> None:
