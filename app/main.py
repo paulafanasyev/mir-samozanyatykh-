@@ -101,7 +101,16 @@ async def api_info():
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_web(request, db)
-    return templates.TemplateResponse("index.html", {"request": request, "user": user, "version": "8.7.0"})
+    # Get API keys from environment for Svetlana AI
+    apinex_key = os.getenv("APINEX_API_KEY", "")
+    anymodel_key = os.getenv("ANYMODEL_API_KEY", "")
+    return templates.TemplateResponse("index.html", {
+        "request": request, 
+        "user": user, 
+        "version": "8.7.0",
+        "apinex_api_key": apinex_key,
+        "anymodel_api_key": anymodel_key
+    })
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, error: str = None):
