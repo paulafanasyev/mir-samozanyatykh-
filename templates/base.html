@@ -12,6 +12,7 @@
     {% if apinex_api_key %}<meta name="apinex-api-key" content="{{ apinex_api_key }}">{% endif %}
     {% if anymodel_api_key %}<meta name="anymodel-api-key" content="{{ anymodel_api_key }}">{% endif %}
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/svetlana-avatar.css">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌟</text></svg>">
 </head>
@@ -42,7 +43,7 @@
             <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
                 <svg class="theme-icon-light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="5"></circle>
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l-1.42-1.42M18.36 5.64l-1.42 1.42"></path>
                 </svg>
                 <svg class="theme-icon-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -60,115 +61,32 @@
             </button>
         </div>
     </nav>
-    
     <nav class="mobile-nav" id="mobileNav">
-        <a href="/">Главная</a>
-        <a href="#features">Возможности</a>
-        <a href="#svetlana">Светлана</a>
-        <a href="#pricing">Тарифы</a>
+        <a href="/">Главная</a><a href="#features">Возможности</a><a href="#svetlana">Светлана</a><a href="#pricing">Тарифы</a>
         {% if user %}
-        <a href="/dashboard">Кабинет</a>
-        <a href="/contracts">Договоры</a>
-        <a href="/finance">Финансы</a>
-        <a href="/crm">CRM</a>
-        <a href="/marketplace">Маркет</a>
-        <a href="/grants">Гранты</a>
-        <a href="/profile">Профиль</a>
-        <a href="#" onclick="logout()">Выход</a>
-        {% else %}
-        <a href="/login">Вход</a>
-        <a href="/register">Регистрация</a>
-        {% endif %}
+        <a href="/dashboard">Кабинет</a><a href="/contracts">Договоры</a><a href="/finance">Финансы</a><a href="/crm">CRM</a><a href="/marketplace">Маркет</a><a href="/grants">Гранты</a><a href="/profile">Профиль</a><a href="#" onclick="logout()">Выход</a>
+        {% else %}<a href="/login">Вход</a><a href="/register">Регистрация</a>{% endif %}
     </nav>
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
+    <main>{% block content %}{% endblock %}</main>
     <footer>
         <div class="footer-content">
-            <div class="footer-brand">
-                <a href="/" class="logo">МИР <span>САМОЗАНЯТЫХ</span></a>
-                <p>Ваш личный помощник для самозанятости</p>
-            </div>
-            <div class="footer-links">
-                <h4>Продукт</h4>
-                <a href="#features">Возможности</a>
-                <a href="#svetlana">Светлана</a>
-                <a href="#pricing">Тарифы</a>
-            </div>
-            <div class="footer-links">
-                <h4>Компания</h4>
-                <a href="#">О нас</a>
-                <a href="#">Контакты</a>
-                <a href="#">Помощь</a>
-            </div>
-            <div class="footer-links">
-                <h4>Правовая информация</h4>
-                <a href="#">Политика конфиденциальности</a>
-                <a href="#">Условия использования</a>
-            </div>
+            <div class="footer-brand"><a href="/" class="logo">МИР <span>САМОЗАНЯТЫХ</span></a><p>Ваш личный помощник для самозанятости</p></div>
+            <div class="footer-links"><h4>Продукт</h4><a href="#features">Возможности</a><a href="#svetlana">Светлана</a><a href="#pricing">Тарифы</a></div>
+            <div class="footer-links"><h4>Компания</h4><a href="#">О нас</a><a href="#">Контакты</a><a href="#">Помощь</a></div>
+            <div class="footer-links"><h4>Правовая информация</h4><a href="#">Политика конфиденциальности</a><a href="#">Условия использования</a></div>
         </div>
-        <div class="footer-bottom">
-            <p>© 2026 Мир Самозанятых v9.0.0 | <a href="/api/docs">API Docs</a></p>
-        </div>
+        <div class="footer-bottom"><p>© 2026 Мир Самозанятых v9.0.0 | <a href="/api/docs">API Docs</a></p></div>
     </footer>
-
     <script>
-        // Theme Toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
-        const themeIconLight = themeToggle.querySelector('.theme-icon-light');
-        const themeIconDark = themeToggle.querySelector('.theme-icon-dark');
-        
-        function setTheme(theme) {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            if (theme === 'dark') {
-                themeIconLight.style.display = 'none';
-                themeIconDark.style.display = 'block';
-            } else {
-                themeIconLight.style.display = 'block';
-                themeIconDark.style.display = 'none';
-            }
-        }
-        
-        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        setTheme(savedTheme);
-        
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-        });
-        
-        // Mobile Menu
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileNav = document.getElementById('mobileNav');
-        
-        if (mobileMenuBtn && mobileNav) {
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileNav.classList.toggle('active');
-            });
-        }
-        
-        // Logout
-        async function logout() {
-            await fetch('/api/auth/logout', {method: 'POST'});
-            window.location.href = '/';
-        }
-        
-        // Reveal on scroll
-        const revealElements = document.querySelectorAll('.reveal');
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
-            });
-        }, { threshold: 0.1 });
-        
-        revealElements.forEach(el => revealObserver.observe(el));
+        const themeToggle=document.getElementById('themeToggle'),html=document.documentElement,themeIconLight=themeToggle.querySelector('.theme-icon-light'),themeIconDark=themeToggle.querySelector('.theme-icon-dark');
+        function setTheme(theme){html.setAttribute('data-theme',theme);localStorage.setItem('theme',theme);themeIconLight.style.display=theme==='dark'?'none':'block';themeIconDark.style.display=theme==='dark'?'block':'none'}
+        const savedTheme=localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');setTheme(savedTheme);
+        themeToggle.addEventListener('click',()=>setTheme(html.getAttribute('data-theme')==='dark'?'light':'dark'));
+        const mobileMenuBtn=document.getElementById('mobileMenuBtn'),mobileNav=document.getElementById('mobileNav');if(mobileMenuBtn&&mobileNav)mobileMenuBtn.addEventListener('click',()=>mobileNav.classList.toggle('active'));
+        async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/'}
+        const revealElements=document.querySelectorAll('.reveal'),revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('active')})},{threshold:.1});revealElements.forEach(el=>revealObserver.observe(el));
     </script>
+    <script src="/static/js/svetlana-avatar.js" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
