@@ -1,59 +1,61 @@
-import { useEffect, useRef, useState } from 'react'
-import { API_BASE_URL } from '../api/client'
+import { useEffect, useState } from 'react'
 
-type Props = { size?: 'sm' | 'md' | 'lg'; interactive?: boolean; className?: string }
+type Props = {
+  size?: 'sm' | 'md' | 'lg'
+  interactive?: boolean
+  className?: string
+}
 
-export default function SvetlanaAvatar({ size = 'md', className = '' }: Props) {
-  const dims = size === 'lg' ? 'h-[min(72vh,720px)] min-h-[420px] w-full' : size === 'sm' ? 'h-12 w-12' : 'h-24 w-24'
-  const iframeRef = useRef<HTMLIFrameElement | null>(null)
-  const [modelLoaded, setModelLoaded] = useState(false)
-  const [portraitFailed, setPortraitFailed] = useState(false)
-  const runtimeUrl = `${API_BASE_URL}/svetlana-runtime/index.html`
-  const portraitUrl = `${API_BASE_URL}/static/svetlana/base.png`
+const sizeClass = {
+  sm: 'h-12 w-12',
+  md: 'h-24 w-24',
+  lg: 'h-80 w-full',
+} as const
+
+const SVETLANA_AVATAR_ASSET = '/static/svetlana/svetlana-office.jpg'
+
+/**
+ * Основной аватар Светланы — локальный статичный брендовый портрет.
+ * Изображение хранится отдельно от компонента, поэтому его можно заменить
+ * без изменения UI-кода.
+ */
+export default function SvetlanaAvatar({ size = 'md', interactive = false, className = '' }: Props) {
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    const runtimeOrigin = new URL(API_BASE_URL).origin
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== runtimeOrigin) return
-      if (event.data?.type === 'svetlana.ready') setModelLoaded(true)
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [])
-
-  const sendSmile = () => {
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: 'svetlana.command', payload: { type: 'avatar.emotion', name: 'smile', duration: 1200 } },
-      new URL(API_BASE_URL).origin,
-    )
-  }
+    setLoaded(false)
+    setError(false)
+  }, [size])
 
   return (
-    <div className={`${dims} ${className} relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg`} aria-label="Светлана">
-      <img
-        src={portraitFailed ? `${API_BASE_URL}/static/svetlana/face.png` : portraitUrl}
-        onError={() => setPortraitFailed(true)}
-        alt="Светлана — ИИ-помощник"
-        className="absolute inset-0 h-full w-full object-contain object-bottom"
-        loading={size === 'lg' ? 'eager' : 'lazy'}
-      />
-      <iframe
-        ref={iframeRef}
-        title="Анимированная Светлана"
-        src={runtimeUrl}
-        onLoad={sendSmile}
-        className={`absolute inset-0 h-full w-full border-0 bg-transparent transition-opacity duration-300 ${modelLoaded ? 'opacity-100' : 'opacity-0'}`}
-        allow="microphone; autoplay; speech-synthesis"
-        loading={size === 'lg' ? 'eager' : 'lazy'}
-        sandbox="allow-scripts allow-same-origin"
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5" />
-      <span className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow" title="Светлана доступна" />
+    <div
+      className={`${sizeClass[size]} ${className} relative flex items-end justify-center overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_25%,rgba(52,211,153,.18),transparent_55%),linear-gradient(145deg,#f8fafc,#e2e8f0)] shadow-2xl`}
+      aria-label="Светлана"
+      data-svetlana-avatar="local"
+    >
+      {!error && (
+        <img
+          src={SVETLANA_AVATAR_ASSET}
+          alt="Светлана — помощник «Мира Самозанятых»"
+          className={`h-full w-full object-contain object-bottom transition duration-700 ${loaded ? 'opacity-100' : 'opacity-0'} ${interactive ? 'animate-[svetlanaFloat_4s_ease-in-out_infinite]' : ''}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          draggable={false}
+        />
+      )}
+      {(!loaded || error) && (
+        <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-slate-600">
+          {error ? 'Аватар Светланы недоступен' : 'Светлана загружается…'}
+        </div>
+      )}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full border border-slate-900/10 bg-white/80 px-2 py-1 text-[9px] font-bold text-emerald-700 backdrop-blur">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> OFFLINE
+      </div>
     </div>
   )
 }
 
-export function commandSvetlana(iframe: HTMLIFrameElement | null, payload: Record<string, unknown>) {
-  if (!iframe?.contentWindow) return
-  iframe.contentWindow.postMessage({ type: 'svetlana.command', payload }, new URL(API_BASE_URL).origin)
+export function commandSvetlana(_iframe: HTMLIFrameElement | null, _payload: Record<string, unknown>) {
+  // Compatibility no-op: the primary avatar is intentionally static.
 }
