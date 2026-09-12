@@ -23,20 +23,25 @@
         <div class="svetlana-container" id="svetlanaContainer">
             <div class="svetlana-glow"></div>
             <div class="svetlana-avatar-wrapper">
-                <div class="svetlana-avatar" id="svetlanaAvatar">
-                    <canvas id="svetlanaCanvas"></canvas>
+                <!-- Новый контейнер для многоуровневого рендерера -->
+                <div id="svetlanaAvatar" class="avatar-renderer-container">
+                    <!-- Сюда будет рендериться 3D/Image/Canvas аватар -->
                 </div>
-                <div class="svetlana-lips-overlay" id="lipsOverlay"></div>
-                <div class="svetlana-eyes-overlay" id="eyesOverlay"></div>
+                <!-- Индикатор состояния -->
+                <div class="avatar-state-indicator idle" data-state="idle">
+                    <span class="avatar-state-description">Готова к общению</span>
+                </div>
+                <!-- Кнопка голосового ввода -->
+                <button id="voice-control-btn" class="voice-control-btn" title="Голосовой ввод" aria-label="Включить голосовой ввод">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0v5zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3z"/>
+                    </svg>
+                </button>
             </div>
             <div class="svetlana-status">
                 <span class="pulse-dot"></span>
                 <span>Светлана онлайн</span>
-            </div>
-            <div class="svetlana-speaking-indicator" id="speakingIndicator">
-                <div class="wave wave-1"></div>
-                <div class="wave wave-2"></div>
-                <div class="wave wave-3"></div>
             </div>
         </div>
     </div>
@@ -246,14 +251,15 @@
 (function() {
     'use strict';
     
-    // Configuration - API keys will be set via environment variables
-    const APINEX_API_KEY = ''; // Will be set from server config
-    const ANYMODEL_API_KEY = ''; // Will be set from server config
+    // Configuration - API keys are handled securely via backend endpoints
+    // Frontend does not store or use API keys directly
+    
+    const CHAT_API_URL = '/api/chat'; // Backend endpoint that handles API keys securely
     
     const APINEX_BASE_URL = 'https://api.apinex.bond/v1';
     const ANYMODEL_BASE_URL = 'https://anymodel.org/v1';
     
-    // Models for automatic rotation
+    // Models for automatic rotation (used by backend only)
     const APINEX_MODELS = [
         'free/glm-5.3-flash',
         'free/gemini-3.8-flash',
@@ -481,65 +487,31 @@
         return model;
     }
     
-    // Call AI API with fallback
+    // Call AI API via secure backend endpoint
     async function callAI(prompt) {
-        const model = getNextModel();
-        
-        // Try APINEX first
+        // All API calls are now routed through the backend for security
         try {
-            const response = await fetch(`${APINEX_BASE_URL}/chat/completions`, {
+            const response = await fetch(CHAT_API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${APINEX_API_KEY}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: 'system', content: 'Вы Светлана, ИИ-помощник для самозанятых в России. Отвечайте дружелюбно и профессионально на вопросы о налогах, договорах, регистрации самозанятых, финансах.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    max_tokens: 500,
-                    temperature: 0.7
+                    message: prompt,
+                    context: 'Вы Светлана, ИИ-помощник для самозанятых в России. Отвечайте дружелюбно и профессионально на вопросы о налогах, договорах, регистрации самозанятых, финансах.'
                 })
             });
             
             if (response.ok) {
                 const data = await response.json();
-                return data.choices?.[0]?.message?.content || 'Извините, я не поняла вопрос.';
+                return data.response || data.message || 'Извините, я не поняла вопрос.';
+            } else {
+                throw new Error(`HTTP ${response.status}`);
             }
         } catch (e) {
-            console.log('APINEX failed, trying AnyModel:', e);
+            console.error('AI API call failed:', e);
+            return 'Извините, произошла ошибка при обработке запроса. Попробуйте позже.';
         }
-        
-        // Fallback to AnyModel
-        try {
-            const response = await fetch(`${ANYMODEL_BASE_URL}/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${ANYMODEL_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: ANYMODEL_MODEL,
-                    messages: [
-                        { role: 'system', content: 'Вы Светлана, ИИ-помощник для самозанятых в России. Отвечайте дружелюбно и профессионально.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    max_tokens: 500
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.choices?.[0]?.message?.content || 'Извините, я не поняла вопрос.';
-            }
-        } catch (e) {
-            console.log('AnyModel failed:', e);
-        }
-        
-        // Local fallback
-        return getLocalResponse(prompt);
     }
     
     // Local fallback responses
@@ -680,12 +652,8 @@
     
     // Initialize
     function init() {
-        // Get API keys from meta tags or data attributes (set by server)
-        const apinexKey = document.querySelector('meta[name="apinex-api-key"]')?.content || '';
-        const anymodelKey = document.querySelector('meta[name="anymodel-api-key"]')?.content || '';
-        
-        if (apinexKey) window.APINEX_API_KEY = apinexKey;
-        if (anymodelKey) window.ANYMODEL_API_KEY = anymodelKey;
+        // API keys are now handled securely via backend endpoints
+        // No API keys are exposed in frontend code
         
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -719,6 +687,113 @@
         init();
     }
 })();
+</script>
+
+<!-- Подключение новой системы Светланы -->
+<script src="{{ url_for('static', filename='js/avatar-state.js') }}"></script>
+<script src="{{ url_for('static', filename='js/canvas-avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image-avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/avatar-renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lip-sync.js') }}"></script>
+<script src="{{ url_for('static', filename='js/voice-interaction.js') }}"></script>
+<script src="{{ url_for('static', filename='js/svetlana-main.js') }}"></script>
+
+<script>
+// Инициализация новой системы Светланы при загрузке страницы
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing new Svetlana system...');
+    
+    // Проверяем, есть ли контейнер для аватара
+    const avatarContainer = document.getElementById('svetlanaAvatar');
+    if (!avatarContainer) {
+        console.warn('Svetlana avatar container not found');
+        return;
+    }
+    
+    try {
+        // Создаем экземпляр системы состояний Светланы
+        const svetlanaState = new window.SvetlanaState();
+        
+        // Создаем рендерер аватара
+        const avatarRenderer = new window.AvatarRenderer('svetlanaAvatar');
+        await avatarRenderer.init();
+        
+        // Создаем систему lip-sync
+        const lipSyncSystem = new window.LipSyncSystem(avatarRenderer);
+        
+        // Создаем систему голосового взаимодействия
+        const voiceInteraction = new window.VoiceInteraction(svetlanaState, avatarRenderer, lipSyncSystem);
+        
+        // Привязываем кнопку голосового ввода
+        const voiceBtn = document.getElementById('voice-control-btn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', async () => {
+                await voiceInteraction.toggleListening();
+                
+                // Обновляем состояние кнопки
+                if (svetlanaState.getState() === svetlanaState.states.LISTENING) {
+                    voiceBtn.classList.add('listening');
+                } else {
+                    voiceBtn.classList.remove('listening');
+                }
+            });
+        }
+        
+        // Привязываем систему состояний к обновлениям интерфейса
+        svetlanaState.onStateChange(svetlanaState.states.IDLE, () => {
+            voiceBtn?.classList.remove('listening');
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.LISTENING, () => {
+            voiceBtn?.classList.add('listening');
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.SPEAKING, async () => {
+            // Начинаем lip-sync анализ при начале речи
+            if (lipSyncSystem) {
+                await lipSyncSystem.startAnalysis();
+            }
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.IDLE, async () => {
+            // Останавливаем lip-sync анализ при окончании речи
+            if (lipSyncSystem) {
+                await lipSyncSystem.stopAnalysis();
+            }
+        });
+        
+        // Инициализируем начальное состояние
+        svetlanaState.setState(svetlanaState.states.IDLE);
+        
+        console.log('Svetlana system initialized successfully');
+        
+        // Сохраняем экземпляры в глобальной области для отладки
+        window.svetlanaState = svetlanaState;
+        window.avatarRenderer = avatarRenderer;
+        window.voiceInteraction = voiceInteraction;
+        window.lipSyncSystem = lipSyncSystem;
+        
+    } catch (error) {
+        console.error('Failed to initialize Svetlana system:', error);
+    }
+});
+
+// Очищаем ресурсы при закрытии страницы
+window.addEventListener('beforeunload', async function() {
+    try {
+        if (window.voiceInteraction) {
+            await window.voiceInteraction.destroy();
+        }
+        if (window.avatarRenderer) {
+            await window.avatarRenderer.destroy();
+        }
+        if (window.lipSyncSystem) {
+            await window.lipSyncSystem.destroy();
+        }
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+    }
+});
 </script>
 {% endblock scripts %}
 {% endblock content %}
