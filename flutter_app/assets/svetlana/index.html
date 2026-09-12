@@ -1,0 +1,799 @@
+{% extends "base.html" %}
+{% block title %}Мир Самозанятых — Главная{% endblock %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge animate-fade-in">
+            <span class="status-dot"></span>
+            <span>ИИ-помощник онлайн</span>
+        </div>
+        <h1 class="animate-slide-up">Работай на себя<br>с умным помощником</h1>
+        <p class="hero-description animate-slide-up-delay">
+            Светлана помогает управлять работой, клиентами и доходами. 
+            Договоры, налоги, CRM и маркетплейс — всё в одном месте.
+        </p>
+        <div class="hero-buttons animate-slide-up-delay-2">
+            <a href="/register" class="btn btn-primary">Начать бесплатно</a>
+            <a href="/login" class="btn btn-outline">Войти</a>
+        </div>
+    </div>
+    
+    <div class="hero-visual reveal">
+        <div class="svetlana-container" id="svetlanaContainer">
+            <div class="svetlana-glow"></div>
+            <div class="svetlana-avatar-wrapper">
+                <!-- Новый контейнер для многоуровневого рендерера -->
+                <div id="svetlanaAvatar" class="avatar-renderer-container">
+                    <!-- Сюда будет рендериться 3D/Image/Canvas аватар -->
+                </div>
+                <!-- Индикатор состояния -->
+                <div class="avatar-state-indicator idle" data-state="idle">
+                    <span class="avatar-state-description">Готова к общению</span>
+                </div>
+                <!-- Кнопка голосового ввода -->
+                <button id="voice-control-btn" class="voice-control-btn" title="Голосовой ввод" aria-label="Включить голосовой ввод">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0v5zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="svetlana-status">
+                <span class="pulse-dot"></span>
+                <span>Светлана онлайн</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="section-header reveal">
+        <span class="section-label">Возможности</span>
+        <h2 class="section-title">Всё для вашей самозанятости</h2>
+        <p class="section-description">
+            Полный набор инструментов для работы, управления клиентами и финансами
+        </p>
+    </div>
+    
+    <div class="features-grid">
+        <div class="feature-card reveal">
+            <div class="feature-icon">🤖</div>
+            <h3>ИИ Светлана</h3>
+            <p>Ваш личный консультант по налогам, договорам и бизнесу. Отвечает 24/7 на любые вопросы.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">📄</div>
+            <h3>Договоры и документы</h3>
+            <p>Генерация ГПД, счетов, актов за секунды. Электронная подпись и QR-коды для проверки.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">💰</div>
+            <h3>Финансовый трекер</h3>
+            <p>Учёт доходов и расходов, автоматический расчёт налога НПД, финансовая аналитика.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">👥</div>
+            <h3>CRM система</h3>
+            <p>Управление контактами, сделками и коммуникацией с клиентами в одном месте.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">🛒</div>
+            <h3>Маркетплейс</h3>
+            <p>Продавайте услуги и товары другим самозанятым. Найдите новых клиентов легко.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">🎁</div>
+            <h3>Гранты и поддержка</h3>
+            <p>Актуальные программы поддержки с AI-оценкой совместимости. Подавайте заявки онлайн.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Svetlana Section -->
+<section class="product-section svetlana-product-section" id="svetlana">
+    <div class="product-grid">
+        <div class="product-content reveal">
+            <span class="section-label">ИИ-помощник</span>
+            <h2>Светлана — ваш интеллектуальный партнёр</h2>
+            <p>
+                Светлана понимает контекст вашего бизнеса и даёт персонализированные рекомендации. 
+                Помогает с документами, отвечает на вопросы по налогам, подсказывает оптимальные решения.
+            </p>
+            <p>
+                Обучена на лучших практиках российского законодательства для самозанятых. 
+                Всегда на связи, всегда готова помочь.
+            </p>
+            <div class="svetlana-chat-demo" id="svetlanaChatDemo">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message svetlana-message">
+                        <span>Здравствуйте! Я Светлана. Чем могу помочь?</span>
+                    </div>
+                </div>
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chatInput" placeholder="Задайте вопрос Светлане..." />
+                    <button class="btn btn-primary btn-sm" id="sendChatBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                    <button class="btn btn-icon btn-mic" id="voiceBtn" aria-label="Голосовой ввод">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <a href="/dashboard" class="btn btn-primary">Попробовать Светлану</a>
+        </div>
+        <div class="product-visual reveal">
+            <div class="svetlana-mini-avatar">
+                <canvas id="svetlanaMiniCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Work Section -->
+<section class="product-section reverse">
+    <div class="product-grid">
+        <div class="product-content reveal">
+            <span class="section-label">Работа</span>
+            <h2>Найдите клиентов своей мечты</h2>
+            <p>
+                Маркетплейс соединяет исполнителей и заказчиков. Создайте профиль услуг, 
+                получайте заявки и работайте с проверенными клиентами.
+            </p>
+            <p>
+                Интеллектуальная система подбора рекомендует подходящие проекты 
+                на основе ваших навыков и опыта.
+            </p>
+            <a href="/marketplace" class="btn btn-outline">Смотреть проекты</a>
+        </div>
+        <div class="product-visual reveal">
+            <div class="visual-placeholder">💼</div>
+        </div>
+    </div>
+</section>
+
+<!-- Finance Section -->
+<section class="product-section">
+    <div class="product-grid">
+        <div class="product-content reveal">
+            <span class="section-label">Финансы</span>
+            <h2>Контролируйте каждый рубль</h2>
+            <p>
+                Автоматический учёт доходов и расходов, расчёт налогов, формирование чеков. 
+                Финансовая аналитика поможет понять, куда движется ваш бизнес.
+            </p>
+            <p>
+                Интеграция с налоговой службой для автоматической отправки данных о доходах. 
+                Никакой бумажной волокиты.
+            </p>
+            <a href="/finance" class="btn btn-primary">Управлять финансами</a>
+        </div>
+        <div class="product-visual reveal">
+            <div class="visual-placeholder">📊</div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section" id="pricing">
+    <div class="section-header reveal">
+        <span class="section-label">Тарифы</span>
+        <h2 class="section-title">Выберите подходящий план</h2>
+        <p class="section-description">
+            Начните бесплатно, масштабируйтесь по мере роста
+        </p>
+    </div>
+    
+    <div class="pricing-grid">
+        <div class="pricing-card reveal">
+            <h3>START</h3>
+            <div class="pricing-price">Бесплатно</div>
+            <ul class="pricing-features">
+                <li>3 договора в месяц</li>
+                <li>Базовый ИИ-чат</li>
+                <li>Финансовый трекер</li>
+                <li>Доступ к маркетплейсу</li>
+            </ul>
+            <a href="/register" class="btn btn-outline btn-full">Выбрать</a>
+        </div>
+        
+        <div class="pricing-card featured reveal">
+            <h3>PRO</h3>
+            <div class="pricing-price">300 ₽ <span>/мес</span></div>
+            <ul class="pricing-features">
+                <li>Безлимитные договоры</li>
+                <li>Продвинутый ИИ-чат</li>
+                <li>CRM система</li>
+                <li>PDF экспорт документов</li>
+                <li>Приоритетная поддержка</li>
+            </ul>
+            <a href="/register" class="btn btn-primary btn-full">Выбрать</a>
+        </div>
+        
+        <div class="pricing-card reveal">
+            <h3>BUSINESS</h3>
+            <div class="pricing-price">990 ₽ <span>/мес</span></div>
+            <ul class="pricing-features">
+                <li>Всё из PRO</li>
+                <li>Расширенный маркетплейс</li>
+                <li>API доступ</li>
+                <li>Командная работа</li>
+                <li>Персональный менеджер</li>
+            </ul>
+            <a href="/register" class="btn btn-outline btn-full">Выбрать</a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <h2 class="reveal">Готовы начать?</h2>
+    <p class="reveal">
+        Присоединяйтесь к тысячам самозанятых, которые уже работают с комфортом
+    </p>
+    <div class="cta-buttons reveal">
+        <a href="/register" class="btn btn-white">Начать бесплатно</a>
+        <a href="/login" class="btn btn-outline" style="border-color: rgba(255,255,255,0.5); color: white;">Войти</a>
+    </div>
+</section>
+
+{% block scripts %}
+<script>
+// ===== Svetlana Realistic Avatar with AI Integration =====
+(function() {
+    'use strict';
+    
+    // Configuration - API keys are handled securely via backend endpoints
+    // Frontend does not store or use API keys directly
+    
+    const CHAT_API_URL = '/api/chat'; // Backend endpoint that handles API keys securely
+    
+    const APINEX_BASE_URL = 'https://api.apinex.bond/v1';
+    const ANYMODEL_BASE_URL = 'https://anymodel.org/v1';
+    
+    // Models for automatic rotation (used by backend only)
+    const APINEX_MODELS = [
+        'free/glm-5.3-flash',
+        'free/gemini-3.8-flash',
+        'free/muse-spark-1.3',
+        'free/deepseek-v4-pro-0813',
+        'free/gpt-5.6-luna',
+        'free/qwen-3.8-max'
+    ];
+    
+    const ANYMODEL_MODEL = 'am/free';
+    
+    let currentModelIndex = 0;
+    let isSpeaking = false;
+    let animationFrameId = null;
+    
+    // Canvas setup for main avatar
+    const canvas = document.getElementById('svetlanaCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const miniCanvas = document.getElementById('svetlanaMiniCanvas');
+    const miniCtx = miniCanvas ? miniCanvas.getContext('2d') : null;
+    
+    // Lips and eyes overlays
+    const lipsOverlay = document.getElementById('lipsOverlay');
+    const eyesOverlay = document.getElementById('eyesOverlay');
+    const speakingIndicator = document.getElementById('speakingIndicator');
+    
+    // Chat elements
+    const chatInput = document.getElementById('chatInput');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    
+    // Set canvas size
+    function resizeCanvas() {
+        if (canvas && canvas.parentElement) {
+            canvas.width = canvas.parentElement.clientWidth * 0.7;
+            canvas.height = canvas.parentElement.clientHeight * 0.7;
+        }
+        if (miniCanvas && miniCanvas.parentElement) {
+            miniCanvas.width = 280;
+            miniCanvas.height = 280;
+        }
+        drawSvetlana();
+    }
+    
+    // Draw realistic Svetlana face
+    function drawSvetlana(targetCtx = ctx, width, height) {
+        if (!targetCtx || !width || !height) return;
+        
+        const scale = Math.min(width, height) / 400;
+        const cx = width / 2;
+        const cy = height / 2;
+        
+        targetCtx.clearRect(0, 0, width, height);
+        
+        // Background gradient based on theme
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const bgGradient = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, width);
+        if (isDark) {
+            bgGradient.addColorStop(0, '#1a2a2a');
+            bgGradient.addColorStop(1, '#0d0d0d');
+        } else {
+            bgGradient.addColorStop(0, '#f0f8f5');
+            bgGradient.addColorStop(1, '#e8f0e8');
+        }
+        targetCtx.fillStyle = bgGradient;
+        targetCtx.fillRect(0, 0, width, height);
+        
+        // Neck
+        const neckGradient = targetCtx.createLinearGradient(cx - 40 * scale, cy + 80 * scale, cx + 40 * scale, cy + 80 * scale);
+        neckGradient.addColorStop(0, '#d4a591');
+        neckGradient.addColorStop(0.5, '#e8b4a0');
+        neckGradient.addColorStop(1, '#d4a591');
+        targetCtx.fillStyle = neckGradient;
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx, cy + 100 * scale, 50 * scale, 70 * scale, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Face base
+        const faceGradient = targetCtx.createRadialGradient(cx - 20 * scale, cy - 20 * scale, 0, cx, cy, 120 * scale);
+        faceGradient.addColorStop(0, '#f5d0c5');
+        faceGradient.addColorStop(0.5, '#e8b4a0');
+        faceGradient.addColorStop(1, '#d4a591');
+        targetCtx.fillStyle = faceGradient;
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx, cy, 100 * scale, 120 * scale, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Hair
+        const hairGradient = targetCtx.createLinearGradient(cx - 100 * scale, cy - 100 * scale, cx + 100 * scale, cy - 50 * scale);
+        hairGradient.addColorStop(0, '#5d4037');
+        hairGradient.addColorStop(0.5, '#795548');
+        hairGradient.addColorStop(1, '#5d4037');
+        targetCtx.fillStyle = hairGradient;
+        targetCtx.beginPath();
+        targetCtx.arc(cx, cy - 30 * scale, 110 * scale, Math.PI, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Hair sides
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx - 95 * scale, cy + 10 * scale, 25 * scale, 80 * scale, 0.2, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx + 95 * scale, cy + 10 * scale, 25 * scale, 80 * scale, -0.2, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Eyes
+        const eyeY = cy - 15 * scale;
+        const eyeSpacing = 35 * scale;
+        
+        // Eye whites
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx - eyeSpacing, eyeY, 18 * scale, 12 * scale, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx + eyeSpacing, eyeY, 18 * scale, 12 * scale, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Iris and pupil (animated based on speaking state)
+        const irisColor = isDark ? '#4a90a4' : '#5d4037';
+        targetCtx.fillStyle = irisColor;
+        const blinkOffset = isSpeaking ? Math.sin(Date.now() / 200) * 2 : 0;
+        targetCtx.beginPath();
+        targetCtx.arc(cx - eyeSpacing, eyeY + blinkOffset, 8 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(cx + eyeSpacing, eyeY + blinkOffset, 8 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Eye highlights
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.arc(cx - eyeSpacing - 3 * scale, eyeY - 3 * scale + blinkOffset, 3 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(cx + eyeSpacing - 3 * scale, eyeY - 3 * scale + blinkOffset, 3 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Eyebrows
+        targetCtx.strokeStyle = '#8b6f5c';
+        targetCtx.lineWidth = 3 * scale;
+        targetCtx.lineCap = 'round';
+        targetCtx.beginPath();
+        targetCtx.moveTo(cx - 50 * scale, eyeY - 25 * scale);
+        targetCtx.quadraticCurveTo(cx - 35 * scale, eyeY - 30 * scale, cx - 20 * scale, eyeY - 25 * scale);
+        targetCtx.stroke();
+        targetCtx.beginPath();
+        targetCtx.moveTo(cx + 20 * scale, eyeY - 25 * scale);
+        targetCtx.quadraticCurveTo(cx + 35 * scale, eyeY - 30 * scale, cx + 50 * scale, eyeY - 25 * scale);
+        targetCtx.stroke();
+        
+        // Nose
+        const noseGradient = targetCtx.createLinearGradient(cx, cy, cx, cy + 40 * scale);
+        noseGradient.addColorStop(0, 'rgba(212, 165, 145, 0.6)');
+        noseGradient.addColorStop(1, 'rgba(212, 165, 145, 0.3)');
+        targetCtx.fillStyle = noseGradient;
+        targetCtx.beginPath();
+        targetCtx.moveTo(cx - 5 * scale, cy + 10 * scale);
+        targetCtx.lineTo(cx, cy + 45 * scale);
+        targetCtx.lineTo(cx + 5 * scale, cy + 10 * scale);
+        targetCtx.closePath();
+        targetCtx.fill();
+        
+        // Mouth/Lips (animated when speaking)
+        const mouthY = cy + 55 * scale;
+        const lipColor = isDark ? '#c98972' : '#d49a8a';
+        targetCtx.fillStyle = lipColor;
+        
+        if (isSpeaking) {
+            // Open mouth when speaking
+            const mouthOpenness = Math.abs(Math.sin(Date.now() / 100)) * 15 * scale;
+            targetCtx.beginPath();
+            targetCtx.ellipse(cx, mouthY, 20 * scale, mouthOpenness, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+            
+            // Inner mouth
+            targetCtx.fillStyle = '#8b4a5a';
+            targetCtx.beginPath();
+            targetCtx.ellipse(cx, mouthY, 15 * scale, mouthOpenness * 0.7, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+        } else {
+            // Closed smile
+            targetCtx.beginPath();
+            targetCtx.arc(cx, mouthY - 5 * scale, 20 * scale, 0.1 * Math.PI, 0.9 * Math.PI);
+            targetCtx.lineWidth = 4 * scale;
+            targetCtx.strokeStyle = lipColor;
+            targetCtx.stroke();
+        }
+        
+        // Cheeks
+        targetCtx.fillStyle = 'rgba(232, 180, 160, 0.4)';
+        targetCtx.beginPath();
+        targetCtx.arc(cx - 60 * scale, cy + 30 * scale, 15 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(cx + 60 * scale, cy + 30 * scale, 15 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+        
+        // Subtle glow effect
+        const glowGradient = targetCtx.createRadialGradient(cx, cy, 80 * scale, cx, cy, 150 * scale);
+        glowGradient.addColorStop(0, isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(52, 199, 89, 0.1)');
+        glowGradient.addColorStop(1, 'transparent');
+        targetCtx.fillStyle = glowGradient;
+        targetCtx.beginPath();
+        targetCtx.arc(cx, cy, 150 * scale, 0, Math.PI * 2);
+        targetCtx.fill();
+    }
+    
+    // Animation loop
+    function animate() {
+        if (canvas && ctx) {
+            drawSvetlana(ctx, canvas.width, canvas.height);
+        }
+        if (miniCanvas && miniCtx) {
+            drawSvetlana(miniCtx, miniCanvas.width, miniCanvas.height);
+        }
+        animationFrameId = requestAnimationFrame(animate);
+    }
+    
+    // Get next model in rotation
+    function getNextModel() {
+        const model = APINEX_MODELS[currentModelIndex];
+        currentModelIndex = (currentModelIndex + 1) % APINEX_MODELS.length;
+        return model;
+    }
+    
+    // Call AI API via secure backend endpoint
+    async function callAI(prompt) {
+        // All API calls are now routed through the backend for security
+        try {
+            const response = await fetch(CHAT_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: prompt,
+                    context: 'Вы Светлана, ИИ-помощник для самозанятых в России. Отвечайте дружелюбно и профессионально на вопросы о налогах, договорах, регистрации самозанятых, финансах.'
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                return data.response || data.message || 'Извините, я не поняла вопрос.';
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (e) {
+            console.error('AI API call failed:', e);
+            return 'Извините, произошла ошибка при обработке запроса. Попробуйте позже.';
+        }
+    }
+    
+    // Local fallback responses
+    function getLocalResponse(message) {
+        const lower = message.toLowerCase();
+        const responses = {
+            'привет': 'Здравствуйте! Я Светлана, ваш ИИ-помощник. Чем могу помочь?',
+            'налог': 'Самозанятые платят НПД: 4% с физлиц, 6% с юрлиц. Есть налоговый вычет 10 000 ₽.',
+            'договор': 'Я помогу создать договор ГПХ, счёт или акт. Перейдите в раздел Договоры.',
+            'регистрация': 'Для регистрации скачайте приложение "Мой налог" или обратитесь в ФНС.',
+            'тариф': 'У нас есть тарифы: START (бесплатно), PRO (300₽/мес), BUSINESS (990₽/мес).',
+            'финансы': 'В разделе Финансы вы можете отслеживать доходы и расходы, платить налоги.',
+            'crm': 'CRM поможет управлять клиентами и сделками. Добавьте контакты в разделе CRM.',
+            'грант': 'В разделе Гранты найдите программы поддержки для вашего бизнеса.',
+            'пока': 'До свидания! Обращайтесь ещё!',
+            'спасибо': 'Всегда рада помочь!',
+            'кто ты': 'Я Светлана, ИИ-помощник для самозанятых. Помогаю с налогами, договорами и бизнесом.'
+        };
+        
+        for (const [key, value] of Object.entries(responses)) {
+            if (lower.includes(key)) return value;
+        }
+        
+        return 'Интересный вопрос! Для более точного ответа войдите в систему, и я смогу помочь вам персонально.';
+    }
+    
+    // Add message to chat
+    function addMessage(text, isUser = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isUser ? 'user-message' : 'svetlana-message'}`;
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Speak text with animation
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ru-RU';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+            
+            utterance.onstart = () => {
+                isSpeaking = true;
+                if (speakingIndicator) speakingIndicator.classList.add('active');
+            };
+            
+            utterance.onend = () => {
+                isSpeaking = false;
+                if (speakingIndicator) speakingIndicator.classList.remove('active');
+            };
+            
+            speechSynthesis.speak(utterance);
+        }
+    }
+    
+    // Handle chat send
+    async function handleChatSend() {
+        const message = chatInput?.value.trim();
+        if (!message) return;
+        
+        addMessage(message, true);
+        chatInput.value = '';
+        
+        // Show thinking state
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'message svetlana-message';
+        thinkingDiv.textContent = 'Думаю...';
+        thinkingDiv.id = 'thinking-message';
+        chatMessages.appendChild(thinkingDiv);
+        
+        try {
+            const response = await callAI(message);
+            
+            // Remove thinking message
+            const thinking = document.getElementById('thinking-message');
+            if (thinking) thinking.remove();
+            
+            addMessage(response, false);
+            speakText(response);
+        } catch (error) {
+            console.error('Chat error:', error);
+            const thinking = document.getElementById('thinking-message');
+            if (thinking) thinking.remove();
+            addMessage('Извините, произошла ошибка. Попробуйте ещё раз.', false);
+        }
+    }
+    
+    // Voice recognition
+    let recognition = null;
+    let isListening = false;
+    
+    function initVoiceRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ru-RU';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onstart = () => {
+                isListening = true;
+                if (voiceBtn) voiceBtn.classList.add('listening');
+            };
+            
+            recognition.onend = () => {
+                isListening = false;
+                if (voiceBtn) voiceBtn.classList.remove('listening');
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if (chatInput) chatInput.value = transcript;
+                handleChatSend();
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                if (voiceBtn) voiceBtn.classList.remove('listening');
+            };
+        }
+    }
+    
+    function toggleVoiceInput() {
+        if (!recognition) {
+            alert('Голосовой ввод не поддерживается вашим браузером.');
+            return;
+        }
+        
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    }
+    
+    // Initialize
+    function init() {
+        // API keys are now handled securely via backend endpoints
+        // No API keys are exposed in frontend code
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Start animation
+        animate();
+        
+        // Event listeners
+        if (sendChatBtn) sendChatBtn.addEventListener('click', handleChatSend);
+        if (chatInput) {
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleChatSend();
+            });
+        }
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', toggleVoiceInput);
+            initVoiceRecognition();
+        }
+        
+        // Theme change listener
+        const observer = new MutationObserver(() => {
+            if (canvas && ctx) drawSvetlana(ctx, canvas.width, canvas.height);
+            if (miniCanvas && miniCtx) drawSvetlana(miniCtx, miniCanvas.width, miniCanvas.height);
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
+<!-- Подключение новой системы Светланы -->
+<script src="{{ url_for('static', filename='js/avatar-state.js') }}"></script>
+<script src="{{ url_for('static', filename='js/canvas-avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image-avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/avatar-renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lip-sync.js') }}"></script>
+<script src="{{ url_for('static', filename='js/voice-interaction.js') }}"></script>
+<script src="{{ url_for('static', filename='js/svetlana-main.js') }}"></script>
+
+<script>
+// Инициализация новой системы Светланы при загрузке страницы
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing new Svetlana system...');
+    
+    // Проверяем, есть ли контейнер для аватара
+    const avatarContainer = document.getElementById('svetlanaAvatar');
+    if (!avatarContainer) {
+        console.warn('Svetlana avatar container not found');
+        return;
+    }
+    
+    try {
+        // Создаем экземпляр системы состояний Светланы
+        const svetlanaState = new window.SvetlanaState();
+        
+        // Создаем рендерер аватара
+        const avatarRenderer = new window.AvatarRenderer('svetlanaAvatar');
+        await avatarRenderer.init();
+        
+        // Создаем систему lip-sync
+        const lipSyncSystem = new window.LipSyncSystem(avatarRenderer);
+        
+        // Создаем систему голосового взаимодействия
+        const voiceInteraction = new window.VoiceInteraction(svetlanaState, avatarRenderer, lipSyncSystem);
+        
+        // Привязываем кнопку голосового ввода
+        const voiceBtn = document.getElementById('voice-control-btn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', async () => {
+                await voiceInteraction.toggleListening();
+                
+                // Обновляем состояние кнопки
+                if (svetlanaState.getState() === svetlanaState.states.LISTENING) {
+                    voiceBtn.classList.add('listening');
+                } else {
+                    voiceBtn.classList.remove('listening');
+                }
+            });
+        }
+        
+        // Привязываем систему состояний к обновлениям интерфейса
+        svetlanaState.onStateChange(svetlanaState.states.IDLE, () => {
+            voiceBtn?.classList.remove('listening');
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.LISTENING, () => {
+            voiceBtn?.classList.add('listening');
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.SPEAKING, async () => {
+            // Начинаем lip-sync анализ при начале речи
+            if (lipSyncSystem) {
+                await lipSyncSystem.startAnalysis();
+            }
+        });
+        
+        svetlanaState.onStateChange(svetlanaState.states.IDLE, async () => {
+            // Останавливаем lip-sync анализ при окончании речи
+            if (lipSyncSystem) {
+                await lipSyncSystem.stopAnalysis();
+            }
+        });
+        
+        // Инициализируем начальное состояние
+        svetlanaState.setState(svetlanaState.states.IDLE);
+        
+        console.log('Svetlana system initialized successfully');
+        
+        // Сохраняем экземпляры в глобальной области для отладки
+        window.svetlanaState = svetlanaState;
+        window.avatarRenderer = avatarRenderer;
+        window.voiceInteraction = voiceInteraction;
+        window.lipSyncSystem = lipSyncSystem;
+        
+    } catch (error) {
+        console.error('Failed to initialize Svetlana system:', error);
+    }
+});
+
+// Очищаем ресурсы при закрытии страницы
+window.addEventListener('beforeunload', async function() {
+    try {
+        if (window.voiceInteraction) {
+            await window.voiceInteraction.destroy();
+        }
+        if (window.avatarRenderer) {
+            await window.avatarRenderer.destroy();
+        }
+        if (window.lipSyncSystem) {
+            await window.lipSyncSystem.destroy();
+        }
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+    }
+});
+</script>
+{% endblock scripts %}
+{% endblock content %}
