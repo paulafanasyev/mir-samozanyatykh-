@@ -1,9 +1,25 @@
-# Svetlana avatar assets
+# Изображения аватара Светланы
 
-This directory is the single place for replaceable Svetlana avatar images.
+Поместите сюда файлы изображений для аватара Светланы:
 
-- `svetlana-current.webp` — primary avatar.
-- `svetlana-light.webp` — optional light-theme variant.
-- `svetlana-dark.webp` — optional dark-theme variant.
+- `svetlana-current.webp` - универсальный аватар (fallback)
+- `svetlana-light.webp` - для светлой темы
+- `svetlana-dark.webp` - для тёмной темы
 
-Recommended format: WebP, portrait/chest-up composition. The application falls back to the current Canvas avatar when no image asset exists.
+## Требования к изображениям
+
+- Формат: WebP (рекомендуется), PNG, JPG
+- Размер: 512x512px или больше
+- Соотношение сторон: 1:1 (квадрат)
+- Фон: прозрачный или однотонный
+
+## Рекомендации
+
+- Используйте качественные фотографии или рендеры
+- Лицо должно быть хорошо освещено
+- Выражение лица: дружелюбное, профессиональное
+- Стиль: деловой, современный
+
+## Автоматическое использование
+
+Система автоматически подхватит изображения из этой директории и будет использовать их в зависимости от текущей темы интерфейса.
