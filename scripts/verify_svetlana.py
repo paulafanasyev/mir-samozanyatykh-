@@ -47,12 +47,15 @@ def check_api_endpoint(api_file):
 
 def main():
     print("=" * 60)
-    print("SVETLANA RUNTIME VERIFIER v2.1")
+    print("SVETLANA RUNTIME VERIFIER v2.2")
     print("=" * 60)
     
-    base_dir = Path('/workspace')
+    # Определяем базовую директорию динамически
+    base_dir = Path(__file__).parent.parent
     
-    # Пути к файлам
+    print(f"Base directory: {base_dir}")
+    
+    # Пути к файлам (актуальная структура проекта)
     web_index = base_dir / 'templates' / 'index.html'
     mobile_index = base_dir / 'flutter_app' / 'assets' / 'svetlana' / 'index.html'
     app_js = base_dir / 'static' / 'js' / 'svetlana-main.js'
