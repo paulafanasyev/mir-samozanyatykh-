@@ -424,34 +424,55 @@ async def api_achievements(user: User = Depends(get_current_user_api), db: Sessi
 # ============ API: SVETLANA ============
 @app.post("/api/svetlana/chat")
 async def api_svetlana_chat(data: dict, user: User = Depends(get_current_user_api), db: Session = Depends(get_db)):
-    message = data.get("message", "")
-    session_id = data.get("session_id", str(uuid.uuid4()))
-    responses = {
-        "привет": "Здравствуйте! Я Светлана, ваш ИИ-ассистент. Чем могу помочь?",
-        "налог": "Самозанятые платят НПД: 4% с физлиц, 6% с юрлиц и ИП. Налоговый вычет 10 000 ₽ применяется автоматически.",
-        "вычет": "Налоговый вычет 10 000 ₽ для самозанятых. Применяется в приложении Мой налог.",
-        "договор": "Я могу помочь с шаблонами: ГПД, счёт, акт выполненных работ, чек НПД.",
-        "тариф": "Тарифы: START (бесплатно), PRO (300 ₽/мес), BUSINESS (990 ₽/мес), ENTERPRISE (индивидуально).",
-        "регистрация": "Для регистрации самозанятым скачайте приложение Мой налог или обратитесь в ФНС.",
-        "штраф": "Штраф за неуплату НПД — 20% от суммы + пени 1/300 ставки рефинансирования.",
-        "ип": "Самозанятость и ИП — разные режимы. Самозанятый не платит фиксированные взносы, но имеет ограничения по доходу (2.4 млн ₽/год).",
-        "грант": "В разделе Гранты вы найдёте актуальные программы поддержки.",
-        "crm": "CRM помогает управлять клиентами. Добавляйте контакты, отслеживайте статусы.",
-    }
-    reply = "Я пока работаю в режиме базы знаний. Задайте вопрос о налогах, договорах, тарифах или грантах."
-    for key, resp in responses.items():
-        if key in message.lower():
-            reply = resp
-            break
-    chat = SvetlanaChat(user_id=user.id, session_id=session_id, message=message, response=reply, category="general")
-    db.add(chat)
-    db.commit()
-    chats_count = db.query(SvetlanaChat).filter(SvetlanaChat.user_id == user.id).count()
-    for ach in db.query(Achievement).filter(Achievement.condition_type == "svetlana_chats").all():
-        if chats_count >= ach.condition_value and not db.query(UserAchievement).filter(UserAchievement.user_id == user.id, UserAchievement.achievement_id == ach.id).first():
-            db.add(UserAchievement(user_id=user.id, achievement_id=ach.id))
-            db.commit()
-    return {"reply": reply, "session_id": session_id, "timestamp": datetime.utcnow().isoformat()}
+    """
+    Универсальный эндпоинт для чата со Светланой.
+    
+    Логика выбора модели:
+    1. Если есть API ключ в ENV -> Внешняя модель (Premium)
+    2. Иначе -> Локальная модель Svetlana-2.0 (офлайн, бесплатно)
+    """
+    try:
+        from app.local_ai_engine import local_engine
+        
+        message = data.get("message", "")
+        session_id = data.get("session_id", str(uuid.uuid4()))
+        
+        # Проверка: есть ли API ключ для внешней модели (Premium режим)
+        api_key = os.getenv("ANYMODEL_API_KEY") or os.getenv("APINEX_API_KEY")
+        is_premium_mode = bool(api_key)
+        
+        if is_premium_mode:
+            # --- PREMIUM MODE: External API ---
+            logger.info(f"User {user.id}: Using Premium External AI Model")
+            # Здесь будет вызов внешней модели через requests/httpx
+            # Пока используем заглушку с пометкой
+            reply = "[Premium AI] Для подключения внешней модели добавьте API ключ в GitHub Secrets. Пока работает локальная Светлана."
+            source = "external_premium_stub"
+        else:
+            # --- FREE MODE: Local Offline Model ---
+            logger.info(f"User {user.id}: Using Local Svetlana-2.0 Model")
+            reply = local_engine.generate_response(message)
+            source = "local_offline"
+            
+        # Сохранение в БД
+        chat = SvetlanaChat(user_id=user.id, session_id=session_id, message=message, response=reply, category=source)
+        db.add(chat)
+        db.commit()
+        
+        chats_count = db.query(SvetlanaChat).filter(SvetlanaChat.user_id == user.id).count()
+        
+        # Проверка достижений
+        for ach in db.query(Achievement).filter(Achievement.condition_type == "svetlana_chats").all():
+            if chats_count >= ach.condition_value and not db.query(UserAchievement).filter(UserAchievement.user_id == user.id, UserAchievement.achievement_id == ach.id).first():
+                db.add(UserAchievement(user_id=user.id, achievement_id=ach.id))
+                db.commit()
+                
+        return {"reply": reply, "session_id": session_id, "timestamp": datetime.utcnow().isoformat()}
+        
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        # Fallback на простую заглушку при ошибке
+        return {"reply": "Произошла ошибка при обработке запроса. Попробуйте позже.", "session_id": session_id, "timestamp": datetime.utcnow().isoformat()}
 
 @app.get("/api/svetlana/history")
 async def api_svetlana_history(user: User = Depends(get_current_user_api), db: Session = Depends(get_db), limit: int = 50):
